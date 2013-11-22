@@ -3,8 +3,9 @@
 #include "Header.h"
 
 //==================================================================================================
-Solver::Solver( void )
+Solver::Solver( RubiksCube* rubiksCube )
 {
+	this->rubiksCube = rubiksCube;
 }
 
 //==================================================================================================
@@ -27,7 +28,17 @@ bool Solver::MakeMove( RubiksCube::Rotation& rotation )
 	// sub-cubes in the cube to a desired location.  Discovering all types of desired
 	// semi-invariant move sequences will be a challenge, if they even exist.
 
-	return false;
+	// TODO: Check to see if the cube is in the solved state here.
+	//       If it is, then we're done.
+
+	if( currentMoveSequence.size() == 0 )
+		if( !MakeMoveSequence( currentMoveSequence ) || currentMoveSequence.size() == 0 )
+			return false;
+
+	MoveSequence::iterator iter = currentMoveSequence.begin();
+	rotation = *iter;
+	currentMoveSequence.erase( iter );
+	return true;
 }
 
 // Solver.cpp

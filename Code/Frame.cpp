@@ -136,6 +136,13 @@ void Frame::OnDestroyCube( wxCommandEvent& event )
 	if( !wxGetApp().rubiksCube )
 		return;
 
+	// The solver keeps a pointer to the cube, so be sure to delete this first.
+	if( wxGetApp().solver )
+	{
+		delete wxGetApp().solver;
+		wxGetApp().solver = 0;
+	}
+
 	delete wxGetApp().rubiksCube;
 	wxGetApp().rubiksCube = 0;
 	canvas->Refresh();
@@ -170,7 +177,33 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 	if( wxGetApp().solver )
 		return;
 
-	wxGetApp().solver = new Solver();
+	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	if( !rubiksCube )
+		return;
+
+	switch( rubiksCube->SubCubeMatrixSize() )
+	{
+		case 1:
+		{
+			// It's already solved.  ;)
+			break;
+		}
+		case 2:
+		{
+			wxGetApp().solver = new SolverForCase2( rubiksCube );
+			break;
+		}
+		case 3:
+		{
+			wxGetApp().solver = new SolverForCase3( rubiksCube );
+			break;
+		}
+		default:
+		{
+			wxGetApp().solver = new SolverForCaseGreaterThan3( rubiksCube );
+			break;
+		}
+	}
 }
 
 //==================================================================================================

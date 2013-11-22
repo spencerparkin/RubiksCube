@@ -220,6 +220,30 @@
 				RelativePath=".\Code\Solver.h"
 				>
 			</File>
+			<File
+				RelativePath=".\Code\SolverForCase2.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Code\SolverForCase2.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Code\SolverForCase3.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Code\SolverForCase3.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Code\SolverForCaseGreaterThan3.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Code\SolverForCaseGreaterThan3.h"
+				>
+			</File>
 			<Filter
 				Name="c3ga"
 				>
