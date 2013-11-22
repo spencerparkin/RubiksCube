@@ -1,13 +1,8 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
+# Ignore dev-studio temporaries
+*.ncb
+*.suo
+*.user
+*.tss
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
+# Ignore built files and intermmediates
+Build/

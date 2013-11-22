@@ -1,0 +1,38 @@
+// Application.cpp
+
+#include "Header.h"
+
+//==================================================================================================
+wxIMPLEMENT_APP( Application );
+
+//==================================================================================================
+Application::Application( void )
+{
+	rubiksCube = 0;
+}
+
+//==================================================================================================
+/*virtual*/ Application::~Application( void )
+{
+	delete rubiksCube;
+}
+
+//==================================================================================================
+/*virtual*/ bool Application::OnInit( void )
+{
+	if( !wxApp::OnInit() )
+		return false;
+
+	Frame* frame = new Frame(0);
+	frame->Show();
+
+	return true;
+}
+
+//==================================================================================================
+/*virtual*/ int Application::OnExit( void )
+{
+	return 0;
+}
+
+// Application.cpp
