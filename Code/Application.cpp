@@ -9,12 +9,14 @@ wxIMPLEMENT_APP( Application );
 Application::Application( void )
 {
 	rubiksCube = 0;
+	solver = 0;
 }
 
 //==================================================================================================
 /*virtual*/ Application::~Application( void )
 {
 	delete rubiksCube;
+	delete solver;
 }
 
 //==================================================================================================
@@ -23,7 +25,7 @@ Application::Application( void )
 	if( !wxApp::OnInit() )
 		return false;
 
-	Frame* frame = new Frame(0);
+	Frame* frame = new Frame( 0, wxDefaultPosition, wxSize( 500, 500 ) );
 	frame->Show();
 
 	return true;

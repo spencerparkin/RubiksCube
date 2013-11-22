@@ -15,6 +15,8 @@ public:
 
 	typedef std::list< RubiksCube::Rotation > MoveStack;
 	MoveStack moveStack;
+
+	Solver* solver;
 };
 
 //==================================================================================================

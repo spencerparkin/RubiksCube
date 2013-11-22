@@ -3,7 +3,7 @@
 #include "Header.h"
 
 //==================================================================================================
-RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/ )
+RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, int colorCount /*= 6*/ )
 {
 	this->subCubeMatrixSize = subCubeMatrixSize;
 	subCubeMatrix = new SubCube**[ subCubeMatrixSize ];
@@ -17,12 +17,12 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/ )
 			{
 				SubCube* subCube = &subCubeMatrix[x][y][z];
 
-				subCube->faceColor[ NEG_X ] = ( x == 0 ) ? YELLOW : GREY;
-				subCube->faceColor[ POS_X ] = ( x == subCubeMatrixSize - 1 ) ? RED : GREY;
-				subCube->faceColor[ NEG_Y ] = ( y == 0 ) ? MEGENTA : GREY;
-				subCube->faceColor[ POS_Y ] = ( y == subCubeMatrixSize - 1 ) ? GREEN : GREY;
-				subCube->faceColor[ NEG_Z ] = ( z == 0 ) ? CYAN : GREY;
-				subCube->faceColor[ POS_Z ] = ( z == subCubeMatrixSize - 1 ) ? BLUE : GREY;
+				subCube->faceColor[ NEG_X ] = ( x == 0 ) ? ( colorCount > 1 ? YELLOW : WHITE ) : GREY;
+				subCube->faceColor[ POS_X ] = ( x == subCubeMatrixSize - 1 ) ? ( colorCount > 0 ? RED : WHITE ) : GREY;
+				subCube->faceColor[ NEG_Y ] = ( y == 0 ) ? ( colorCount > 3 ? MEGENTA : WHITE ) : GREY;
+				subCube->faceColor[ POS_Y ] = ( y == subCubeMatrixSize - 1 ) ? ( colorCount > 2 ? GREEN : WHITE ) : GREY;
+				subCube->faceColor[ NEG_Z ] = ( z == 0 ) ? ( colorCount > 5 ? CYAN : WHITE ) : GREY;
+				subCube->faceColor[ POS_Z ] = ( z == subCubeMatrixSize - 1 ) ? ( colorCount > 4 ? BLUE : WHITE ) : GREY;
 			}
 		}
 	}
@@ -196,6 +196,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga:
 		case YELLOW:	colorVector.set( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 1.0, 0.0 ); break;
 		case MEGENTA:	colorVector.set( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 1.0 ); break;
 		case CYAN:		colorVector.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 1.0 ); break;
+		case WHITE:		colorVector.set( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 1.0, 1.0 ); break;
 	}
 
 	return colorVector;

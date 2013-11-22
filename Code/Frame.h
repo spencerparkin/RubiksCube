@@ -5,7 +5,7 @@ class Frame : public wxFrame
 {
 public:
 
-	Frame( wxWindow* parent );
+	Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size );
 	virtual ~Frame( void );
 
 private:
@@ -15,7 +15,9 @@ private:
 		ID_CreateCube = wxID_HIGHEST,
 		ID_DestroyCube,
 		ID_ScrambleCube,
-		ID_PopMove,
+		ID_SolveCube,
+		ID_PopMoveAndApply,
+		ID_PopMoveAndNoApply,
 		ID_Exit,
 		ID_About,
 		ID_Timer,
@@ -24,7 +26,9 @@ private:
 	void OnCreateCube( wxCommandEvent& event );
 	void OnDestroyCube( wxCommandEvent& event );
 	void OnScrambleCube( wxCommandEvent& event );
-	void OnPopMove( wxCommandEvent& event );
+	void OnSolveCube( wxCommandEvent& event );
+	void OnPopMoveAndApply( wxCommandEvent& event );
+	void OnPopMoveAndNoApply( wxCommandEvent& event );
 	void OnExit( wxCommandEvent& event );
 	void OnAbout( wxCommandEvent& event );
 	void OnUpdateMenuItemUI( wxUpdateUIEvent& event );

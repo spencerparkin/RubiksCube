@@ -21,10 +21,12 @@ class RubiksCube;
 class Application;
 class Frame;
 class Canvas;
+class Solver;
 
 #include "RubiksCube.h"
 #include "Application.h"
 #include "Frame.h"
 #include "Canvas.h"
+#include "Solver.h"
 
 // Header.h

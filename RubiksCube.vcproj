@@ -212,6 +212,14 @@
 				RelativePath=".\Code\RubiksCube.h"
 				>
 			</File>
+			<File
+				RelativePath=".\Code\Solver.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Code\Solver.h"
+				>
+			</File>
 			<Filter
 				Name="c3ga"
 				>

@@ -5,7 +5,7 @@ class RubiksCube
 {
 public:
 
-	RubiksCube( int subCubeMatrixSize = 3 );
+	RubiksCube( int subCubeMatrixSize = 3, int colorCount = 6 );
 	~RubiksCube( void );
 
 	enum Axis
@@ -35,6 +35,7 @@ public:
 		YELLOW,
 		MEGENTA,
 		CYAN,
+		WHITE,
 	};
 
 	enum RotationDirection
