@@ -579,7 +579,7 @@ bool RubiksCube::TranslateMove(
 		}
 	}
 
-	axis = c3ga::gp( xAxis, axis.get_e1() ) + c3ga::gp( yAxis, axis.get_e2() ) + c3ga::gp( zAxis, axis.get_e2() );
+	axis = c3ga::gp( xAxis, axis.get_e1() ) + c3ga::gp( yAxis, axis.get_e2() ) + c3ga::gp( zAxis, axis.get_e3() );
 
 	double epsilon = 1e-7;
 	if( c3ga::norm( axis - c3ga::e1 ) < epsilon )
