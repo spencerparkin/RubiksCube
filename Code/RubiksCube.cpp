@@ -462,4 +462,146 @@ bool RubiksCube::Select( unsigned int* hitBuffer, int hitBufferSize, int hitCoun
 	return grippingCube;
 }
 
+//==================================================================================================
+// A cube is in the solved state if all faces are of one color.
+// Notice that there are multiple cases of the solved state,
+// but relatively speaking, color adjacencies should be consistent
+// in all such cases.
+bool RubiksCube::IsInSolvedState( void ) const
+{
+	Color posXColor = subCubeMatrix[ subCubeMatrixSize - 1 ][0][0].faceColor[ POS_X ];
+	Color posYColor = subCubeMatrix[0][ subCubeMatrixSize - 1 ][0].faceColor[ POS_Y ];
+	Color posZColor = subCubeMatrix[0][0][ subCubeMatrixSize - 1 ].faceColor[ POS_Z ];
+	Color negXColor = subCubeMatrix[0][0][0].faceColor[ NEG_X ];
+	Color negYColor = subCubeMatrix[0][0][0].faceColor[ NEG_Y ];
+	Color negZColor = subCubeMatrix[0][0][0].faceColor[ NEG_Z ];
+
+	for( int x = 0; x < subCubeMatrixSize; x++ )
+	{
+		for( int y = 0; y < subCubeMatrixSize; y++ )
+		{
+			for( int z = 0; z < subCubeMatrixSize; z++ )
+			{
+				SubCube* subCube = &subCubeMatrix[x][y][z];
+
+				if( x == subCubeMatrixSize - 1 && subCube->faceColor[ POS_X ] != posXColor )
+					return false;
+				if( y == subCubeMatrixSize - 1 && subCube->faceColor[ POS_Y ] != posYColor )
+					return false;
+				if( z == subCubeMatrixSize - 1 && subCube->faceColor[ POS_Z ] != posZColor )
+					return false;
+				if( x == 0 && subCube->faceColor[ NEG_X ] != negXColor )
+					return false;
+				if( y == 0 && subCube->faceColor[ NEG_Y ] != negYColor )
+					return false;
+				if( z == 0 && subCube->faceColor[ NEG_Z ] != negZColor )
+					return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+//==================================================================================================
+// I imagine that this routine would be used by the UI as well as the AI.
+// The UI would formulate the given system based on how the cube is oriented.
+// The AI, however, would have to formulate it as a function of the desired perspective.
+bool RubiksCube::TranslateMove(
+						const c3ga::vectorE3GA& xAxis,
+						const c3ga::vectorE3GA& yAxis,
+						const c3ga::vectorE3GA& zAxis,
+						RelativeMove relativeMove, Rotation& rotation ) const
+{
+	c3ga::vectorE3GA axis;
+	switch( relativeMove )
+	{
+		case LT_CCW:
+		case LT_CW:
+		{
+			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, -1.0, 0.0, 0.0 );
+			break;
+		}
+		case RT_CCW:
+		case RT_CW:
+		{
+			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
+			break;
+		}
+		case BM_CCW:
+		case BM_CW:
+		{
+			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, -1.0, 0.0 );
+			break;
+		}
+		case TP_CCW:
+		case TP_CW:
+		{
+			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
+			break;
+		}
+		case BK_CCW:
+		case BK_CW:
+		{
+			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, -1.0 );
+			break;
+		}
+		case FT_CCW:
+		case FT_CW:
+		{
+			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
+			break;
+		}
+	}
+
+	double angle;
+	switch( relativeMove )
+	{
+		case LT_CCW:
+		case RT_CCW:
+		case BM_CCW:
+		case TP_CCW:
+		case BK_CCW:
+		case FT_CCW:
+		{
+			angle = M_PI / 2.0;
+			break;
+		}
+		case LT_CW:
+		case RT_CW:
+		case BM_CW:
+		case TP_CW:
+		case BK_CW:
+		case FT_CW:
+		{
+			angle = -M_PI / 2.0;
+			break;
+		}
+	}
+
+	axis = c3ga::gp( xAxis, axis.get_e1() ) + c3ga::gp( yAxis, axis.get_e2() ) + c3ga::gp( zAxis, axis.get_e2() );
+
+	double epsilon = 1e-7;
+	if( c3ga::norm( axis - c3ga::e1 ) < epsilon )
+	{
+		rotation.plane.axis = X_AXIS;
+		rotation.plane.index = subCubeMatrixSize - 1;
+		rotation.angle = angle;
+		return true;
+	}
+	else if( c3ga::norm( axis + c3ga::e1 ) < epsilon )
+	{
+		rotation.plane.axis = X_AXIS;
+		rotation.plane.index = 0;
+		rotation.angle = -angle;
+		return true;
+	}
+	else if( c3ga::norm( axis - c3ga::e2 ) < epsilon )
+	{
+		//...
+	}
+
+	return false;
+}
+
 // RubiksCube.cpp

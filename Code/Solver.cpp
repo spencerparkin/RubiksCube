@@ -35,8 +35,8 @@ bool Solver::MakeMove( RubiksCube::Rotation& rotation )
 	// given an initial fixed orientation, then I may be able to use that to complete a significant
 	// portion of the cube.
 
-	// TODO: Check to see if the cube is in the solved state here.
-	//       If it is, then we're done.
+	if( rubiksCube->IsInSolvedState() )
+		return false;
 
 	if( currentMoveSequence.size() == 0 )
 		if( !MakeMoveSequence( currentMoveSequence ) || currentMoveSequence.size() == 0 )
