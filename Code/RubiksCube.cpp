@@ -331,6 +331,21 @@ bool RubiksCube::Apply( const Rotation& rotation, Rotation* invariantRotation /*
 }
 
 //==================================================================================================
+bool RubiksCube::ApplySequence( const RotationSequence& rotationSequence )
+{
+	RotationSequence rotationList = rotationSequence;
+	while( rotationList.size() > 0 )
+	{
+		RotationSequence::iterator iter = rotationList.begin();
+		Rotation rotation = *iter;
+		rotationList.erase( iter );
+		if( !Apply( rotation ) )
+			return false;
+	}
+	return true;
+}
+
+//==================================================================================================
 void RubiksCube::RotatePlane( Plane plane, RotationDirection rotationDirection, int rotationCount )
 {
 	// To achieve the desired rotation, we always rotate some number of times counter-clock-wise.
@@ -507,47 +522,47 @@ bool RubiksCube::IsInSolvedState( void ) const
 // I imagine that this routine would be used by the UI as well as the AI.
 // The UI would formulate the given system based on how the cube is oriented.
 // The AI, however, would have to formulate it as a function of the desired perspective.
-bool RubiksCube::TranslateMove(
+bool RubiksCube::TranslateRotation(
 						const c3ga::vectorE3GA& xAxis,
 						const c3ga::vectorE3GA& yAxis,
 						const c3ga::vectorE3GA& zAxis,
-						RelativeMove relativeMove, Rotation& rotation ) const
+						RelativeRotation relativeRotation, Rotation& rotation ) const
 {
 	c3ga::vectorE3GA axis;
-	switch( relativeMove )
+	switch( relativeRotation )
 	{
-		case LT_CCW:
-		case LT_CW:
+		case L:
+		case Li:
 		{
 			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, -1.0, 0.0, 0.0 );
 			break;
 		}
-		case RT_CCW:
-		case RT_CW:
+		case R:
+		case Ri:
 		{
 			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
 			break;
 		}
-		case BM_CCW:
-		case BM_CW:
+		case D:
+		case Di:
 		{
 			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, -1.0, 0.0 );
 			break;
 		}
-		case TP_CCW:
-		case TP_CW:
+		case U:
+		case Ui:
 		{
 			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
 			break;
 		}
-		case BK_CCW:
-		case BK_CW:
+		case B:
+		case Bi:
 		{
 			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, -1.0 );
 			break;
 		}
-		case FT_CCW:
-		case FT_CW:
+		case F:
+		case Fi:
 		{
 			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
 			break;
@@ -555,24 +570,24 @@ bool RubiksCube::TranslateMove(
 	}
 
 	double angle;
-	switch( relativeMove )
+	switch( relativeRotation )
 	{
-		case LT_CCW:
-		case RT_CCW:
-		case BM_CCW:
-		case TP_CCW:
-		case BK_CCW:
-		case FT_CCW:
+		case Li:
+		case Ri:
+		case Di:
+		case Ui:
+		case Bi:
+		case Fi:
 		{
 			angle = M_PI / 2.0;
 			break;
 		}
-		case LT_CW:
-		case RT_CW:
-		case BM_CW:
-		case TP_CW:
-		case BK_CW:
-		case FT_CW:
+		case L:
+		case R:
+		case D:
+		case U:
+		case B:
+		case F:
 		{
 			angle = -M_PI / 2.0;
 			break;

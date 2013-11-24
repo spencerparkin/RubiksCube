@@ -13,8 +13,7 @@ public:
 
 	RubiksCube* rubiksCube;
 
-	typedef std::list< RubiksCube::Rotation > MoveStack;
-	MoveStack moveStack;
+	RubiksCube::RotationSequence rotationStack;
 
 	Solver* solver;
 };

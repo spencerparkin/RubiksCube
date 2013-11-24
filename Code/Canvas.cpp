@@ -254,7 +254,7 @@ void Canvas::OnMouseRightUp( wxMouseEvent& event )
 		{
 			RubiksCube::Rotation reverseRotation;
 			if( rubiksCube->Apply( rotation, &rotation, &reverseRotation ) )
-				wxGetApp().moveStack.push_back( reverseRotation );
+				wxGetApp().rotationStack.push_back( reverseRotation );
 		}
 
 		grippingCube = false;

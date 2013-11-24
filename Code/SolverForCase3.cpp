@@ -3,9 +3,8 @@
 #include "Header.h"
 
 //==================================================================================================
-SolverForCase3::SolverForCase3( RubiksCube* rubiksCube ) : Solver( rubiksCube )
+SolverForCase3::SolverForCase3( void )
 {
-	wxASSERT( rubiksCube->SubCubeMatrixSize() == 3 );
 }
 
 //==================================================================================================
@@ -14,8 +13,11 @@ SolverForCase3::SolverForCase3( RubiksCube* rubiksCube ) : Solver( rubiksCube )
 }
 
 //==================================================================================================
-/*virtual*/ bool SolverForCase3::MakeMoveSequence( MoveSequence& moveSequence )
+/*virtual*/ bool SolverForCase3::MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
+	if( rubiksCube->SubCubeMatrixSize() != 3 )
+		return false;
+
 	return false;
 }
 

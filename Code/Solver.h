@@ -5,19 +5,10 @@ class Solver
 {
 public:
 
-	Solver( RubiksCube* rubiksCube );
+	Solver( void );
 	virtual ~Solver( void );
 
-	bool MakeMove( RubiksCube::Rotation& rotation );
-
-	typedef std::list< RubiksCube::Rotation > MoveSequence;
-
-	virtual bool MakeMoveSequence( MoveSequence& moveSequence ) = 0;
-
-protected:
-
-	RubiksCube* rubiksCube;
-	MoveSequence currentMoveSequence;
+	virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) = 0;
 };
 
 // Solver.h

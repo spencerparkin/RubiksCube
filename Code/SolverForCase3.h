@@ -5,10 +5,10 @@ class SolverForCase3 : public Solver
 {
 public:
 
-	SolverForCase3( RubiksCube* rubiksCube );
+	SolverForCase3( void );
 	virtual ~SolverForCase3( void );
 
-	virtual bool MakeMoveSequence( MoveSequence& moveSequence ) override;
+	virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
 };
 
 // SolverForCase3.h

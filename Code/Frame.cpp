@@ -23,10 +23,10 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	programMenu->Append( exitMenuItem );
 
 	wxMenu* moveStackMenu = new wxMenu();
-	wxMenuItem* popMoveAndApplyMenuItem = new wxMenuItem( programMenu, ID_PopMoveAndApply, "Pop Move and Apply\tF9", "Pop and apply the move on the top of the move-stack." );
-	wxMenuItem* popMoveAndNoApplyMenuItem = new wxMenuItem( programMenu, ID_PopMoveAndNoApply, "Pop Move and No Apply\tShift+F9", "Pop, but do not apply, the move on the top of the move-stack." );
-	moveStackMenu->Append( popMoveAndApplyMenuItem );
-	moveStackMenu->Append( popMoveAndNoApplyMenuItem );
+	wxMenuItem* popRotationAndApplyMenuItem = new wxMenuItem( programMenu, ID_PopRotationAndApply, "Pop Rotation and Apply\tF9", "Pop and apply the rotation on the top of the rotation-stack." );
+	wxMenuItem* popRotationAndNoApplyMenuItem = new wxMenuItem( programMenu, ID_PopRotationAndNoApply, "Pop Rotation and No Apply\tShift+F9", "Pop, but do not apply, the rotation on the top of the rotation-stack." );
+	moveStackMenu->Append( popRotationAndApplyMenuItem );
+	moveStackMenu->Append( popRotationAndNoApplyMenuItem );
 
 	wxMenu* helpMenu = new wxMenu();
 	wxMenuItem* aboutMenuItem = new wxMenuItem( helpMenu, ID_About, "About\tF1", "Show the about-box." );
@@ -34,7 +34,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 
 	wxMenuBar* menuBar = new wxMenuBar();
 	menuBar->Append( programMenu, "Program" );
-	menuBar->Append( moveStackMenu, "Move Stack" );
+	menuBar->Append( moveStackMenu, "Rotation Stack" );
 	menuBar->Append( helpMenu, "Help" );
 	SetMenuBar( menuBar );
 
@@ -45,16 +45,16 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnDestroyCube, this, ID_DestroyCube );
 	Bind( wxEVT_MENU, &Frame::OnScrambleCube, this, ID_ScrambleCube );
 	Bind( wxEVT_MENU, &Frame::OnSolveCube, this, ID_SolveCube );
-	Bind( wxEVT_MENU, &Frame::OnPopMoveAndApply, this, ID_PopMoveAndApply );
-	Bind( wxEVT_MENU, &Frame::OnPopMoveAndNoApply, this, ID_PopMoveAndNoApply );
+	Bind( wxEVT_MENU, &Frame::OnPopRotationAndApply, this, ID_PopRotationAndApply );
+	Bind( wxEVT_MENU, &Frame::OnPopRotationAndNoApply, this, ID_PopRotationAndNoApply );
 	Bind( wxEVT_MENU, &Frame::OnExit, this, ID_Exit );
 	Bind( wxEVT_MENU, &Frame::OnAbout, this, ID_About );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_CreateCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DestroyCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ScrambleCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SolveCube );
-	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopMoveAndApply );
-	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopMoveAndNoApply );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopRotationAndApply );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopRotationAndNoApply );
 	Bind( wxEVT_TIMER, &Frame::OnTimer, this, ID_Timer );
 
 	canvas = new Canvas( this );
@@ -67,8 +67,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	acceleratorEntries[0].Set( wxACCEL_NORMAL, WXK_F5, ID_CreateCube, createCubeMenuItem );
 	acceleratorEntries[1].Set( wxACCEL_NORMAL, WXK_F6, ID_DestroyCube, destroyCubeMenuItem );
 	acceleratorEntries[2].Set( wxACCEL_NORMAL, WXK_F12, ID_ScrambleCube, scrambleCubeMenuItem );
-	acceleratorEntries[3].Set( wxACCEL_NORMAL, WXK_F9, ID_PopMoveAndApply, popMoveAndApplyMenuItem );
-	acceleratorEntries[4].Set( wxACCEL_SHIFT, WXK_F9, ID_PopMoveAndNoApply, popMoveAndNoApplyMenuItem );
+	acceleratorEntries[3].Set( wxACCEL_NORMAL, WXK_F9, ID_PopRotationAndApply, popRotationAndApplyMenuItem );
+	acceleratorEntries[4].Set( wxACCEL_SHIFT, WXK_F9, ID_PopRotationAndNoApply, popRotationAndNoApplyMenuItem );
 	acceleratorEntries[5].Set( wxACCEL_NORMAL, WXK_F1, ID_About, aboutMenuItem );
 
 	wxAcceleratorTable acceleratorTable( sizeof( acceleratorEntries ) / sizeof( wxAcceleratorEntry ), acceleratorEntries );
@@ -85,24 +85,27 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 //==================================================================================================
 void Frame::OnTimer( wxTimerEvent& event )
 {
-	if( !canvas->IsAnimating( 1.0 ) )
+	if( executionSequence.size() == 0 )
 	{
+		RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 		Solver* solver = wxGetApp().solver;
-		if( solver )
+
+		if( rubiksCube && solver )
 		{
-			RubiksCube::Rotation rotation;
-			if( !solver->MakeMove( rotation ) || !canvas->ApplyRotation( rotation ) )
+			if( !solver->MakeRotationSequence( rubiksCube, executionSequence ) )
 			{
 				delete solver;
 				wxGetApp().solver = 0;
 			}
 		}
-		else if( scrambleList.size() > 0 )
-		{
-			RubiksCube::Rotation rotation = scrambleList.back();
-			scrambleList.pop_back();
-			canvas->ApplyRotation( rotation );
-		}
+	}
+	
+	if( !canvas->IsAnimating( 1.0 ) && executionSequence.size() > 0 )
+	{
+		RubiksCube::RotationSequence::iterator iter = executionSequence.begin();
+		RubiksCube::Rotation rotation = *iter;
+		executionSequence.erase( iter );
+		canvas->ApplyRotation( rotation );
 	}
 
 	if( canvas->Animate() )
@@ -127,7 +130,7 @@ void Frame::OnCreateCube( wxCommandEvent& event )
 	canvas->AdjustSizeFor( wxGetApp().rubiksCube );
 	canvas->Refresh();
 
-	wxGetApp().moveStack.clear();
+	wxGetApp().rotationStack.clear();
 }
 
 //==================================================================================================
@@ -136,24 +139,17 @@ void Frame::OnDestroyCube( wxCommandEvent& event )
 	if( !wxGetApp().rubiksCube )
 		return;
 
-	// The solver keeps a pointer to the cube, so be sure to delete this first.
-	if( wxGetApp().solver )
-	{
-		delete wxGetApp().solver;
-		wxGetApp().solver = 0;
-	}
-
 	delete wxGetApp().rubiksCube;
 	wxGetApp().rubiksCube = 0;
 	canvas->Refresh();
 
-	wxGetApp().moveStack.clear();
+	wxGetApp().rotationStack.clear();
 }
 
 //==================================================================================================
 void Frame::OnScrambleCube( wxCommandEvent& event )
 {
-	if( scrambleList.size() != 0 )
+	if( executionSequence.size() != 0 )
 		return;
 
 	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
@@ -167,7 +163,7 @@ void Frame::OnScrambleCube( wxCommandEvent& event )
 		rotation.plane.index = rand() % rubiksCube->SubCubeMatrixSize();
 		rotation.plane.axis = RubiksCube::Axis( rand() % 3 );
 		rotation.angle = double( 1 + rand() % 3 ) * M_PI / 2.0;
-		scrambleList.push_back( rotation );
+		executionSequence.push_back( rotation );
 	}
 }
 
@@ -190,38 +186,38 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 		}
 		case 2:
 		{
-			wxGetApp().solver = new SolverForCase2( rubiksCube );
+			wxGetApp().solver = new SolverForCase2();
 			break;
 		}
 		case 3:
 		{
-			wxGetApp().solver = new SolverForCase3( rubiksCube );
+			wxGetApp().solver = new SolverForCase3();
 			break;
 		}
 		default:
 		{
-			wxGetApp().solver = new SolverForCaseGreaterThan3( rubiksCube );
+			wxGetApp().solver = new SolverForCaseGreaterThan3();
 			break;
 		}
 	}
 }
 
 //==================================================================================================
-void Frame::OnPopMoveAndApply( wxCommandEvent& event )
+void Frame::OnPopRotationAndApply( wxCommandEvent& event )
 {
-	if( wxGetApp().moveStack.size() == 0 )
+	if( wxGetApp().rotationStack.size() == 0 )
 		return;
 
-	RubiksCube::Rotation rotation = wxGetApp().moveStack.back();
-	wxGetApp().moveStack.pop_back();
+	RubiksCube::Rotation rotation = wxGetApp().rotationStack.back();
+	wxGetApp().rotationStack.pop_back();
 	canvas->ApplyRotation( rotation );
 }
 
 //==================================================================================================
-void Frame::OnPopMoveAndNoApply( wxCommandEvent& event )
+void Frame::OnPopRotationAndNoApply( wxCommandEvent& event )
 {
-	if( wxGetApp().moveStack.size() > 0 )
-		wxGetApp().moveStack.pop_back();
+	if( wxGetApp().rotationStack.size() > 0 )
+		wxGetApp().rotationStack.pop_back();
 }
 
 //==================================================================================================
@@ -256,20 +252,24 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 			break;
 		}
 		case ID_DestroyCube:
+		{
+			event.Enable( wxGetApp().rubiksCube != 0 ? true : false );
+			break;
+		}
 		case ID_ScrambleCube:
 		{
-			event.Enable( wxGetApp().rubiksCube == 0 ? false : true );
+			event.Enable( ( wxGetApp().rubiksCube != 0 && executionSequence.size() == 0 ) ? true : false );
 			break;
 		}
 		case ID_SolveCube:
 		{
-			event.Enable( wxGetApp().rubiksCube != 0 && wxGetApp().solver == 0 ? true : false );
+			event.Enable( ( wxGetApp().rubiksCube != 0 && wxGetApp().solver == 0 ) ? true : false );
 			break;
 		}
-		case ID_PopMoveAndApply:
-		case ID_PopMoveAndNoApply:
+		case ID_PopRotationAndApply:
+		case ID_PopRotationAndNoApply:
 		{
-			event.Enable( ( wxGetApp().rubiksCube != 0 && wxGetApp().moveStack.size() > 0 ) ? true : false );
+			event.Enable( ( wxGetApp().rubiksCube != 0 && wxGetApp().rotationStack.size() > 0 ) ? true : false );
 			break;
 		}
 	}

@@ -8,20 +8,20 @@ public:
 	RubiksCube( int subCubeMatrixSize = 3, int colorCount = 6 );
 	~RubiksCube( void );
 
-	enum RelativeMove
+	enum RelativeRotation
 	{
-		LT_CCW,
-		RT_CCW,
-		BM_CCW,
-		TP_CCW,
-		BK_CCW,
-		FT_CCW,
-		LT_CW,
-		RT_CW,
-		BM_CW,
-		TP_CW,
-		BK_CW,
-		FT_CW,
+		L,
+		R,
+		D,
+		U,
+		B,
+		F,
+		Li,
+		Ri,
+		Di,
+		Ui,
+		Bi,
+		Fi,
 	};
 
 	enum Axis
@@ -83,8 +83,11 @@ public:
 		double subCubeWidthHeightAndDepth;
 	};
 
+	typedef std::list< Rotation > RotationSequence;
+
 	void Render( GLenum mode, const Rotation& rotation, const Size& size ) const;
 	bool Apply( const Rotation& rotation, Rotation* invariantRotation = 0, Rotation* reverseRotation = 0 );
+	bool ApplySequence( const RotationSequence& rotationSequence );
 	bool Select( unsigned int* hitBuffer, int hitBufferSize, int hitCount, Grip& grip ) const;
 	bool IsInSolvedState( void ) const;
 
@@ -95,11 +98,11 @@ public:
 	static c3ga::vectorE3GA TranslateNormal( Face face );
 	static bool TranslateGrip( Grip& grip, int x, int y, int z, Face face );
 	static void TranslateAxis( wxString& axisString, Axis axis );
-	bool TranslateMove(
+	bool TranslateRotation(
 				const c3ga::vectorE3GA& xAxis,
 				const c3ga::vectorE3GA& yAxis,
 				const c3ga::vectorE3GA& zAxis,
-				RelativeMove relativeMove, Rotation& rotation ) const;
+				RelativeRotation relativeRotation, Rotation& rotation ) const;
 
 private:
 

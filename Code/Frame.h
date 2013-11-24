@@ -16,8 +16,8 @@ private:
 		ID_DestroyCube,
 		ID_ScrambleCube,
 		ID_SolveCube,
-		ID_PopMoveAndApply,
-		ID_PopMoveAndNoApply,
+		ID_PopRotationAndApply,
+		ID_PopRotationAndNoApply,
 		ID_Exit,
 		ID_About,
 		ID_Timer,
@@ -27,8 +27,8 @@ private:
 	void OnDestroyCube( wxCommandEvent& event );
 	void OnScrambleCube( wxCommandEvent& event );
 	void OnSolveCube( wxCommandEvent& event );
-	void OnPopMoveAndApply( wxCommandEvent& event );
-	void OnPopMoveAndNoApply( wxCommandEvent& event );
+	void OnPopRotationAndApply( wxCommandEvent& event );
+	void OnPopRotationAndNoApply( wxCommandEvent& event );
 	void OnExit( wxCommandEvent& event );
 	void OnAbout( wxCommandEvent& event );
 	void OnUpdateMenuItemUI( wxUpdateUIEvent& event );
@@ -36,7 +36,7 @@ private:
 
 	Canvas* canvas;
 	wxTimer timer;
-	Application::MoveStack scrambleList;
+	RubiksCube::RotationSequence executionSequence;
 };
 
 // Frame.h

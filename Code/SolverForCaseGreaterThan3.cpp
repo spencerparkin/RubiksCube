@@ -3,12 +3,10 @@
 #include "Header.h"
 
 //==================================================================================================
-SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( RubiksCube* rubiksCube ) : Solver( rubiksCube )
+SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( void )
 {
 	solverForCase3 = 0;
 	reducedCube = 0;
-
-	wxASSERT( rubiksCube->SubCubeMatrixSize() > 3 );
 }
 
 //==================================================================================================
@@ -19,26 +17,23 @@ SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( RubiksCube* rubiksCube ) :
 }
 
 //==================================================================================================
-/*virtual*/ bool SolverForCaseGreaterThan3::MakeMoveSequence( MoveSequence& moveSequence )
+/*virtual*/ bool SolverForCaseGreaterThan3::MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
+	if( rubiksCube->SubCubeMatrixSize() <= 3 )
+		return false;
+
 	// TODO: If the cube is equivilant to the 3x3x3 case, create the reduced cube and its solver here.
 
 	if( reducedCube && solverForCase3 )
 	{
-		MoveSequence reducedMoveSequence;
-		if( !solverForCase3->MakeMoveSequence( reducedMoveSequence ) || reducedMoveSequence.size() == 0 )
+		RubiksCube::RotationSequence reducedRotationSequence;
+		if( !solverForCase3->MakeRotationSequence( reducedCube, reducedRotationSequence ) || reducedRotationSequence.size() == 0 )
 			return false;
 
-		TranslateMoveSequence( reducedMoveSequence, moveSequence );
+		TranslateRotationSequence( rubiksCube, reducedRotationSequence, rotationSequence );
 
-		while( reducedMoveSequence.size() > 0 )
-		{
-			MoveSequence::iterator iter = reducedMoveSequence.begin();
-			RubiksCube::Rotation rotation = *iter;
-			reducedMoveSequence.erase( iter );
-			if( !reducedCube->Apply( rotation ) )
-				return false;
-		}
+		if( !reducedCube->ApplySequence( reducedRotationSequence ) )
+			return false;
 
 		return true;
 	}
@@ -51,9 +46,9 @@ SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( RubiksCube* rubiksCube ) :
 }
 
 //==================================================================================================
-void SolverForCaseGreaterThan3::TranslateMoveSequence( const MoveSequence& reducedMoveSequence, MoveSequence& moveSequence )
+void SolverForCaseGreaterThan3::TranslateRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::RotationSequence& reducedRotationSequence, RubiksCube::RotationSequence& rotationSequence )
 {
-	for( MoveSequence::const_iterator iter = reducedMoveSequence.begin(); iter != reducedMoveSequence.end(); iter++ )
+	for( RubiksCube::RotationSequence::const_iterator iter = reducedRotationSequence.begin(); iter != reducedRotationSequence.end(); iter++ )
 	{
 		RubiksCube::Rotation reducedRotation = *iter;
 		
@@ -61,7 +56,7 @@ void SolverForCaseGreaterThan3::TranslateMoveSequence( const MoveSequence& reduc
 		{
 			case 0:
 			{
-				moveSequence.push_back( reducedRotation );
+				rotationSequence.push_back( reducedRotation );
 				break;
 			}
 			case 1:
@@ -72,7 +67,7 @@ void SolverForCaseGreaterThan3::TranslateMoveSequence( const MoveSequence& reduc
 				{
 					RubiksCube::Rotation rotation = reducedRotation;
 					rotation.plane.index = index;
-					moveSequence.push_back( rotation );
+					rotationSequence.push_back( rotation );
 				}
 
 				break;
@@ -81,7 +76,7 @@ void SolverForCaseGreaterThan3::TranslateMoveSequence( const MoveSequence& reduc
 			{
 				RubiksCube::Rotation rotation = reducedRotation;
 				rotation.plane.index = rubiksCube->SubCubeMatrixSize() - 1;
-				moveSequence.push_back( rotation );
+				rotationSequence.push_back( rotation );
 				break;
 			}
 		}

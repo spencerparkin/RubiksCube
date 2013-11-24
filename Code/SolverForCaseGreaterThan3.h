@@ -6,14 +6,14 @@ class SolverForCaseGreaterThan3 : public Solver
 {
 public:
 
-	SolverForCaseGreaterThan3( RubiksCube* rubiksCube );
+	SolverForCaseGreaterThan3( void );
 	virtual ~SolverForCaseGreaterThan3( void );
 
-	virtual bool MakeMoveSequence( MoveSequence& moveSequence ) override;
+	virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
 
 private:
 
-	void TranslateMoveSequence( const MoveSequence& reducedMoveSequence, MoveSequence& moveSequence );
+	void TranslateRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::RotationSequence& reducedRotationSequence, RubiksCube::RotationSequence& rotationSequence );
 
 	SolverForCase3* solverForCase3;
 	RubiksCube* reducedCube;
