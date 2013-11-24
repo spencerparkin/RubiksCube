@@ -9,6 +9,7 @@
 #include <wx/glcanvas.h>
 #include <wx/sizer.h>
 #include <wx/timer.h>
+#include <wx/textctrl.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>

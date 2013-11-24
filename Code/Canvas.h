@@ -12,6 +12,7 @@ public:
 	bool Animate( void );
 	bool IsAnimating( double tolerance = 1e-7 ) const;
 	bool ApplyRotation( const RubiksCube::Rotation& rotation );
+	void DeterminePerspective( c3ga::vectorE3GA& rAxis, c3ga::vectorE3GA& uAxis, c3ga::vectorE3GA& fAxis ) const;
 
 private:
 
@@ -27,6 +28,13 @@ private:
 	void OnMouseRightUp( wxMouseEvent& event );
 	void OnMouseMotion( wxMouseEvent& event );
 	void OnMouseCaptureLost( wxMouseCaptureLostEvent& event );
+
+	typedef std::list< c3ga::vectorE3GA > AxisList;
+
+	static void SortAxesByBlade( const AxisList& axisList, const c3ga::bivectorE3GA& blade,
+											AxisList* backAxisList,
+											AxisList* frontAxisList,
+											AxisList* neitherAxisList );
 
 	struct Camera
 	{

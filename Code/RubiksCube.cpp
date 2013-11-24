@@ -523,9 +523,9 @@ bool RubiksCube::IsInSolvedState( void ) const
 // The UI would formulate the given system based on how the cube is oriented.
 // The AI, however, would have to formulate it as a function of the desired perspective.
 bool RubiksCube::TranslateRotation(
-						const c3ga::vectorE3GA& xAxis,
-						const c3ga::vectorE3GA& yAxis,
-						const c3ga::vectorE3GA& zAxis,
+						const c3ga::vectorE3GA& rAxis,
+						const c3ga::vectorE3GA& uAxis,
+						const c3ga::vectorE3GA& fAxis,
 						RelativeRotation relativeRotation, Rotation& rotation ) const
 {
 	c3ga::vectorE3GA axis;
@@ -594,7 +594,7 @@ bool RubiksCube::TranslateRotation(
 		}
 	}
 
-	axis = c3ga::gp( xAxis, axis.get_e1() ) + c3ga::gp( yAxis, axis.get_e2() ) + c3ga::gp( zAxis, axis.get_e3() );
+	axis = c3ga::gp( rAxis, axis.get_e1() ) + c3ga::gp( uAxis, axis.get_e2() ) + c3ga::gp( fAxis, axis.get_e3() );
 
 	double epsilon = 1e-7;
 	if( c3ga::norm( axis - c3ga::e1 ) < epsilon )

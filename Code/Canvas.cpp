@@ -62,8 +62,11 @@ bool Canvas::Animate( void )
 	if( grippingCube )
 		return false;
 
-	if( rotation.angle == 0.0 )
+	if( !IsAnimating( 1e-8 ) )
+	{
+		rotation.angle = 0.0;
 		return false;
+	}
 
 	rotation.angle *= 0.9;
 	return true;
@@ -355,6 +358,136 @@ void Canvas::OnMouseMotion( wxMouseEvent& event )
 void Canvas::OnMouseCaptureLost( wxMouseCaptureLostEvent& event )
 {
 	grippingCube = false;
+}
+
+//==================================================================================================
+void Canvas::DeterminePerspective( c3ga::vectorE3GA& rAxis, c3ga::vectorE3GA& uAxis, c3ga::vectorE3GA& fAxis ) const
+{
+	typedef std::list< c3ga::vectorE3GA > AxisList;
+	AxisList axisList;
+
+	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 ) );
+	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 ) );
+	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 ) );
+	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, -1.0, 0.0, 0.0 ) );
+	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, -1.0, 0.0 ) );
+	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, -1.0 ) );
+
+	c3ga::vectorE3GA zAxis;
+	c3ga::trivectorE3GA I( c3ga::trivectorE3GA::coord_e1e2e3, 1.0 );
+	c3ga::bivectorE3GA viewBlade = camera.xAxis ^ camera.yAxis;
+	zAxis = c3ga::gp( viewBlade, -I );
+	c3ga::bivectorE3GA verticalViewBlade = camera.yAxis ^ zAxis;
+	c3ga::bivectorE3GA horizontalViewBlade = zAxis ^ camera.xAxis;
+
+	AxisList visibleAxisList, almostVisibleAxisList;
+	SortAxesByBlade( axisList, viewBlade, 0, &visibleAxisList, &almostVisibleAxisList );
+
+	if( visibleAxisList.size() == 3 )
+	{
+		AxisList rightAxisList, forwardAxisList, neitherAxisList;
+		SortAxesByBlade( visibleAxisList, verticalViewBlade, &forwardAxisList, &rightAxisList, &neitherAxisList );
+		wxASSERT( rightAxisList.size() > 0 );
+		wxASSERT( forwardAxisList.size() > 0 );
+		wxASSERT( neitherAxisList.size() != 2 );
+
+		if( rightAxisList.size() == 1 && forwardAxisList.size() == 1 && neitherAxisList.size() == 1 )
+		{
+			rAxis = rightAxisList.front();
+			fAxis = forwardAxisList.front();
+
+			uAxis = neitherAxisList.front();
+			c3ga::trivectorE3GA trivector = rAxis ^ fAxis ^ uAxis;
+			if( trivector.get_e1_e2_e3() > 0.0 )
+				uAxis = -uAxis;
+		}
+		else if( rightAxisList.size() == 1 && forwardAxisList.size() == 2 )
+		{
+			rAxis = rightAxisList.front();
+
+			AxisList aboveAxisList, belowAxisList;
+			SortAxesByBlade( forwardAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
+			wxASSERT( aboveAxisList.size() == 1 );
+			wxASSERT( belowAxisList.size() == 1 );
+
+			uAxis = aboveAxisList.front();
+			fAxis = belowAxisList.front();
+		}
+		else if( rightAxisList.size() == 2 && forwardAxisList.size() == 1 )
+		{
+			fAxis = forwardAxisList.front();
+
+			AxisList aboveAxisList, belowAxisList;
+			SortAxesByBlade( rightAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
+			wxASSERT( aboveAxisList.size() == 1 );
+			wxASSERT( belowAxisList.size() == 1 );
+
+			uAxis = aboveAxisList.front();
+			rAxis = belowAxisList.front();
+		}
+	}
+	else if( visibleAxisList.size() == 2 )
+	{
+		AxisList rightAxisList, forwardAxisList, neitherAxisList;
+		SortAxesByBlade( visibleAxisList, verticalViewBlade, &forwardAxisList, &rightAxisList, &neitherAxisList );
+		wxASSERT( neitherAxisList.size() == 0 || neitherAxisList.size() == 2 );
+		if( neitherAxisList.size() == 0 )
+		{
+			rAxis = rightAxisList.front();
+			fAxis = forwardAxisList.front();
+			uAxis = c3ga::gp( fAxis ^ rAxis, -I );
+		}
+		else
+		{
+			neitherAxisList.clear();
+			AxisList aboveAxisList, belowAxisList;
+			SortAxesByBlade( visibleAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, &neitherAxisList );
+			wxASSERT( neitherAxisList.size() == 0 );
+			wxASSERT( aboveAxisList.size() == 1 );
+			wxASSERT( belowAxisList.size() == 1 );
+			uAxis = aboveAxisList.front();
+			fAxis = belowAxisList.front();
+			rAxis = c3ga::gp( uAxis ^ fAxis, -I );
+		}
+	}
+	else if( visibleAxisList.size() == 1 )
+	{
+		wxASSERT( almostVisibleAxisList.size() == 4 );
+		//...
+	}
+
+	// We should always be returning a right-handed system.
+	c3ga::trivectorE3GA trivector = rAxis ^ uAxis ^ fAxis;
+	wxASSERT( trivector.get_e1_e2_e3() > 0.0 );
+}
+
+//==================================================================================================
+/*static*/ void Canvas::SortAxesByBlade( const AxisList& axisList, const c3ga::bivectorE3GA& blade,
+													AxisList* backAxisList,
+													AxisList* frontAxisList,
+													AxisList* neitherAxisList )
+{
+	for( AxisList::const_iterator iter = axisList.begin(); iter != axisList.end(); iter++ )
+	{
+		c3ga::vectorE3GA axis = *iter;
+		c3ga::trivectorE3GA trivector = blade ^ axis;
+
+		if( trivector.get_e1_e2_e3() > 0.0 )
+		{
+			if( frontAxisList )
+				frontAxisList->push_back( axis );
+		}
+		else if( trivector.get_e1_e2_e3() < 0.0 )
+		{
+			if( backAxisList )
+				backAxisList->push_back( axis );
+		}
+		else
+		{
+			if( neitherAxisList )
+				neitherAxisList->push_back( axis );
+		}
+	}
 }
 
 // Canvas.cpp

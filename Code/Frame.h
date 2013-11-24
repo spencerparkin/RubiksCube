@@ -33,9 +33,12 @@ private:
 	void OnAbout( wxCommandEvent& event );
 	void OnUpdateMenuItemUI( wxUpdateUIEvent& event );
 	void OnTimer( wxTimerEvent& event );
+	void OnTextCtrlEnter( wxCommandEvent& event );
 
 	Canvas* canvas;
+	wxTextCtrl* textCtrl;
 	wxTimer timer;
+
 	RubiksCube::RotationSequence executionSequence;
 };
 

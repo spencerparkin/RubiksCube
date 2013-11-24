@@ -99,9 +99,9 @@ public:
 	static bool TranslateGrip( Grip& grip, int x, int y, int z, Face face );
 	static void TranslateAxis( wxString& axisString, Axis axis );
 	bool TranslateRotation(
-				const c3ga::vectorE3GA& xAxis,
-				const c3ga::vectorE3GA& yAxis,
-				const c3ga::vectorE3GA& zAxis,
+				const c3ga::vectorE3GA& rAxis,
+				const c3ga::vectorE3GA& uAxis,
+				const c3ga::vectorE3GA& fAxis,
 				RelativeRotation relativeRotation, Rotation& rotation ) const;
 
 private:

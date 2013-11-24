@@ -38,8 +38,31 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	menuBar->Append( helpMenu, "Help" );
 	SetMenuBar( menuBar );
 
+	// TODO: Create view menu.  Support orthographic or perspective projections.
+	//       Have option to turn perspective axis labeling on/off.
+
 	wxStatusBar* statusBar = new wxStatusBar( this );
 	SetStatusBar( statusBar );
+
+	canvas = new Canvas( this );
+
+	textCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER | wxTE_LEFT );
+
+	wxBoxSizer* boxSizer = new wxBoxSizer( wxVERTICAL );
+	boxSizer->Add( canvas, 1, wxALL | wxGROW, 0 );
+	boxSizer->Add( textCtrl, 0, wxALL | wxGROW, 0 );
+	SetSizer( boxSizer );
+
+	wxAcceleratorEntry acceleratorEntries[6];
+	acceleratorEntries[0].Set( wxACCEL_NORMAL, WXK_F5, ID_CreateCube, createCubeMenuItem );
+	acceleratorEntries[1].Set( wxACCEL_NORMAL, WXK_F6, ID_DestroyCube, destroyCubeMenuItem );
+	acceleratorEntries[2].Set( wxACCEL_NORMAL, WXK_F12, ID_ScrambleCube, scrambleCubeMenuItem );
+	acceleratorEntries[3].Set( wxACCEL_NORMAL, WXK_F9, ID_PopRotationAndApply, popRotationAndApplyMenuItem );
+	acceleratorEntries[4].Set( wxACCEL_SHIFT, WXK_F9, ID_PopRotationAndNoApply, popRotationAndNoApplyMenuItem );
+	acceleratorEntries[5].Set( wxACCEL_NORMAL, WXK_F1, ID_About, aboutMenuItem );
+
+	wxAcceleratorTable acceleratorTable( sizeof( acceleratorEntries ) / sizeof( wxAcceleratorEntry ), acceleratorEntries );
+	SetAcceleratorTable( acceleratorTable );
 
 	Bind( wxEVT_MENU, &Frame::OnCreateCube, this, ID_CreateCube );
 	Bind( wxEVT_MENU, &Frame::OnDestroyCube, this, ID_DestroyCube );
@@ -56,23 +79,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopRotationAndApply );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopRotationAndNoApply );
 	Bind( wxEVT_TIMER, &Frame::OnTimer, this, ID_Timer );
-
-	canvas = new Canvas( this );
-
-	wxBoxSizer* boxSizer = new wxBoxSizer( wxVERTICAL );
-	boxSizer->Add( canvas, 1, wxALL | wxGROW, 0 );
-	SetSizer( boxSizer );
-
-	wxAcceleratorEntry acceleratorEntries[6];
-	acceleratorEntries[0].Set( wxACCEL_NORMAL, WXK_F5, ID_CreateCube, createCubeMenuItem );
-	acceleratorEntries[1].Set( wxACCEL_NORMAL, WXK_F6, ID_DestroyCube, destroyCubeMenuItem );
-	acceleratorEntries[2].Set( wxACCEL_NORMAL, WXK_F12, ID_ScrambleCube, scrambleCubeMenuItem );
-	acceleratorEntries[3].Set( wxACCEL_NORMAL, WXK_F9, ID_PopRotationAndApply, popRotationAndApplyMenuItem );
-	acceleratorEntries[4].Set( wxACCEL_SHIFT, WXK_F9, ID_PopRotationAndNoApply, popRotationAndNoApplyMenuItem );
-	acceleratorEntries[5].Set( wxACCEL_NORMAL, WXK_F1, ID_About, aboutMenuItem );
-
-	wxAcceleratorTable acceleratorTable( sizeof( acceleratorEntries ) / sizeof( wxAcceleratorEntry ), acceleratorEntries );
-	SetAcceleratorTable( acceleratorTable );
+	Bind( wxEVT_COMMAND_TEXT_ENTER, &Frame::OnTextCtrlEnter, this );
 
 	timer.Start( 1 );
 }
@@ -80,6 +87,12 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 //==================================================================================================
 /*virtual*/ Frame::~Frame( void )
 {
+}
+
+//==================================================================================================
+void Frame::OnTextCtrlEnter( wxCommandEvent& event )
+{
+	wxString rotationSequenceString = textCtrl->GetValue();
 }
 
 //==================================================================================================
