@@ -5,6 +5,8 @@
 //==================================================================================================
 Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFrame( parent, wxID_ANY, "Rubik's Cube", pos, size ), timer( this, ID_Timer )
 {
+	animationTolerance = 0.01;
+
 	wxMenu* programMenu = new wxMenu();
 	wxMenuItem* createCubeMenuItem = new wxMenuItem( programMenu, ID_CreateCube, "Create Cube\tF5", "Create a new Rubik's Cube." );
 	wxMenuItem* destroyCubeMenuItem = new wxMenuItem( programMenu, ID_DestroyCube, "Destroy Cube\tF6", "Destroy the Rubik's Cube." );
@@ -126,9 +128,74 @@ void Frame::OnShowPerspectiveLabels( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 {
-	wxString rotationSequenceString = textCtrl->GetValue();
+	if( !wxGetApp().rubiksCube )
+		return;
 
-	// TODO: Generate an execution sequence from the given string.
+	if( executionSequence.size() > 0 || canvas->IsAnimating( 1.0 ) )
+		return;
+
+	wxString relativeRotationSequenceString = textCtrl->GetValue();
+
+	RubiksCube::RelativeRotationSequence relativeRotationSequence;
+	if( ParseRelativeRotationSequenceString( relativeRotationSequenceString, relativeRotationSequence ) )
+	{
+		RubiksCube::Perspective perspective;
+		canvas->DeterminePerspective( perspective );
+
+		if( !wxGetApp().rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, executionSequence ) )
+			executionSequence.clear();
+		else
+			animationTolerance = 0.01;
+	}
+}
+
+//==================================================================================================
+/*static*/ bool Frame::ParseRelativeRotationSequenceString( const wxString& relativeRotationSequenceString, RubiksCube::RelativeRotationSequence& relativeRotationSequence )
+{
+	std::string string = ( const char* )relativeRotationSequenceString.c_str();
+
+	boost::char_separator< char > separator( " ", "," );
+	typedef boost::tokenizer< boost::char_separator< char > > Tokenizer;
+	Tokenizer tokenizer( string, separator );
+
+	for( Tokenizer::iterator iter = tokenizer.begin(); iter != tokenizer.end(); iter++ )
+	{
+		std::string token = *iter;
+		if( token == "," )
+			continue;
+
+		RubiksCube::RelativeRotation relativeRotation;
+		if( token == "L" )
+			relativeRotation = RubiksCube::L;
+		else if( token == "R" )
+			relativeRotation = RubiksCube::R;
+		else if( token == "D" )
+			relativeRotation = RubiksCube::D;
+		else if( token == "U" )
+			relativeRotation = RubiksCube::U;
+		else if( token == "B" )
+			relativeRotation = RubiksCube::B;
+		else if( token == "F" )
+			relativeRotation = RubiksCube::F;
+		else if( token == "Li" )
+			relativeRotation = RubiksCube::Li;
+		else if( token == "Ri" )
+			relativeRotation = RubiksCube::Ri;
+		else if( token == "Di" )
+			relativeRotation = RubiksCube::Di;
+		else if( token == "Ui" )
+			relativeRotation = RubiksCube::Ui;
+		else if( token == "Bi" )
+			relativeRotation = RubiksCube::Bi;
+		else if( token == "Fi" )
+			relativeRotation = RubiksCube::Fi;
+		else
+			return false;
+
+		relativeRotationSequence.push_back( relativeRotation );
+	}
+
+	return true;
 }
 
 //==================================================================================================
@@ -149,7 +216,7 @@ void Frame::OnTimer( wxTimerEvent& event )
 		}
 	}
 	
-	if( !canvas->IsAnimating( 1.0 ) && executionSequence.size() > 0 )
+	if( !canvas->IsAnimating( animationTolerance ) && executionSequence.size() > 0 )
 	{
 		RubiksCube::RotationSequence::iterator iter = executionSequence.begin();
 		RubiksCube::Rotation rotation = *iter;
@@ -214,6 +281,8 @@ void Frame::OnScrambleCube( wxCommandEvent& event )
 		rotation.angle = double( 1 + rand() % 3 ) * M_PI / 2.0;
 		executionSequence.push_back( rotation );
 	}
+
+	animationTolerance = 1.0;
 }
 
 //==================================================================================================

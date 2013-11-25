@@ -519,54 +519,46 @@ bool RubiksCube::IsInSolvedState( void ) const
 }
 
 //==================================================================================================
+bool RubiksCube::TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const
+{
+	for( RelativeRotationSequence::const_iterator iter = relativeRotationSequence.begin(); iter != relativeRotationSequence.end(); iter++ )
+	{
+		RelativeRotation relativeRotation = *iter;
+		Rotation rotation;
+		if( !TranslateRotation( perspective, relativeRotation, rotation ) )
+			return false;
+
+		rotationSequence.push_back( rotation );
+	}
+
+	return true;
+}
+
+//==================================================================================================
 // I imagine that this routine would be used by the UI as well as the AI.
 // The UI would formulate the given system based on how the cube is oriented.
 // The AI, however, would have to formulate it as a function of the desired perspective.
-bool RubiksCube::TranslateRotation(
-						const c3ga::vectorE3GA& rAxis,
-						const c3ga::vectorE3GA& uAxis,
-						const c3ga::vectorE3GA& fAxis,
-						RelativeRotation relativeRotation, Rotation& rotation ) const
+bool RubiksCube::TranslateRotation( const Perspective& perspective, RelativeRotation relativeRotation, Rotation& rotation ) const
 {
+	c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
+	c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
+	c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
+
 	c3ga::vectorE3GA axis;
 	switch( relativeRotation )
 	{
 		case L:
-		case Li:
-		{
-			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, -1.0, 0.0, 0.0 );
-			break;
-		}
+		case Li:	axis = -xAxis;	break;
 		case R:
-		case Ri:
-		{
-			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
-			break;
-		}
+		case Ri:	axis = xAxis;	break;
 		case D:
-		case Di:
-		{
-			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, -1.0, 0.0 );
-			break;
-		}
+		case Di:	axis = -yAxis;	break;
 		case U:
-		case Ui:
-		{
-			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
-			break;
-		}
+		case Ui:	axis = yAxis;	break;
 		case B:
-		case Bi:
-		{
-			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, -1.0 );
-			break;
-		}
+		case Bi:	axis = -zAxis;	break;
 		case F:
-		case Fi:
-		{
-			axis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
-			break;
-		}
+		case Fi:	axis = zAxis;	break;
 	}
 
 	double angle;
@@ -577,43 +569,62 @@ bool RubiksCube::TranslateRotation(
 		case Di:
 		case Ui:
 		case Bi:
-		case Fi:
-		{
-			angle = M_PI / 2.0;
-			break;
-		}
+		case Fi:	angle = M_PI / 2.0;		break;
 		case L:
 		case R:
 		case D:
 		case U:
 		case B:
-		case F:
-		{
-			angle = -M_PI / 2.0;
-			break;
-		}
+		case F:		angle = -M_PI / 2.0;	break;
 	}
 
-	axis = c3ga::gp( rAxis, axis.get_e1() ) + c3ga::gp( uAxis, axis.get_e2() ) + c3ga::gp( fAxis, axis.get_e3() );
+	axis =
+		c3ga::gp( perspective.rAxis, axis.get_e1() ) +
+		c3ga::gp( perspective.uAxis, axis.get_e2() ) +
+		c3ga::gp( perspective.fAxis, axis.get_e3() );
 
 	double epsilon = 1e-7;
-	if( c3ga::norm( axis - c3ga::e1 ) < epsilon )
+	if( c3ga::norm( axis - xAxis ) < epsilon )
 	{
 		rotation.plane.axis = X_AXIS;
 		rotation.plane.index = subCubeMatrixSize - 1;
 		rotation.angle = angle;
 		return true;
 	}
-	else if( c3ga::norm( axis + c3ga::e1 ) < epsilon )
+	else if( c3ga::norm( axis + xAxis ) < epsilon )
 	{
 		rotation.plane.axis = X_AXIS;
 		rotation.plane.index = 0;
 		rotation.angle = -angle;
 		return true;
 	}
-	else if( c3ga::norm( axis - c3ga::e2 ) < epsilon )
+	else if( c3ga::norm( axis - yAxis ) < epsilon )
 	{
-		//...
+		rotation.plane.axis = Y_AXIS;
+		rotation.plane.index = subCubeMatrixSize - 1;
+		rotation.angle = angle;
+		return true;
+	}
+	else if( c3ga::norm( axis + yAxis ) < epsilon )
+	{
+		rotation.plane.axis = Y_AXIS;
+		rotation.plane.index = 0;
+		rotation.angle = -angle;
+		return true;
+	}
+	else if( c3ga::norm( axis - zAxis ) < epsilon )
+	{
+		rotation.plane.axis = Z_AXIS;
+		rotation.plane.index = subCubeMatrixSize - 1;
+		rotation.angle = angle;
+		return true;
+	}
+	else if( c3ga::norm( axis + zAxis ) < epsilon )
+	{
+		rotation.plane.axis = Z_AXIS;
+		rotation.plane.index = 0;
+		rotation.angle = -angle;
+		return true;
 	}
 
 	return false;

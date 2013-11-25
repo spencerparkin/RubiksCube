@@ -83,7 +83,18 @@ public:
 		double subCubeWidthHeightAndDepth;
 	};
 
+	struct Perspective
+	{
+		// This should always be a right-handed orthonormal system.
+		// Not only this, but each axes vector should consist of two
+		// zeros with the remaining component being +/-1.
+		c3ga::vectorE3GA rAxis;
+		c3ga::vectorE3GA uAxis;
+		c3ga::vectorE3GA fAxis;
+	};
+
 	typedef std::list< Rotation > RotationSequence;
+	typedef std::list< RelativeRotation > RelativeRotationSequence;
 
 	void Render( GLenum mode, const Rotation& rotation, const Size& size ) const;
 	bool Apply( const Rotation& rotation, Rotation* invariantRotation = 0, Rotation* reverseRotation = 0 );
@@ -98,11 +109,8 @@ public:
 	static c3ga::vectorE3GA TranslateNormal( Face face );
 	static bool TranslateGrip( Grip& grip, int x, int y, int z, Face face );
 	static void TranslateAxis( wxString& axisString, Axis axis );
-	bool TranslateRotation(
-				const c3ga::vectorE3GA& rAxis,
-				const c3ga::vectorE3GA& uAxis,
-				const c3ga::vectorE3GA& fAxis,
-				RelativeRotation relativeRotation, Rotation& rotation ) const;
+	bool TranslateRotation( const Perspective& perspective, RelativeRotation relativeRotation, Rotation& rotation ) const;
+	bool TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const;
 
 private:
 

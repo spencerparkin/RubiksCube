@@ -255,32 +255,27 @@ void Canvas::RenderPerspectiveLabels( void )
 	bool lighting = glIsEnabled( GL_LIGHTING ) ? true : false;
 	glDisable( GL_LIGHTING );
 
-	c3ga::vectorE3GA rAxis, uAxis, fAxis;
-	DeterminePerspective( rAxis, uAxis, fAxis );
+	RubiksCube::Perspective perspective;
+	DeterminePerspective( perspective );
 	
 	double length = 0.7 * ( size.cubeWidthHeightAndDepth + size.subCubeWidthHeightAndDepth );
 
-//	glColor3f( 0.f, 0.f, 0.f );
-//	RenderAxes( length, 6.f, 0.5f );
-	
 	glDisable( GL_DEPTH_TEST );
 
-//	glColor3f( 1.f, 1.f, 1.f );
-//	RenderAxes( length, 3.f, 0.4f );
+	glColor3f( 0.5f, 0.5f, 0.5f );
+//	RenderAxes( length, 1.f, 0.f );
 	
 	c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
 	c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
 	c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
 
-	glColor3f( 0.5f, 0.5f, 0.5f );
+	RenderAxisLabel( xAxis * length, AxisLabel( xAxis, perspective ) );
+	RenderAxisLabel( yAxis * length, AxisLabel( yAxis, perspective ) );
+	RenderAxisLabel( zAxis * length, AxisLabel( zAxis, perspective ) );
 
-	RenderAxisLabel( xAxis * length, AxisLabel( xAxis, rAxis, uAxis, fAxis ) );
-	RenderAxisLabel( yAxis * length, AxisLabel( yAxis, rAxis, uAxis, fAxis ) );
-	RenderAxisLabel( zAxis * length, AxisLabel( zAxis, rAxis, uAxis, fAxis ) );
-
-	RenderAxisLabel( -xAxis * length, AxisLabel( -xAxis, rAxis, uAxis, fAxis ) );
-	RenderAxisLabel( -yAxis * length, AxisLabel( -yAxis, rAxis, uAxis, fAxis ) );
-	RenderAxisLabel( -zAxis * length, AxisLabel( -zAxis, rAxis, uAxis, fAxis ) );
+	RenderAxisLabel( -xAxis * length, AxisLabel( -xAxis, perspective ) );
+	RenderAxisLabel( -yAxis * length, AxisLabel( -yAxis, perspective ) );
+	RenderAxisLabel( -zAxis * length, AxisLabel( -zAxis, perspective ) );
 
 	glEnable( GL_DEPTH_TEST );
 
@@ -289,23 +284,20 @@ void Canvas::RenderPerspectiveLabels( void )
 }
 
 //==================================================================================================
-/*static*/ int Canvas::AxisLabel( const c3ga::vectorE3GA& axis,
-										const c3ga::vectorE3GA& rAxis,
-										const c3ga::vectorE3GA& uAxis,
-										const c3ga::vectorE3GA& fAxis )
+/*static*/ int Canvas::AxisLabel( const c3ga::vectorE3GA& axis, const RubiksCube::Perspective& perspective )
 {
 	double epsilon = 1e-7;
-	if( c3ga::norm( axis - rAxis ) < epsilon )
+	if( c3ga::norm( axis - perspective.rAxis ) < epsilon )
 		return 'R';
-	if( c3ga::norm( axis + rAxis ) < epsilon )
+	if( c3ga::norm( axis + perspective.rAxis ) < epsilon )
 		return 'L';
-	if( c3ga::norm( axis - uAxis ) < epsilon )
+	if( c3ga::norm( axis - perspective.uAxis ) < epsilon )
 		return 'U';
-	if( c3ga::norm( axis + uAxis ) < epsilon )
+	if( c3ga::norm( axis + perspective.uAxis ) < epsilon )
 		return 'D';
-	if( c3ga::norm( axis - fAxis ) < epsilon )
+	if( c3ga::norm( axis - perspective.fAxis ) < epsilon )
 		return 'F';
-	if( c3ga::norm( axis + fAxis ) < epsilon )
+	if( c3ga::norm( axis + perspective.fAxis ) < epsilon )
 		return 'B';
 	return '?';
 }
@@ -335,24 +327,27 @@ void Canvas::RenderAxes( float length, float thickness, float radius )
 
 	glEnd();
 
-	int triangleCount = 32;
-	for( int i = 0; i < 6; i++ )
+	if( radius > 0.f )
 	{
-		glBegin( GL_TRIANGLE_FAN );
-
-		glVertex3fv( vertex[i] );
-		for( int j = 0; j < triangleCount; j++ )
+		int triangleCount = 32;
+		for( int i = 0; i < 6; i++ )
 		{
-			float angle = 2.f * M_PI * float(j) / float( triangleCount - 1 );
-			float x = radius * cos( angle );
-			float y = radius * sin( angle );
+			glBegin( GL_TRIANGLE_FAN );
 
-			c3ga::vectorE3GA haloVertex( c3ga::vectorE3GA::coord_e1_e2_e3, vertex[i][0], vertex[i][1], vertex[i][2] );
-			haloVertex += c3ga::gp( camera.xAxis, x ) + c3ga::gp( camera.yAxis, y );
-			glVertex3d( haloVertex.get_e1(), haloVertex.get_e2(), haloVertex.get_e3() );
+			glVertex3fv( vertex[i] );
+			for( int j = 0; j < triangleCount; j++ )
+			{
+				float angle = 2.f * M_PI * float(j) / float( triangleCount - 1 );
+				float x = radius * cos( angle );
+				float y = radius * sin( angle );
+
+				c3ga::vectorE3GA haloVertex( c3ga::vectorE3GA::coord_e1_e2_e3, vertex[i][0], vertex[i][1], vertex[i][2] );
+				haloVertex += c3ga::gp( camera.xAxis, x ) + c3ga::gp( camera.yAxis, y );
+				glVertex3d( haloVertex.get_e1(), haloVertex.get_e2(), haloVertex.get_e3() );
+			}
+
+			glEnd();
 		}
-
-		glEnd();
 	}
 }
 
@@ -514,8 +509,12 @@ void Canvas::OnMouseCaptureLost( wxMouseCaptureLostEvent& event )
 }
 
 //==================================================================================================
-void Canvas::DeterminePerspective( c3ga::vectorE3GA& rAxis, c3ga::vectorE3GA& uAxis, c3ga::vectorE3GA& fAxis ) const
+void Canvas::DeterminePerspective( RubiksCube::Perspective& perspective ) const
 {
+	perspective.rAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 0.0 );
+	perspective.uAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 0.0 );
+	perspective.fAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 0.0 );
+
 	typedef std::list< c3ga::vectorE3GA > AxisList;
 	AxisList axisList;
 
@@ -546,37 +545,37 @@ void Canvas::DeterminePerspective( c3ga::vectorE3GA& rAxis, c3ga::vectorE3GA& uA
 
 		if( rightAxisList.size() == 1 && forwardAxisList.size() == 1 && neitherAxisList.size() == 1 )
 		{
-			rAxis = rightAxisList.front();
-			fAxis = forwardAxisList.front();
+			perspective.rAxis = rightAxisList.front();
+			perspective.fAxis = forwardAxisList.front();
 
-			uAxis = neitherAxisList.front();
-			c3ga::trivectorE3GA trivector = rAxis ^ fAxis ^ uAxis;
+			perspective.uAxis = neitherAxisList.front();
+			c3ga::trivectorE3GA trivector = perspective.rAxis ^ perspective.fAxis ^ perspective.uAxis;
 			if( trivector.get_e1_e2_e3() > 0.0 )
-				uAxis = -uAxis;
+				perspective.uAxis = -perspective.uAxis;
 		}
 		else if( rightAxisList.size() == 1 && forwardAxisList.size() == 2 )
 		{
-			rAxis = rightAxisList.front();
+			perspective.rAxis = rightAxisList.front();
 
 			AxisList aboveAxisList, belowAxisList;
 			SortAxesByBlade( forwardAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
 			wxASSERT( aboveAxisList.size() == 1 );
 			wxASSERT( belowAxisList.size() == 1 );
 
-			uAxis = aboveAxisList.front();
-			fAxis = belowAxisList.front();
+			perspective.uAxis = aboveAxisList.front();
+			perspective.fAxis = belowAxisList.front();
 		}
 		else if( rightAxisList.size() == 2 && forwardAxisList.size() == 1 )
 		{
-			fAxis = forwardAxisList.front();
+			perspective.fAxis = forwardAxisList.front();
 
 			AxisList aboveAxisList, belowAxisList;
 			SortAxesByBlade( rightAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
 			wxASSERT( aboveAxisList.size() == 1 );
 			wxASSERT( belowAxisList.size() == 1 );
 
-			uAxis = aboveAxisList.front();
-			rAxis = belowAxisList.front();
+			perspective.uAxis = aboveAxisList.front();
+			perspective.rAxis = belowAxisList.front();
 		}
 	}
 	else if( visibleAxisList.size() == 2 )
@@ -586,9 +585,9 @@ void Canvas::DeterminePerspective( c3ga::vectorE3GA& rAxis, c3ga::vectorE3GA& uA
 		wxASSERT( neitherAxisList.size() == 0 || neitherAxisList.size() == 2 );
 		if( neitherAxisList.size() == 0 )
 		{
-			rAxis = rightAxisList.front();
-			fAxis = forwardAxisList.front();
-			uAxis = c3ga::gp( fAxis ^ rAxis, -I );
+			perspective.rAxis = rightAxisList.front();
+			perspective.fAxis = forwardAxisList.front();
+			perspective.uAxis = c3ga::gp( perspective.fAxis ^ perspective.rAxis, -I );
 		}
 		else
 		{
@@ -598,20 +597,21 @@ void Canvas::DeterminePerspective( c3ga::vectorE3GA& rAxis, c3ga::vectorE3GA& uA
 			wxASSERT( neitherAxisList.size() == 0 );
 			wxASSERT( aboveAxisList.size() == 1 );
 			wxASSERT( belowAxisList.size() == 1 );
-			uAxis = aboveAxisList.front();
-			fAxis = belowAxisList.front();
-			rAxis = c3ga::gp( uAxis ^ fAxis, -I );
+			perspective.uAxis = aboveAxisList.front();
+			perspective.fAxis = belowAxisList.front();
+			perspective.rAxis = c3ga::gp( perspective.uAxis ^ perspective.fAxis, -I );
 		}
 	}
 	else if( visibleAxisList.size() == 1 )
 	{
 		wxASSERT( almostVisibleAxisList.size() == 4 );
 		//...
+		return;
 	}
 
 	// We should always be returning a right-handed system.
-	c3ga::trivectorE3GA trivector = rAxis ^ uAxis ^ fAxis;
-	//wxASSERT( trivector.get_e1_e2_e3() > 0.0 );
+	c3ga::trivectorE3GA trivector = perspective.rAxis ^ perspective.uAxis ^ perspective.fAxis;
+	wxASSERT( trivector.get_e1_e2_e3() > 0.0 );
 }
 
 //==================================================================================================

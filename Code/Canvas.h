@@ -24,7 +24,7 @@ public:
 	bool Animate( void );
 	bool IsAnimating( double tolerance = 1e-7 ) const;
 	bool ApplyRotation( const RubiksCube::Rotation& rotation );
-	void DeterminePerspective( c3ga::vectorE3GA& rAxis, c3ga::vectorE3GA& uAxis, c3ga::vectorE3GA& fAxis ) const;
+	void DeterminePerspective( RubiksCube::Perspective& perspective ) const;
 
 private:
 
@@ -51,10 +51,7 @@ private:
 	void RenderPerspectiveLabels( void );
 	void RenderAxes( float length, float thickness, float radius );
 	void RenderAxisLabel( const c3ga::vectorE3GA& axis, int label );
-	static int AxisLabel( const c3ga::vectorE3GA& axis,
-							const c3ga::vectorE3GA& rAxis,
-							const c3ga::vectorE3GA& uAxis,
-							const c3ga::vectorE3GA& fAxis );
+	static int AxisLabel( const c3ga::vectorE3GA& axis, const RubiksCube::Perspective& perspective );
 
 	struct Camera
 	{

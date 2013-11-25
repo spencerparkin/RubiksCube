@@ -41,11 +41,14 @@ private:
 	void OnTimer( wxTimerEvent& event );
 	void OnTextCtrlEnter( wxCommandEvent& event );
 
+	static bool ParseRelativeRotationSequenceString( const wxString& relativeRotationSequenceString, RubiksCube::RelativeRotationSequence& relativeRotationSequence );
+
 	Canvas* canvas;
 	wxTextCtrl* textCtrl;
 	wxTimer timer;
 
 	RubiksCube::RotationSequence executionSequence;
+	double animationTolerance;
 };
 
 // Frame.h
