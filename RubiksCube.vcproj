@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxmsw29ud_core.lib wxbase29ud.lib wxmsw29ud_gl.lib comctl32.lib rpcrt4.lib advapi32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib"
+				AdditionalDependencies="wxmsw29ud_core.lib wxbase29ud.lib wxmsw29ud_gl.lib comctl32.lib rpcrt4.lib advapi32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib glut32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;../../wxWidgets-2.9.5/lib/vc_lib&quot;"
 				GenerateDebugInformation="true"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxmsw29u_core.lib wxbase29u.lib wxmsw29u_gl.lib comctl32.lib rpcrt4.lib advapi32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib"
+				AdditionalDependencies="wxmsw29u_core.lib wxbase29u.lib wxmsw29u_gl.lib comctl32.lib rpcrt4.lib advapi32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib glut32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;../../wxWidgets-2.9.5/lib/vc_lib&quot;"
 				GenerateDebugInformation="true"

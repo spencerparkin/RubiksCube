@@ -227,7 +227,6 @@ void Canvas::PostRender( GLenum mode )
 													axisString[0], grip.plane[0].index,
 													axisString[1], grip.plane[1].index );
 			}
-				
 
 			wxStatusBar* statusBar = frame->GetStatusBar();
 			statusBar->SetStatusText( gripString );
@@ -243,6 +242,10 @@ void Canvas::OnPaint( wxPaintEvent& event )
 	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 	if( rubiksCube )
 		rubiksCube->Render( GL_RENDER, rotation, size );
+
+	//glRasterPos2i( 0, 0 );
+	//glPixelZoom( 4.f, 4.f );
+	//glutBitmapCharacter( GLUT_BITMAP_TIMES_ROMAN_10, 'A' );
 
 	PostRender( GL_RENDER );
 }
