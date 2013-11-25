@@ -243,11 +243,125 @@ void Canvas::OnPaint( wxPaintEvent& event )
 	if( rubiksCube )
 		rubiksCube->Render( GL_RENDER, rotation, size );
 
-	//glRasterPos2i( 0, 0 );
-	//glPixelZoom( 4.f, 4.f );
-	//glutBitmapCharacter( GLUT_BITMAP_TIMES_ROMAN_10, 'A' );
+	if( showPerspectiveLabels )
+		RenderPerspectiveLabels();
 
 	PostRender( GL_RENDER );
+}
+
+//==================================================================================================
+void Canvas::RenderPerspectiveLabels( void )
+{
+	bool lighting = glIsEnabled( GL_LIGHTING ) ? true : false;
+	glDisable( GL_LIGHTING );
+
+	c3ga::vectorE3GA rAxis, uAxis, fAxis;
+	DeterminePerspective( rAxis, uAxis, fAxis );
+	
+	double length = 0.7 * ( size.cubeWidthHeightAndDepth + size.subCubeWidthHeightAndDepth );
+
+//	glColor3f( 0.f, 0.f, 0.f );
+//	RenderAxes( length, 6.f, 0.5f );
+	
+	glDisable( GL_DEPTH_TEST );
+
+//	glColor3f( 1.f, 1.f, 1.f );
+//	RenderAxes( length, 3.f, 0.4f );
+	
+	c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
+	c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
+	c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
+
+	glColor3f( 0.5f, 0.5f, 0.5f );
+
+	RenderAxisLabel( xAxis * length, AxisLabel( xAxis, rAxis, uAxis, fAxis ) );
+	RenderAxisLabel( yAxis * length, AxisLabel( yAxis, rAxis, uAxis, fAxis ) );
+	RenderAxisLabel( zAxis * length, AxisLabel( zAxis, rAxis, uAxis, fAxis ) );
+
+	RenderAxisLabel( -xAxis * length, AxisLabel( -xAxis, rAxis, uAxis, fAxis ) );
+	RenderAxisLabel( -yAxis * length, AxisLabel( -yAxis, rAxis, uAxis, fAxis ) );
+	RenderAxisLabel( -zAxis * length, AxisLabel( -zAxis, rAxis, uAxis, fAxis ) );
+
+	glEnable( GL_DEPTH_TEST );
+
+	if( lighting )
+		glEnable( GL_LIGHTING );
+}
+
+//==================================================================================================
+/*static*/ int Canvas::AxisLabel( const c3ga::vectorE3GA& axis,
+										const c3ga::vectorE3GA& rAxis,
+										const c3ga::vectorE3GA& uAxis,
+										const c3ga::vectorE3GA& fAxis )
+{
+	double epsilon = 1e-7;
+	if( c3ga::norm( axis - rAxis ) < epsilon )
+		return 'R';
+	if( c3ga::norm( axis + rAxis ) < epsilon )
+		return 'L';
+	if( c3ga::norm( axis - uAxis ) < epsilon )
+		return 'U';
+	if( c3ga::norm( axis + uAxis ) < epsilon )
+		return 'D';
+	if( c3ga::norm( axis - fAxis ) < epsilon )
+		return 'F';
+	if( c3ga::norm( axis + fAxis ) < epsilon )
+		return 'B';
+	return '?';
+}
+
+//==================================================================================================
+void Canvas::RenderAxes( float length, float thickness, float radius )
+{
+	glLineWidth( thickness );
+
+	float vertex[6][3] =
+	{
+		{ length, 0.f, 0.f },
+		{ -length, 0.f, 0.f },
+		{ 0.f, length, 0.f },
+		{ 0.f, -length, 0.f },
+		{ 0.f, 0.f, length },
+		{ 0.f, 0.f, -length },
+	};
+
+	glBegin( GL_LINES );
+
+	for( int i = 0; i < 6; i++ )
+	{
+		glVertex3f( 0.f, 0.f, 0.f );
+		glVertex3fv( vertex[i] );
+	}
+
+	glEnd();
+
+	int triangleCount = 32;
+	for( int i = 0; i < 6; i++ )
+	{
+		glBegin( GL_TRIANGLE_FAN );
+
+		glVertex3fv( vertex[i] );
+		for( int j = 0; j < triangleCount; j++ )
+		{
+			float angle = 2.f * M_PI * float(j) / float( triangleCount - 1 );
+			float x = radius * cos( angle );
+			float y = radius * sin( angle );
+
+			c3ga::vectorE3GA haloVertex( c3ga::vectorE3GA::coord_e1_e2_e3, vertex[i][0], vertex[i][1], vertex[i][2] );
+			haloVertex += c3ga::gp( camera.xAxis, x ) + c3ga::gp( camera.yAxis, y );
+			glVertex3d( haloVertex.get_e1(), haloVertex.get_e2(), haloVertex.get_e3() );
+		}
+
+		glEnd();
+	}
+}
+
+//==================================================================================================
+void Canvas::RenderAxisLabel( const c3ga::vectorE3GA& axis, int label )
+{
+	float delta = 0.0f;		// I'm not sure how to calculate this.
+	glRasterPos3f( axis.get_e1() - delta, axis.get_e2() - delta, axis.get_e3() - delta );
+	glutBitmapCharacter( GLUT_BITMAP_TIMES_ROMAN_24, label );
 }
 
 //==================================================================================================
@@ -497,7 +611,7 @@ void Canvas::DeterminePerspective( c3ga::vectorE3GA& rAxis, c3ga::vectorE3GA& uA
 
 	// We should always be returning a right-handed system.
 	c3ga::trivectorE3GA trivector = rAxis ^ uAxis ^ fAxis;
-	wxASSERT( trivector.get_e1_e2_e3() > 0.0 );
+	//wxASSERT( trivector.get_e1_e2_e3() > 0.0 );
 }
 
 //==================================================================================================

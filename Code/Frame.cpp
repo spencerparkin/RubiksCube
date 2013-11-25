@@ -127,6 +127,8 @@ void Frame::OnShowPerspectiveLabels( wxCommandEvent& event )
 void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 {
 	wxString rotationSequenceString = textCtrl->GetValue();
+
+	// TODO: Generate an execution sequence from the given string.
 }
 
 //==================================================================================================
