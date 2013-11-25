@@ -40,12 +40,40 @@ Canvas::Canvas( wxWindow* parent ) : wxGLCanvas( parent, wxID_ANY, attributeList
 	grip.plane[1].index = 0;
 
 	grippingCube = false;
+
+	projection = PERSPECTIVE;
+
+	showPerspectiveLabels = false;
 }
 
 //==================================================================================================
 /*virtual*/ Canvas::~Canvas( void )
 {
 	delete context;
+}
+
+//==================================================================================================
+void Canvas::SetProjection( Projection projection )
+{
+	this->projection = projection;
+}
+
+//==================================================================================================
+Canvas::Projection Canvas::GetProjection( void ) const
+{
+	return projection;
+}
+
+//==================================================================================================
+void Canvas::ShowPerspectiveLabels( bool showPerspectiveLabels )
+{
+	this->showPerspectiveLabels = showPerspectiveLabels;
+}
+
+//==================================================================================================
+bool Canvas::ShowPerspectiveLabels( void ) const
+{
+	return showPerspectiveLabels;
 }
 
 //==================================================================================================
@@ -148,7 +176,15 @@ void Canvas::PreRender( GLenum mode )
 	glLoadIdentity();
 	if( mode == GL_SELECT )
 		gluPickMatrix( GLdouble( mousePos.x ), GLdouble( viewport[3] - mousePos.y - 1 ), 2.0, 2.0, viewport );
-	gluPerspective( 60.0, aspectRatio, 0.1, 1000.0 );
+	if( projection == PERSPECTIVE )
+		gluPerspective( 60.0, aspectRatio, 0.1, 1000.0 );
+	else if( projection == ORTHOGRAPHIC )
+	{
+		if( aspectRatio > 1.0 )
+			glOrtho( -10.0 * aspectRatio, 10.0 * aspectRatio, -10.0, 10.0, 0.1, 1000.0 );
+		else
+			glOrtho( -10.0, 10.0, -10.0 / aspectRatio, 10.0 / aspectRatio, 0.1, 1000.0 );
+	}
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();

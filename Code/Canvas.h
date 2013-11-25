@@ -8,6 +8,18 @@ public:
 	Canvas( wxWindow* parent );
 	virtual ~Canvas( void );
 
+	enum Projection
+	{
+		PERSPECTIVE,
+		ORTHOGRAPHIC,
+	};
+
+	void ShowPerspectiveLabels( bool showPerspectiveLabels );
+	bool ShowPerspectiveLabels( void ) const;
+
+	void SetProjection( Projection projection );
+	Projection GetProjection( void ) const;
+
 	void AdjustSizeFor( const RubiksCube* rubiksCube );
 	bool Animate( void );
 	bool IsAnimating( double tolerance = 1e-7 ) const;
@@ -53,6 +65,8 @@ private:
 	bool grippingCube;
 	unsigned int* hitBuffer;
 	int hitBufferSize;
+	Projection projection;
+	bool showPerspectiveLabels;
 };
 
 // Canvas.h

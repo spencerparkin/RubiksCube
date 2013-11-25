@@ -28,18 +28,25 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	moveStackMenu->Append( popRotationAndApplyMenuItem );
 	moveStackMenu->Append( popRotationAndNoApplyMenuItem );
 
+	wxMenu* viewMenu = new wxMenu();
+	wxMenuItem* showPerspectiveLabelsMenuItem = new wxMenuItem( viewMenu, ID_ShowPerspectiveLabels, "Show Perspective Labels", "Along with the cube, render labels of the cube faces that indicate the current perspective.", wxITEM_CHECK );
+	wxMenuItem* renderWithPerspectiveProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithPerspectiveProjection, "Render With Perspective Projection", "Render the cube using an perspective projection.", wxITEM_CHECK );
+	wxMenuItem* renderWithOrthographicProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithOrthographicProjection, "Render With Orthographic Projection", "Render the cube using an orthographic projection.", wxITEM_CHECK );
+	viewMenu->Append( showPerspectiveLabelsMenuItem );
+	viewMenu->AppendSeparator();
+	viewMenu->Append( renderWithPerspectiveProjectionMenuItem );
+	viewMenu->Append( renderWithOrthographicProjectionMenuItem );
+
 	wxMenu* helpMenu = new wxMenu();
 	wxMenuItem* aboutMenuItem = new wxMenuItem( helpMenu, ID_About, "About\tF1", "Show the about-box." );
 	helpMenu->Append( aboutMenuItem );
 
 	wxMenuBar* menuBar = new wxMenuBar();
 	menuBar->Append( programMenu, "Program" );
+	menuBar->Append( viewMenu, "View" );
 	menuBar->Append( moveStackMenu, "Rotation Stack" );
 	menuBar->Append( helpMenu, "Help" );
 	SetMenuBar( menuBar );
-
-	// TODO: Create view menu.  Support orthographic or perspective projections.
-	//       Have option to turn perspective axis labeling on/off.
 
 	wxStatusBar* statusBar = new wxStatusBar( this );
 	SetStatusBar( statusBar );
@@ -68,6 +75,9 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnDestroyCube, this, ID_DestroyCube );
 	Bind( wxEVT_MENU, &Frame::OnScrambleCube, this, ID_ScrambleCube );
 	Bind( wxEVT_MENU, &Frame::OnSolveCube, this, ID_SolveCube );
+	Bind( wxEVT_MENU, &Frame::OnShowPerspectiveLabels, this, ID_ShowPerspectiveLabels );
+	Bind( wxEVT_MENU, &Frame::OnRenderWithPerspectiveProjection, this, ID_RenderWithPerspectiveProjection );
+	Bind( wxEVT_MENU, &Frame::OnRenderWithOrthographicProjection, this, ID_RenderWithOrthographicProjection );
 	Bind( wxEVT_MENU, &Frame::OnPopRotationAndApply, this, ID_PopRotationAndApply );
 	Bind( wxEVT_MENU, &Frame::OnPopRotationAndNoApply, this, ID_PopRotationAndNoApply );
 	Bind( wxEVT_MENU, &Frame::OnExit, this, ID_Exit );
@@ -76,6 +86,9 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DestroyCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ScrambleCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SolveCube );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowPerspectiveLabels );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithPerspectiveProjection );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithOrthographicProjection );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopRotationAndApply );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopRotationAndNoApply );
 	Bind( wxEVT_TIMER, &Frame::OnTimer, this, ID_Timer );
@@ -87,6 +100,27 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 //==================================================================================================
 /*virtual*/ Frame::~Frame( void )
 {
+}
+
+//==================================================================================================
+void Frame::OnRenderWithPerspectiveProjection( wxCommandEvent& event )
+{
+	canvas->SetProjection( Canvas::PERSPECTIVE );
+	canvas->Refresh();
+}
+
+//==================================================================================================
+void Frame::OnRenderWithOrthographicProjection( wxCommandEvent& event )
+{
+	canvas->SetProjection( Canvas::ORTHOGRAPHIC );
+	canvas->Refresh();
+}
+
+//==================================================================================================
+void Frame::OnShowPerspectiveLabels( wxCommandEvent& event )
+{
+	canvas->ShowPerspectiveLabels( !canvas->ShowPerspectiveLabels() );
+	canvas->Refresh();
 }
 
 //==================================================================================================
@@ -277,6 +311,21 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		case ID_SolveCube:
 		{
 			event.Enable( ( wxGetApp().rubiksCube != 0 && wxGetApp().solver == 0 ) ? true : false );
+			break;
+		}
+		case ID_RenderWithPerspectiveProjection:
+		{
+			event.Check( canvas->GetProjection() == Canvas::PERSPECTIVE ? true : false );
+			break;
+		}
+		case ID_RenderWithOrthographicProjection:
+		{
+			event.Check( canvas->GetProjection() == Canvas::ORTHOGRAPHIC ? true : false );
+			break;
+		}
+		case ID_ShowPerspectiveLabels:
+		{
+			event.Check( canvas->ShowPerspectiveLabels() );
 			break;
 		}
 		case ID_PopRotationAndApply:
