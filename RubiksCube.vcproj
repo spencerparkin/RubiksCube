@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;../../wxWidgets-2.9.5/include&quot;;&quot;../../wxWidgets-2.9.5/include/msvc&quot;;&quot;C:\Program Files (x86)\boost\boost_1_50&quot;"
+				AdditionalIncludeDirectories="&quot;../../wxWidgets-2.9.5/include&quot;;&quot;../../wxWidgets-2.9.5/include/msvc&quot;;&quot;C:\Program Files (x86)\boost\boost_1_50&quot;;&quot;C:\Program Files\boost\boost_1_50&quot;"
 				PreprocessorDefinitions="__WXMSW__;_UNICODE_;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -117,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;../../wxWidgets-2.9.5/include&quot;;&quot;../../wxWidgets-2.9.5/include/msvc&quot;;&quot;C:\Program Files (x86)\boost\boost_1_50&quot;"
+				AdditionalIncludeDirectories="&quot;../../wxWidgets-2.9.5/include&quot;;&quot;../../wxWidgets-2.9.5/include/msvc&quot;;&quot;C:\Program Files (x86)\boost\boost_1_50&quot;;&quot;C:\Program Files\boost\boost_1_50&quot;"
 				PreprocessorDefinitions="__WXMSW__;_UNICODE_;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"

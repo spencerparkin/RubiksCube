@@ -45,13 +45,12 @@ public:
 	enum Color
 	{
 		GREY,
-		RED,
-		GREEN,
-		BLUE,
-		YELLOW,
-		MEGENTA,
-		CYAN,
-		WHITE,
+		YELLOW,		// +X
+		BLUE,		// +Y
+		RED,		// +Z
+		WHITE,		// -X
+		GREEN,		// -Y
+		ORANGE,		// -Z
 	};
 
 	enum RotationDirection
