@@ -23,6 +23,10 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, int colorCount /*= 6*/ )
 				subCube->faceColor[ POS_Y ] = ( y == subCubeMatrixSize - 1 ) ? ( colorCount > 2 ? BLUE : GREY ) : GREY;
 				subCube->faceColor[ NEG_Z ] = ( z == 0 ) ? ( colorCount > 5 ? ORANGE : GREY ) : GREY;
 				subCube->faceColor[ POS_Z ] = ( z == subCubeMatrixSize - 1 ) ? ( colorCount > 4 ? RED : GREY ) : GREY;
+
+				subCube->x = x;
+				subCube->y = y;
+				subCube->z = z;
 			}
 		}
 	}
@@ -38,6 +42,46 @@ RubiksCube::~RubiksCube( void )
 		delete[] subCubeMatrix[x];
 	}
 	delete[] subCubeMatrix;
+}
+
+//==================================================================================================
+void RubiksCube::CollectSubCubes( Color* colorArray, int colorCount, SubCubeList& subCubeList ) const
+{
+	for( int x = 0; x < subCubeMatrixSize; x++ )
+	{
+		for( int y = 0; y < subCubeMatrixSize; y++ )
+		{
+			for( int z = 0; z < subCubeMatrixSize; z++ )
+			{
+				const SubCube* subCube = &subCubeMatrix[x][y][z];
+
+				int expositionCount =
+					( ( x == 0 || x == subCubeMatrixSize - 1 ) ? 1 : 0 ) +
+					( ( y == 0 || y == subCubeMatrixSize - 1 ) ? 1 : 0 ) +
+					( ( z == 0 || z == subCubeMatrixSize - 1 ) ? 1 : 0 );
+
+				if( expositionCount == colorCount )
+				{
+					int colorIndex;
+					for( colorIndex = 0; colorIndex < colorCount; colorIndex++ )
+						if( !CubeHasColor( subCube, colorArray[ colorIndex ] ) )
+							break;
+
+					if( colorIndex == colorCount )
+						subCubeList.push_back( subCube );
+				}
+			}
+		}
+	}
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::CubeHasColor( const SubCube* subCube, Color color )
+{
+	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
+		if( subCube->faceColor[ face ] == color )
+			return true;
+	return false;
 }
 
 //==================================================================================================
@@ -518,6 +562,50 @@ bool RubiksCube::IsInSolvedState( void ) const
 }
 
 //==================================================================================================
+// This routine won't catch all possible ways that a given sequence can be compressed,
+// but we may be able to catch a few cases here.  For now, there is only one in particular
+// that we catch.
+/*static*/ void RubiksCube::CompressRotationSequence( RotationSequence& rotationSequence )
+{
+	return;		// I'm not ready to debug this routine, so just let it have no effect for now.
+
+	bool optimizationFound = false;
+	do
+	{
+		optimizationFound = false;
+
+		for( RotationSequence::iterator iter0 = rotationSequence.begin(); iter0 != rotationSequence.end(); iter0++ )
+		{
+			RotationSequence::iterator iter1 = iter0;
+			iter1++;
+
+			if( iter1 != rotationSequence.end() )
+			{
+				Rotation rotation0 = *iter0;
+				Rotation rotation1 = *iter1;
+
+				if( rotation0.plane.axis == rotation1.plane.axis && rotation0.plane.index == rotation1.plane.index )
+				{
+					if( rotation0.angle == -rotation1.angle )
+					{
+						rotationSequence.erase( iter0 );
+						rotationSequence.erase( iter1 );
+						optimizationFound = true;
+						break;
+					}
+
+					// This isn't quite an optimization, but it does compress the sequence a bit.
+					rotation0.angle += rotation1.angle;
+					rotationSequence.erase( iter1 );
+					*iter0 = rotation0;
+				}
+			}
+		}
+	}
+	while( optimizationFound );
+}
+
+//==================================================================================================
 bool RubiksCube::TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const
 {
 	for( RelativeRotationSequence::const_iterator iter = relativeRotationSequence.begin(); iter != relativeRotationSequence.end(); iter++ )
@@ -627,6 +715,21 @@ bool RubiksCube::TranslateRotation( const Perspective& perspective, RelativeRota
 	}
 
 	return false;
+}
+
+//==================================================================================================
+const RubiksCube::SubCube* RubiksCube::Matrix( int x, int y, int z ) const
+{
+	if( x < 0 || y < 0 || z < 0 )
+		return 0;
+	if( x > subCubeMatrixSize - 1 )
+		return 0;
+	if( y > subCubeMatrixSize - 1 )
+		return 0;
+	if( z > subCubeMatrixSize - 1 )
+		return 0;
+
+	return &subCubeMatrix[x][y][z];
 }
 
 // RubiksCube.cpp

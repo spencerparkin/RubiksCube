@@ -92,6 +92,20 @@ public:
 		c3ga::vectorE3GA fAxis;
 	};
 
+	struct SubCube
+	{
+		Color faceColor[ CUBE_FACE_COUNT ];
+		int x, y, z;
+	};
+
+	const SubCube* Matrix( int x, int y, int z ) const;
+
+	typedef std::list< const SubCube* > SubCubeList;
+
+	void CollectSubCubes( Color* colorArray, int colorCount, SubCubeList& subCubeList ) const;
+
+	static bool CubeHasColor( const SubCube* subCube, Color color );
+
 	typedef std::list< Rotation > RotationSequence;
 	typedef std::list< RelativeRotation > RelativeRotationSequence;
 
@@ -111,15 +125,12 @@ public:
 	bool TranslateRotation( const Perspective& perspective, RelativeRotation relativeRotation, Rotation& rotation ) const;
 	bool TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const;
 
+	static void CompressRotationSequence( RotationSequence& rotationSequence );
+
 private:
 
 	void RotatePlane( Plane plane, RotationDirection rotationDirection, int rotationCount );
 	void RotatePlaneCCW( Plane plane );
-
-	struct SubCube
-	{
-		Color faceColor[ CUBE_FACE_COUNT ];
-	};
 
 	void RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga::evenVersor& vertexVersor, const c3ga::evenVersor& normalVersor ) const;
 

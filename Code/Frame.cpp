@@ -208,7 +208,9 @@ void Frame::OnTimer( wxTimerEvent& event )
 
 		if( rubiksCube && solver )
 		{
-			if( !solver->MakeRotationSequence( rubiksCube, executionSequence ) )
+			if( solver->MakeRotationSequence( rubiksCube, executionSequence ) )
+				RubiksCube::CompressRotationSequence( executionSequence );
+			else
 			{
 				delete solver;
 				wxGetApp().solver = 0;
@@ -318,6 +320,8 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 			break;
 		}
 	}
+
+	animationTolerance = 0.01;
 }
 
 //==================================================================================================
