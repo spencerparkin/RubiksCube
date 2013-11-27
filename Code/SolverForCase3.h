@@ -1,6 +1,7 @@
 // SolverForCase3.h
 
 //==================================================================================================
+// Here we implement the layer-solve strategy.
 class SolverForCase3 : public Solver
 {
 public:
