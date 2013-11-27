@@ -321,6 +321,10 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 		}
 	}
 
+	// NOTE: If we generated the entire solution sequence here, then we would
+	//       get better compression across that entire sequence than by doing
+	//       the compression of the contiguous sub-sequences as we go along.
+
 	animationTolerance = 0.01;
 }
 
