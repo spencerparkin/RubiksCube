@@ -106,7 +106,7 @@ void SolverForCase3::PerformRedCrossPositioningStage( const RubiksCube* rubiksCu
 {
 	// For each edge piece,
 	//   If it is not already in position.
-	//     If it is in the Z=2 plane, rotate it to the Z=0 plane, return.
+	//     If it is in the Z=2 plane, rotate it to the Z=0 plane.  (this may require us to do a restoration step later)
 	//     If it is in the Z=0 plane and not in the right face plane, rotate it in that plane to the right face plane.
 	//     If it is in the Z=0 plane and in the right face plane, rotate it up into the Z=0 plane.
 }
