@@ -109,14 +109,20 @@ bool Canvas::IsAnimating( double tolerance /*= 1e-7*/ ) const
 }
 
 //==================================================================================================
-// Note that the applied move is not put on the move stack.
-bool Canvas::ApplyRotation( const RubiksCube::Rotation& rotation )
+bool Canvas::ApplyRotation( const RubiksCube::Rotation& rotation, bool pushReverseRotation /*= true*/ )
 {
 	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 	if( !rubiksCube )
 		return false;
 
-	return rubiksCube->Apply( rotation, &this->rotation );
+	RubiksCube::Rotation reverseRotation;
+	if( !rubiksCube->Apply( rotation, &this->rotation, &reverseRotation ) )
+		return false;
+
+	if( pushReverseRotation )
+		wxGetApp().PushRotation( reverseRotation );
+
+	return true;
 }
 
 //==================================================================================================
@@ -400,13 +406,7 @@ void Canvas::OnMouseRightUp( wxMouseEvent& event )
 	{
 		ReleaseMouse();
 
-		RubiksCube* rubiksCube = wxGetApp().rubiksCube;
-		if( rubiksCube )
-		{
-			RubiksCube::Rotation reverseRotation;
-			if( rubiksCube->Apply( rotation, &rotation, &reverseRotation ) )
-				wxGetApp().rotationStack.push_back( reverseRotation );
-		}
+		ApplyRotation( rotation );
 
 		grippingCube = false;
 	}

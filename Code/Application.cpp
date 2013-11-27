@@ -37,4 +37,26 @@ Application::Application( void )
 	return 0;
 }
 
+//==================================================================================================
+void Application::PushRotation( const RubiksCube::Rotation& rotation )
+{
+	if( rotationStack.size() == ROTATION_STACK_CAPACITY )
+		rotationStack.pop_front();
+
+	rotationStack.push_back( rotation );
+}
+
+//==================================================================================================
+bool Application::PopRotation( RubiksCube::Rotation* rotation /*= 0*/ )
+{
+	if( rotationStack.size() == 0 )
+		return false;
+
+	if( rotation )
+		*rotation = rotationStack.back();
+
+	rotationStack.pop_back();
+	return true;
+}
+
 // Application.cpp

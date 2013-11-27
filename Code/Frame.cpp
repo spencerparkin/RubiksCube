@@ -331,19 +331,15 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnPopRotationAndApply( wxCommandEvent& event )
 {
-	if( wxGetApp().rotationStack.size() == 0 )
-		return;
-
-	RubiksCube::Rotation rotation = wxGetApp().rotationStack.back();
-	wxGetApp().rotationStack.pop_back();
-	canvas->ApplyRotation( rotation );
+	RubiksCube::Rotation rotation;
+	if( wxGetApp().PopRotation( &rotation ) )
+		canvas->ApplyRotation( rotation, false );
 }
 
 //==================================================================================================
 void Frame::OnPopRotationAndNoApply( wxCommandEvent& event )
 {
-	if( wxGetApp().rotationStack.size() > 0 )
-		wxGetApp().rotationStack.pop_back();
+	wxGetApp().PopRotation();
 }
 
 //==================================================================================================

@@ -23,7 +23,7 @@ public:
 	void AdjustSizeFor( const RubiksCube* rubiksCube );
 	bool Animate( void );
 	bool IsAnimating( double tolerance = 1e-7 ) const;
-	bool ApplyRotation( const RubiksCube::Rotation& rotation );
+	bool ApplyRotation( const RubiksCube::Rotation& rotation, bool pushReverseRotation = true );
 	void DeterminePerspective( RubiksCube::Perspective& perspective ) const;
 
 private:
