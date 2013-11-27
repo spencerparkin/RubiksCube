@@ -720,16 +720,203 @@ bool RubiksCube::TranslateRotation( const Perspective& perspective, RelativeRota
 //==================================================================================================
 const RubiksCube::SubCube* RubiksCube::Matrix( int x, int y, int z ) const
 {
-	if( x < 0 || y < 0 || z < 0 )
-		return 0;
-	if( x > subCubeMatrixSize - 1 )
-		return 0;
-	if( y > subCubeMatrixSize - 1 )
-		return 0;
-	if( z > subCubeMatrixSize - 1 )
+	if( !ValidMatrixCoordinates( x, y, z ) )
 		return 0;
 
 	return &subCubeMatrix[x][y][z];
+}
+
+//==================================================================================================
+bool RubiksCube::ValidMatrixCoordinates( int x, int y, int z ) const
+{
+	if( x < 0 || y < 0 || z < 0 )
+		return false;
+	if( x > subCubeMatrixSize - 1 )
+		return false;
+	if( y > subCubeMatrixSize - 1 )
+		return false;
+	if( z > subCubeMatrixSize - 1 )
+		return false;
+	return true;
+}
+
+//==================================================================================================
+bool RubiksCube::SaveToFile( const wxString& file ) const
+{
+	return SaveToFile( this, file );
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::SaveToFile( const RubiksCube* rubiksCube, const wxString& file )
+{
+	bool success = false;
+	
+	do
+	{
+		wxXmlNode* xmlRoot = new wxXmlNode( 0, wxXML_ELEMENT_NODE, "RubiksCube" );
+
+		int size = rubiksCube->subCubeMatrixSize;
+		xmlRoot->AddAttribute( "size", wxString::Format( "%d", size ) );
+
+		if( !rubiksCube->SaveToXml( xmlRoot ) )
+			break;
+
+		wxXmlDocument xmlDocument;
+		xmlDocument.SetRoot( xmlRoot );
+
+		if( !xmlDocument.Save( file ) )
+			break;
+
+		success = true;
+	}
+	while( false );
+
+	return success;
+}
+
+//==================================================================================================
+/*static*/ RubiksCube* RubiksCube::LoadFromFile( const wxString& file )
+{
+	bool success = false;
+	RubiksCube* rubiksCube = 0;
+
+	do
+	{
+		wxXmlDocument xmlDocument;
+		if( !xmlDocument.Load( file ) )
+			break;
+
+		wxXmlNode* xmlRoot = xmlDocument.GetRoot();
+		if( xmlRoot->GetName() != "RubiksCube" )
+			break;
+
+		wxString sizeString;
+		if( !xmlRoot->GetAttribute( "size", &sizeString ) )
+			break;
+
+		long size;
+		if( !sizeString.ToLong( &size ) )
+			break;
+
+		rubiksCube = new RubiksCube( int( size ), 0 );
+		if( !rubiksCube->LoadFromXml( xmlRoot ) )
+			break;
+
+		success = true;
+	}
+	while( false );
+
+	if( !success )
+	{
+		delete rubiksCube;
+		rubiksCube = 0;
+	}
+
+	return rubiksCube;
+}
+
+//==================================================================================================
+bool RubiksCube::SaveToXml( wxXmlNode* xmlNode ) const
+{
+	for( int x = 0; x < subCubeMatrixSize; x++ )
+	{
+		for( int y = 0; y < subCubeMatrixSize; y++ )
+		{
+			for( int z = 0; z < subCubeMatrixSize; z++ )
+			{
+				const SubCube* subCube = &subCubeMatrix[x][y][z];
+
+				wxXmlNode* xmlSubCube = new wxXmlNode( xmlNode, wxXML_ELEMENT_NODE, "SubCube" );
+
+				xmlSubCube->AddAttribute( "x", wxString::Format( "%d", x ) );
+				xmlSubCube->AddAttribute( "y", wxString::Format( "%d", y ) );
+				xmlSubCube->AddAttribute( "z", wxString::Format( "%d", z ) );
+				
+				if( !SaveColorToXml( xmlSubCube, "neg_x", subCube->faceColor[ NEG_X ] ) )
+					return false;
+				if( !SaveColorToXml( xmlSubCube, "pos_x", subCube->faceColor[ POS_X ] ) )
+					return false;
+				if( !SaveColorToXml( xmlSubCube, "neg_y", subCube->faceColor[ NEG_Y ] ) )
+					return false;
+				if( !SaveColorToXml( xmlSubCube, "pos_y", subCube->faceColor[ POS_Y ] ) )
+					return false;
+				if( !SaveColorToXml( xmlSubCube, "neg_z", subCube->faceColor[ NEG_Z ] ) )
+					return false;
+				if( !SaveColorToXml( xmlSubCube, "pos_z", subCube->faceColor[ POS_Z ] ) )
+					return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+//==================================================================================================
+bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
+{
+	for( const wxXmlNode* xmlSubCube = xmlNode->GetChildren(); xmlSubCube; xmlSubCube = xmlSubCube->GetNext() )
+	{
+		if( xmlSubCube->GetName() != "SubCube" )
+			continue;
+
+		wxString xString, yString, zString;
+		if( !( xmlSubCube->GetAttribute( "x", &xString ) && xmlSubCube->GetAttribute( "y", &yString ) && xmlSubCube->GetAttribute( "z", &zString ) ) )
+			return false;
+
+		long xLong = -1, yLong = -1, zLong = -1;
+		if( !( xString.ToLong( &xLong ) && yString.ToLong( &yLong ) && zString.ToLong( &zLong ) ) )
+			return false;
+
+		int x = int( xLong );
+		int y = int( yLong );
+		int z = int( zLong );
+		if( !ValidMatrixCoordinates( x, y, z ) )
+			return false;
+
+		SubCube* subCube = &subCubeMatrix[x][y][z];
+
+		if( !LoadColorFromXml( xmlSubCube, "neg_x", subCube->faceColor[ NEG_X ] ) )
+			return false;
+		if( !LoadColorFromXml( xmlSubCube, "pos_x", subCube->faceColor[ POS_X ] ) )
+			return false;
+		if( !LoadColorFromXml( xmlSubCube, "neg_y", subCube->faceColor[ NEG_Y ] ) )
+			return false;
+		if( !LoadColorFromXml( xmlSubCube, "pos_y", subCube->faceColor[ POS_Y ] ) )
+			return false;
+		if( !LoadColorFromXml( xmlSubCube, "neg_z", subCube->faceColor[ NEG_Z ] ) )
+			return false;
+		if( !LoadColorFromXml( xmlSubCube, "pos_z", subCube->faceColor[ POS_Z ] ) )
+			return false;
+	}
+
+	return true;
+}
+
+//==================================================================================================
+bool RubiksCube::SaveColorToXml( wxXmlNode* xmlSubCube, const wxString& name, Color color ) const
+{
+	int colorInt = color;
+	wxString colorString = wxString::Format( "%d", colorInt );
+	xmlSubCube->AddAttribute( name, colorString );
+	return true;
+}
+
+//==================================================================================================
+bool RubiksCube::LoadColorFromXml( const wxXmlNode* xmlSubCube, const wxString& name, Color& color )
+{
+	wxString colorString;
+	if( !xmlSubCube->GetAttribute( name, &colorString ) )
+		return false;
+
+	long colorLong;
+	if( !colorString.ToLong( &colorLong ) )
+		return false;
+
+	if( colorLong < 0 || colorLong >= MAX_COLORS )
+		return false;
+
+	color = Color( colorLong );
+	return true;
 }
 
 // RubiksCube.cpp

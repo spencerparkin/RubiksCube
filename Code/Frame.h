@@ -16,6 +16,8 @@ private:
 		ID_DestroyCube,
 		ID_ScrambleCube,
 		ID_SolveCube,
+		ID_SaveCube,
+		ID_LoadCube,
 		ID_RenderWithPerspectiveProjection,
 		ID_RenderWithOrthographicProjection,
 		ID_ShowPerspectiveLabels,
@@ -30,6 +32,8 @@ private:
 	void OnDestroyCube( wxCommandEvent& event );
 	void OnScrambleCube( wxCommandEvent& event );
 	void OnSolveCube( wxCommandEvent& event );
+	void OnSaveCube( wxCommandEvent& event );
+	void OnLoadCube( wxCommandEvent& event );
 	void OnRenderWithPerspectiveProjection( wxCommandEvent& event );
 	void OnRenderWithOrthographicProjection( wxCommandEvent& event );
 	void OnShowPerspectiveLabels( wxCommandEvent& event );

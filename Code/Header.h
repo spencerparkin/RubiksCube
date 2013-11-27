@@ -6,10 +6,13 @@
 #include <wx/menu.h>
 #include <wx/aboutdlg.h>
 #include <wx/numdlg.h>
+#include <wx/msgdlg.h>
+#include <wx/filedlg.h>
 #include <wx/glcanvas.h>
 #include <wx/sizer.h>
 #include <wx/timer.h>
 #include <wx/textctrl.h>
+#include <wx/xml/xml.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>

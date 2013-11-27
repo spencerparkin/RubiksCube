@@ -12,15 +12,17 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxMenuItem* destroyCubeMenuItem = new wxMenuItem( programMenu, ID_DestroyCube, "Destroy Cube\tF6", "Destroy the Rubik's Cube." );
 	wxMenuItem* scrambleCubeMenuItem = new wxMenuItem( programMenu, ID_ScrambleCube, "Scramble Cube\tF12", "Randomize the Rubik's Cube." );
 	wxMenuItem* solveCubeMenuItem = new wxMenuItem( programMenu, ID_SolveCube, "Solve Cube", "Solve the Rubik's Cube." );
+	wxMenuItem* saveCubeMenuItem = new wxMenuItem( programMenu, ID_SaveCube, "Save Cube", "Save the Rubik's Cube to file." );
+	wxMenuItem* loadCubeMenuItem = new wxMenuItem( programMenu, ID_LoadCube, "Load Cube", "Load a Rubik's Cube from file." );
 	wxMenuItem* exitMenuItem = new wxMenuItem( programMenu, ID_Exit, "Exit", "Exit this program." );
 	programMenu->Append( createCubeMenuItem );
 	programMenu->Append( destroyCubeMenuItem );
 	programMenu->AppendSeparator();
+	programMenu->Append( saveCubeMenuItem );
+	programMenu->Append( loadCubeMenuItem );
+	programMenu->AppendSeparator();
 	programMenu->Append( scrambleCubeMenuItem );
 	programMenu->Append( solveCubeMenuItem );
-	//programMenu->AppendSeparator();
-	//programMenu->Append( saveCubeMenuItem );
-	//programMenu->Append( loadCubeMenuItem );
 	programMenu->AppendSeparator();
 	programMenu->Append( exitMenuItem );
 
@@ -77,6 +79,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnDestroyCube, this, ID_DestroyCube );
 	Bind( wxEVT_MENU, &Frame::OnScrambleCube, this, ID_ScrambleCube );
 	Bind( wxEVT_MENU, &Frame::OnSolveCube, this, ID_SolveCube );
+	Bind( wxEVT_MENU, &Frame::OnSaveCube, this, ID_SaveCube );
+	Bind( wxEVT_MENU, &Frame::OnLoadCube, this, ID_LoadCube );
 	Bind( wxEVT_MENU, &Frame::OnShowPerspectiveLabels, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_MENU, &Frame::OnRenderWithPerspectiveProjection, this, ID_RenderWithPerspectiveProjection );
 	Bind( wxEVT_MENU, &Frame::OnRenderWithOrthographicProjection, this, ID_RenderWithOrthographicProjection );
@@ -88,6 +92,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DestroyCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ScrambleCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SolveCube );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SaveCube );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_LoadCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithPerspectiveProjection );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithOrthographicProjection );
@@ -102,6 +108,42 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 //==================================================================================================
 /*virtual*/ Frame::~Frame( void )
 {
+}
+
+//==================================================================================================
+void Frame::OnSaveCube( wxCommandEvent& event )
+{
+	if( !wxGetApp().rubiksCube )
+		return;
+
+	wxFileDialog fileDialog( this, "Save Rubik's Cube File", wxEmptyString, wxEmptyString, "Rubik's Cube Files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+	if( wxID_OK != fileDialog.ShowModal() )
+		return;
+
+	wxString file = fileDialog.GetPath();
+	if( !wxGetApp().rubiksCube->SaveToFile( file ) )
+		wxMessageBox( "Failed to save file \"" + file + "\".", "Save Failure" );
+}
+
+//==================================================================================================
+void Frame::OnLoadCube( wxCommandEvent& event )
+{
+	if( wxGetApp().rubiksCube )
+		return;
+
+	wxFileDialog fileDialog( this, "Load Rubik's Cube File", wxEmptyString, wxEmptyString, "Rubik's Cube Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+	if( wxID_OK != fileDialog.ShowModal() )
+		return;
+
+	wxString file = fileDialog.GetPath();
+	wxGetApp().rubiksCube = RubiksCube::LoadFromFile( file );
+	if( !wxGetApp().rubiksCube )
+		wxMessageBox( "Failed to load file \"" + file + "\".", "Load Failure" );
+	else
+	{
+		canvas->Refresh();
+		wxGetApp().rotationStack.clear();
+	}
 }
 
 //==================================================================================================
@@ -369,11 +411,13 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 	switch( event.GetId() )
 	{
 		case ID_CreateCube:
+		case ID_LoadCube:
 		{
 			event.Enable( wxGetApp().rubiksCube == 0 ? true : false );
 			break;
 		}
 		case ID_DestroyCube:
+		case ID_SaveCube:
 		{
 			event.Enable( wxGetApp().rubiksCube != 0 ? true : false );
 			break;

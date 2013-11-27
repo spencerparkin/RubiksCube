@@ -44,13 +44,18 @@ public:
 
 	enum Color
 	{
+		// Color used for internal faces:
 		GREY,
+
+		// Colors used for external faces:
 		YELLOW,		// +X
 		BLUE,		// +Y
 		RED,		// +Z
 		WHITE,		// -X
 		GREEN,		// -Y
 		ORANGE,		// -Z
+
+		MAX_COLORS,
 	};
 
 	enum RotationDirection
@@ -99,6 +104,7 @@ public:
 	};
 
 	const SubCube* Matrix( int x, int y, int z ) const;
+	bool ValidMatrixCoordinates( int x, int y, int z ) const;
 
 	typedef std::list< const SubCube* > SubCubeList;
 
@@ -127,7 +133,18 @@ public:
 
 	static void CompressRotationSequence( RotationSequence& rotationSequence );
 
+	bool SaveToFile( const wxString& file ) const;
+	
+	static bool SaveToFile( const RubiksCube* rubiksCube, const wxString& file );
+	static RubiksCube* LoadFromFile( const wxString& file );
+
 private:
+
+	bool SaveToXml( wxXmlNode* xmlNode ) const;
+	bool LoadFromXml( const wxXmlNode* xmlNode );
+
+	bool SaveColorToXml( wxXmlNode* xmlSubCube, const wxString& name, Color color ) const;
+	bool LoadColorFromXml( const wxXmlNode* xmlSubCube, const wxString& name, Color& color );
 
 	void RotatePlane( Plane plane, RotationDirection rotationDirection, int rotationCount );
 	void RotatePlaneCCW( Plane plane );
