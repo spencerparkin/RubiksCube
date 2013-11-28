@@ -3,8 +3,28 @@
 #include "Header.h"
 
 //==================================================================================================
+c3ga::vectorE3GA SolverForCase3::xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
+c3ga::vectorE3GA SolverForCase3::yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
+c3ga::vectorE3GA SolverForCase3::zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
+
+//==================================================================================================
 SolverForCase3::SolverForCase3( void )
 {
+	redEdgePerspectives[0].rAxis = xAxis;
+	redEdgePerspectives[0].uAxis = zAxis;
+	redEdgePerspectives[0].fAxis = -yAxis;
+
+	redEdgePerspectives[1].rAxis = -yAxis;
+	redEdgePerspectives[1].uAxis = zAxis;
+	redEdgePerspectives[1].fAxis = -xAxis;
+
+	redEdgePerspectives[2].rAxis = -xAxis;
+	redEdgePerspectives[2].uAxis = zAxis;
+	redEdgePerspectives[2].fAxis = yAxis;
+
+	redEdgePerspectives[3].rAxis = yAxis;
+	redEdgePerspectives[3].uAxis = zAxis;
+	redEdgePerspectives[3].fAxis = xAxis;
 }
 
 //==================================================================================================
@@ -102,46 +122,28 @@ void SolverForCase3::PerformCubeOrientingStage( const RubiksCube* rubiksCube, Ru
 }
 
 //==================================================================================================
+RubiksCube::Color SolverForCase3::redEdgeColors[4][2] =
+{
+	RubiksCube::RED, RubiksCube::YELLOW,
+	RubiksCube::RED, RubiksCube::GREEN,
+	RubiksCube::RED, RubiksCube::WHITE,
+	RubiksCube::RED, RubiksCube::BLUE,
+};
+
+//==================================================================================================
+int SolverForCase3::redEdgeTargetLocations[4][3] =
+{
+	{ 2, 1, 2 },
+	{ 1, 0, 2 },
+	{ 0, 1, 2 },
+	{ 1, 2, 2 },
+};
+
+RubiksCube::Perspective SolverForCase3::redEdgePerspectives[4];
+
+//==================================================================================================
 void SolverForCase3::PerformRedCrossPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
-	RubiksCube::Color redEdgeColors[4][2] =
-	{
-		RubiksCube::RED, RubiksCube::YELLOW,
-		RubiksCube::RED, RubiksCube::GREEN,
-		RubiksCube::RED, RubiksCube::WHITE,
-		RubiksCube::RED, RubiksCube::BLUE,
-	};
-
-	int redEdgeTargetLocations[4][3] =
-	{
-		{ 2, 1, 2 },
-		{ 1, 0, 2 },
-		{ 0, 1, 2 },
-		{ 1, 2, 2 },
-	};
-
-	c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
-	c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
-	c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
-
-	RubiksCube::Perspective redEdgePerspectives[4];
-
-	redEdgePerspectives[0].rAxis = xAxis;
-	redEdgePerspectives[0].uAxis = zAxis;
-	redEdgePerspectives[0].fAxis = -yAxis;
-
-	redEdgePerspectives[1].rAxis = -yAxis;
-	redEdgePerspectives[1].uAxis = zAxis;
-	redEdgePerspectives[1].fAxis = -xAxis;
-
-	redEdgePerspectives[2].rAxis = -xAxis;
-	redEdgePerspectives[2].uAxis = zAxis;
-	redEdgePerspectives[2].fAxis = yAxis;
-
-	redEdgePerspectives[3].rAxis = yAxis;
-	redEdgePerspectives[3].uAxis = zAxis;
-	redEdgePerspectives[3].fAxis = xAxis;
-
 	// Notice that if we produce redundant rotation with this algorithm,
 	// or any algorithm that's part of the entire solving strategy, that
 	// this is okay in the interests of simplifying the code, because the
@@ -255,14 +257,21 @@ void SolverForCase3::PerformRedCrossPositioningStage( const RubiksCube* rubiksCu
 //==================================================================================================
 void SolverForCase3::PerformRedCrossOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
-	// If the Red/Yellow edge piece is not oriented properly,
-	//   choose rAxis = xAxis, uAxis = zAxis, fAxis = -yAxis, then do Ri, U, Fi, Ui.
-	// If the Red/Blue edge piece is not oriented properly,
-	//   choose rAxis = yAxis, uAxis = zAxis, fAxis = xAxis, then do Ri, U, Fi, Ui.
-	// If the Red/White edge piece is not oriented properly,
-	//   choose rAxis = -xAxis, uAxis = zAxis, fAxis = yAxis, then do Ri, U, Fi, Ui.
-	// If the Red/Green edge piece is not oriented properly,
-	//   choose rAxis = -yAxis, uAxis = zAxis, fAxis = -xAxis, then do Ri, U, Fi, Ui.
+	for( int edge = 0; edge < 4; edge++ )
+	{
+		const RubiksCube::SubCube* subCube = rubiksCube->CollectSubCube( redEdgeColors[ edge ], 2 );
+		if( subCube->faceColor[ RubiksCube::POS_Z ] == RubiksCube::RED )
+			continue;
+
+		RubiksCube::Perspective* perspective = &redEdgePerspectives[ edge ];
+		RubiksCube::RelativeRotationSequence relativeRotationSequence;
+		relativeRotationSequence.push_back( RubiksCube::Ri );
+		relativeRotationSequence.push_back( RubiksCube::U );
+		relativeRotationSequence.push_back( RubiksCube::Fi );
+		relativeRotationSequence.push_back( RubiksCube::Ui );
+		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
+		break;
+	}
 }
 
 //void SolverForCase3::PerformRedFaceCornersPositioningStage()
