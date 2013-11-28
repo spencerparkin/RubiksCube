@@ -104,11 +104,152 @@ void SolverForCase3::PerformCubeOrientingStage( const RubiksCube* rubiksCube, Ru
 //==================================================================================================
 void SolverForCase3::PerformRedCrossPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
-	// For each edge piece,
-	//   If it is not already in position.
-	//     If it is in the Z=2 plane, rotate it to the Z=0 plane.  (this may require us to do a restoration step later)
-	//     If it is in the Z=0 plane and not in the right face plane, rotate it in that plane to the right face plane.
-	//     If it is in the Z=0 plane and in the right face plane, rotate it up into the Z=0 plane.
+	RubiksCube::Color redEdgeColors[4][2] =
+	{
+		RubiksCube::RED, RubiksCube::YELLOW,
+		RubiksCube::RED, RubiksCube::GREEN,
+		RubiksCube::RED, RubiksCube::WHITE,
+		RubiksCube::RED, RubiksCube::BLUE,
+	};
+
+	int redEdgeTargetLocations[4][3] =
+	{
+		{ 2, 1, 2 },
+		{ 1, 0, 2 },
+		{ 0, 1, 2 },
+		{ 1, 2, 2 },
+	};
+
+	c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
+	c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
+	c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
+
+	RubiksCube::Perspective redEdgePerspectives[4];
+
+	redEdgePerspectives[0].rAxis = xAxis;
+	redEdgePerspectives[0].uAxis = zAxis;
+	redEdgePerspectives[0].fAxis = -yAxis;
+
+	redEdgePerspectives[1].rAxis = -yAxis;
+	redEdgePerspectives[1].uAxis = zAxis;
+	redEdgePerspectives[1].fAxis = -xAxis;
+
+	redEdgePerspectives[2].rAxis = -xAxis;
+	redEdgePerspectives[2].uAxis = zAxis;
+	redEdgePerspectives[2].fAxis = yAxis;
+
+	redEdgePerspectives[3].rAxis = yAxis;
+	redEdgePerspectives[3].uAxis = zAxis;
+	redEdgePerspectives[3].fAxis = xAxis;
+
+	// Notice that if we produce redundant rotation with this algorithm,
+	// or any algorithm that's part of the entire solving strategy, that
+	// this is okay in the interests of simplifying the code, because the
+	// calling code will run a compression pass on the sequence that we
+	// return here, which will filter out such redundancies.
+	for( int edge = 0; edge < 4; edge++ )
+	{
+		const RubiksCube::SubCube* subCube = rubiksCube->CollectSubCube( redEdgeColors[ edge ], 2 );
+		wxASSERT( subCube != 0 );
+		
+		int* targetLocation = redEdgeTargetLocations[ edge ];
+		if( subCube->x == targetLocation[0] && subCube->y == targetLocation[1] && subCube->z == targetLocation[2] )
+			continue;
+
+		RubiksCube::Plane plane;
+		if( subCube->x == 2 && ( subCube->y == 1 || subCube->y == 2 ) )
+		{
+			plane.axis = RubiksCube::X_AXIS;
+			plane.index = 2;
+		}
+		else if( ( subCube->x == 0 || subCube->x == 1 ) && subCube->y == 2 )
+		{
+			plane.axis = RubiksCube::Y_AXIS;
+			plane.index = 2;
+		}
+		else if( subCube->x == 0 && ( subCube->y == 0 || subCube->y == 1 ) )
+		{
+			plane.axis = RubiksCube::X_AXIS;
+			plane.index = 0;
+		}
+		else if( ( subCube->x == 1 || subCube->x == 2 ) && subCube->y == 0 )
+		{
+			plane.axis = RubiksCube::Y_AXIS;
+			plane.index = 0;
+		}
+		else
+		{
+			wxASSERT( false );
+		}
+
+		RubiksCube::Rotation rotation;
+		RubiksCube::Rotation restorativeRotation;
+		restorativeRotation.angle = 0.0;
+
+		// Get the sub-cube into the Z=0 plane if it is not there already.
+		if( subCube->z == 2 )
+		{
+			rotation.plane = plane;
+			rotation.angle = M_PI;
+			rotationSequence.push_back( rotation );
+		}
+		else if( subCube->z == 1 )
+		{
+			rotation.plane = plane;
+			rotation.angle = M_PI / 2.0;
+			if( ( subCube->x == 0 && subCube->y == 0 ) || ( subCube->x == 2 && subCube->y == 2 ) )
+				rotation.angle *= -1.0;
+			rotationSequence.push_back( rotation );
+			restorativeRotation.angle = -rotation.angle;
+			restorativeRotation.plane = plane;
+		}
+
+		// Rotate the sub-cube in the Z=0 plane so that it is ready to be rotated into position.
+		rotation.plane.axis = RubiksCube::Z_AXIS;
+		rotation.plane.index = 0;
+		rotation.angle = 0.0;
+		c3ga::vectorE3GA axis = RubiksCube::TranslateAxis( plane.axis );
+		if( plane.index == 0 )
+			axis = -axis;
+		RubiksCube::Perspective* perspective = &redEdgePerspectives[ edge ];
+		double dot = c3ga::lc( axis, perspective->rAxis );
+		double epsilon = 1e-7;
+		if( fabs( dot + 1.0 ) < epsilon )
+			rotation.angle = M_PI;
+		else if( fabs( dot - 1.0 ) >= epsilon )
+		{
+			rotation.angle = M_PI / 2.0;
+			c3ga::trivectorE3GA trivector = perspective->rAxis ^ zAxis ^ axis;
+			rotation.angle *= trivector.get_e1_e2_e3();
+		}
+		if( rotation.angle != 0.0 )
+			rotationSequence.push_back( rotation );
+		else
+		{
+			// No restoration is needed, (or wanted), if we were already in the
+			// right plane, ready to be moved up into position.
+			restorativeRotation.angle = 0.0;
+		}
+
+		// At this point we can restore what we may have already solved.
+		if( restorativeRotation.angle != 0.0 )
+		{
+			// TODO: We might consider for-going this restorative move if, by chance,
+			//       the rotation above causing us to need this actually put the right
+			//       edge cube into its target location.
+			rotationSequence.push_back( restorativeRotation );
+		}
+
+		// Finally, rotate the sub-cube into its proper position.  :)
+		RubiksCube::RelativeRotation relativeRotation = RubiksCube::R;
+		rubiksCube->TranslateRotation( *perspective, relativeRotation, rotation );
+		rotation.angle = M_PI;
+		rotationSequence.push_back( rotation );
+		
+		// We can't go onto to solve the next edge at this time, because its position
+		// in the cube may have been changed by the sequence of moves we have just made.
+		break;
+	}
 }
 
 //==================================================================================================

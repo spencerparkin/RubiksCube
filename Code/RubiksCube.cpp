@@ -76,6 +76,16 @@ void RubiksCube::CollectSubCubes( Color* colorArray, int colorCount, SubCubeList
 }
 
 //==================================================================================================
+const RubiksCube::SubCube* RubiksCube::CollectSubCube( Color* colorArray, int colorCount ) const
+{
+	SubCubeList subCubeList;
+	CollectSubCubes( colorArray, colorCount, subCubeList );
+	if( subCubeList.size() != 1 )
+		return 0;
+	return subCubeList.front();
+}
+
+//==================================================================================================
 /*static*/ bool RubiksCube::CubeHasColor( const SubCube* subCube, Color color )
 {
 	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
@@ -563,8 +573,8 @@ bool RubiksCube::IsInSolvedState( void ) const
 
 //==================================================================================================
 // This routine won't catch all possible ways that a given sequence can be compressed,
-// but we may be able to catch a few cases here.  For now, there is only one in particular
-// that we catch.
+// but we may be able to catch a few cases here.  For now, there are only a few cases
+// we can catch.
 /*static*/ void RubiksCube::CompressRotationSequence( RotationSequence& rotationSequence )
 {
 	return;		// I'm not ready to debug this routine, so just let it have no effect for now.
@@ -576,16 +586,24 @@ bool RubiksCube::IsInSolvedState( void ) const
 
 		for( RotationSequence::iterator iter0 = rotationSequence.begin(); iter0 != rotationSequence.end(); iter0++ )
 		{
+			Rotation rotation0 = *iter0;
+			if( rotation0.angle == 0.0 )
+			{
+				rotationSequence.erase( iter0 );
+				optimizationFound = true;
+				break;
+			}
+
 			RotationSequence::iterator iter1 = iter0;
 			iter1++;
 
 			if( iter1 != rotationSequence.end() )
 			{
-				Rotation rotation0 = *iter0;
 				Rotation rotation1 = *iter1;
 
 				if( rotation0.plane.axis == rotation1.plane.axis && rotation0.plane.index == rotation1.plane.index )
 				{
+					// Adjacent rotations of opposite angles cancel one another out.
 					if( rotation0.angle == -rotation1.angle )
 					{
 						rotationSequence.erase( iter0 );
@@ -598,6 +616,8 @@ bool RubiksCube::IsInSolvedState( void ) const
 					rotation0.angle += rotation1.angle;
 					rotationSequence.erase( iter1 );
 					*iter0 = rotation0;
+					optimizationFound = true;
+					break;
 				}
 			}
 		}

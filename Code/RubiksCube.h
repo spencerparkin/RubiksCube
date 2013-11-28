@@ -109,6 +109,7 @@ public:
 	typedef std::list< const SubCube* > SubCubeList;
 
 	void CollectSubCubes( Color* colorArray, int colorCount, SubCubeList& subCubeList ) const;
+	const SubCube* CollectSubCube( Color* colorArray, int colorCount ) const;
 
 	static bool CubeHasColor( const SubCube* subCube, Color color );
 
