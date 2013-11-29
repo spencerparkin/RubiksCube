@@ -10,7 +10,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxMenu* programMenu = new wxMenu();
 	wxMenuItem* createCubeMenuItem = new wxMenuItem( programMenu, ID_CreateCube, "Create Cube\tF5", "Create a new Rubik's Cube." );
 	wxMenuItem* destroyCubeMenuItem = new wxMenuItem( programMenu, ID_DestroyCube, "Destroy Cube\tF6", "Destroy the Rubik's Cube." );
-	wxMenuItem* scrambleCubeMenuItem = new wxMenuItem( programMenu, ID_ScrambleCube, "Scramble Cube\tF12", "Randomize the Rubik's Cube." );
+	wxMenuItem* scrambleCubeMenuItem = new wxMenuItem( programMenu, ID_ScrambleCube, "Scramble Cube", "Randomize the Rubik's Cube." );
 	wxMenuItem* solveCubeMenuItem = new wxMenuItem( programMenu, ID_SolveCube, "Solve Cube", "Solve the Rubik's Cube." );
 	wxMenuItem* saveCubeMenuItem = new wxMenuItem( programMenu, ID_SaveCube, "Save Cube", "Save the Rubik's Cube to file." );
 	wxMenuItem* loadCubeMenuItem = new wxMenuItem( programMenu, ID_LoadCube, "Load Cube", "Load a Rubik's Cube from file." );
@@ -26,11 +26,11 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	programMenu->AppendSeparator();
 	programMenu->Append( exitMenuItem );
 
-	wxMenu* moveStackMenu = new wxMenu();
-	wxMenuItem* popRotationAndApplyMenuItem = new wxMenuItem( programMenu, ID_PopRotationAndApply, "Pop Rotation and Apply\tF9", "Pop and apply the rotation on the top of the rotation-stack." );
-	wxMenuItem* popRotationAndNoApplyMenuItem = new wxMenuItem( programMenu, ID_PopRotationAndNoApply, "Pop Rotation and No Apply\tShift+F9", "Pop, but do not apply, the rotation on the top of the rotation-stack." );
-	moveStackMenu->Append( popRotationAndApplyMenuItem );
-	moveStackMenu->Append( popRotationAndNoApplyMenuItem );
+	wxMenu* rotationHistoryMenu = new wxMenu();
+	wxMenuItem* rotationHistoryGoForwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoForward, "Go Forward\tF9", "Apply the rotation that takes us forward in the rotation history." );
+	wxMenuItem* rotationHisotryGoBackwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoBackward, "Go Backward\tF10", "Apply the rotation that takes us backward in the rotation history." );
+	rotationHistoryMenu->Append( rotationHistoryGoForwardMenuItem );
+	rotationHistoryMenu->Append( rotationHisotryGoBackwardMenuItem );
 
 	wxMenu* viewMenu = new wxMenu();
 	wxMenuItem* showPerspectiveLabelsMenuItem = new wxMenuItem( viewMenu, ID_ShowPerspectiveLabels, "Show Perspective Labels", "Along with the cube, render labels of the cube faces that indicate the current perspective.", wxITEM_CHECK );
@@ -48,7 +48,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxMenuBar* menuBar = new wxMenuBar();
 	menuBar->Append( programMenu, "Program" );
 	menuBar->Append( viewMenu, "View" );
-	menuBar->Append( moveStackMenu, "Rotation Stack" );
+	menuBar->Append( rotationHistoryMenu, "Rotation History" );
 	menuBar->Append( helpMenu, "Help" );
 	SetMenuBar( menuBar );
 
@@ -64,13 +64,12 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	boxSizer->Add( textCtrl, 0, wxALL | wxGROW, 0 );
 	SetSizer( boxSizer );
 
-	wxAcceleratorEntry acceleratorEntries[6];
+	wxAcceleratorEntry acceleratorEntries[5];
 	acceleratorEntries[0].Set( wxACCEL_NORMAL, WXK_F5, ID_CreateCube, createCubeMenuItem );
 	acceleratorEntries[1].Set( wxACCEL_NORMAL, WXK_F6, ID_DestroyCube, destroyCubeMenuItem );
-	acceleratorEntries[2].Set( wxACCEL_NORMAL, WXK_F12, ID_ScrambleCube, scrambleCubeMenuItem );
-	acceleratorEntries[3].Set( wxACCEL_NORMAL, WXK_F9, ID_PopRotationAndApply, popRotationAndApplyMenuItem );
-	acceleratorEntries[4].Set( wxACCEL_SHIFT, WXK_F9, ID_PopRotationAndNoApply, popRotationAndNoApplyMenuItem );
-	acceleratorEntries[5].Set( wxACCEL_NORMAL, WXK_F1, ID_About, aboutMenuItem );
+	acceleratorEntries[2].Set( wxACCEL_NORMAL, WXK_F9, ID_RotationHistoryGoBackward );
+	acceleratorEntries[3].Set( wxACCEL_NORMAL, WXK_F10, ID_RotationHistoryGoForward );
+	acceleratorEntries[4].Set( wxACCEL_NORMAL, WXK_F1, ID_About, aboutMenuItem );
 
 	wxAcceleratorTable acceleratorTable( sizeof( acceleratorEntries ) / sizeof( wxAcceleratorEntry ), acceleratorEntries );
 	SetAcceleratorTable( acceleratorTable );
@@ -84,8 +83,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnShowPerspectiveLabels, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_MENU, &Frame::OnRenderWithPerspectiveProjection, this, ID_RenderWithPerspectiveProjection );
 	Bind( wxEVT_MENU, &Frame::OnRenderWithOrthographicProjection, this, ID_RenderWithOrthographicProjection );
-	Bind( wxEVT_MENU, &Frame::OnPopRotationAndApply, this, ID_PopRotationAndApply );
-	Bind( wxEVT_MENU, &Frame::OnPopRotationAndNoApply, this, ID_PopRotationAndNoApply );
+	Bind( wxEVT_MENU, &Frame::OnRotationHistoryGoForward, this, ID_RotationHistoryGoForward );
+	Bind( wxEVT_MENU, &Frame::OnRotationHistoryGoBackward, this, ID_RotationHistoryGoBackward );
 	Bind( wxEVT_MENU, &Frame::OnExit, this, ID_Exit );
 	Bind( wxEVT_MENU, &Frame::OnAbout, this, ID_About );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_CreateCube );
@@ -97,8 +96,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithPerspectiveProjection );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithOrthographicProjection );
-	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopRotationAndApply );
-	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_PopRotationAndNoApply );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryGoForward );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryGoBackward );
 	Bind( wxEVT_TIMER, &Frame::OnTimer, this, ID_Timer );
 	Bind( wxEVT_COMMAND_TEXT_ENTER, &Frame::OnTextCtrlEnter, this );
 
@@ -142,7 +141,7 @@ void Frame::OnLoadCube( wxCommandEvent& event )
 	else
 	{
 		canvas->Refresh();
-		wxGetApp().rotationStack.clear();
+		wxGetApp().RotationHistoryClear();
 	}
 }
 
@@ -269,7 +268,7 @@ void Frame::OnCreateCube( wxCommandEvent& event )
 	canvas->AdjustSizeFor( wxGetApp().rubiksCube );
 	canvas->Refresh();
 
-	wxGetApp().rotationStack.clear();
+	wxGetApp().RotationHistoryClear();
 }
 
 //==================================================================================================
@@ -282,7 +281,7 @@ void Frame::OnDestroyCube( wxCommandEvent& event )
 	wxGetApp().rubiksCube = 0;
 	canvas->Refresh();
 
-	wxGetApp().rotationStack.clear();
+	wxGetApp().RotationHistoryClear();
 }
 
 //==================================================================================================
@@ -356,17 +355,19 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 }
 
 //==================================================================================================
-void Frame::OnPopRotationAndApply( wxCommandEvent& event )
+void Frame::OnRotationHistoryGoForward( wxCommandEvent& event )
 {
 	RubiksCube::Rotation rotation;
-	if( wxGetApp().PopRotation( &rotation ) )
+	if( wxGetApp().RotationHistoryGoForward( rotation ) )
 		canvas->ApplyRotation( rotation, false );
 }
 
 //==================================================================================================
-void Frame::OnPopRotationAndNoApply( wxCommandEvent& event )
+void Frame::OnRotationHistoryGoBackward( wxCommandEvent& event )
 {
-	wxGetApp().PopRotation();
+	RubiksCube::Rotation rotation;
+	if( wxGetApp().RotationHistoryGoBackward( rotation ) )
+		canvas->ApplyRotation( rotation, false );
 }
 
 //==================================================================================================
@@ -428,10 +429,14 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 			event.Check( canvas->ShowPerspectiveLabels() );
 			break;
 		}
-		case ID_PopRotationAndApply:
-		case ID_PopRotationAndNoApply:
+		case ID_RotationHistoryGoForward:
 		{
-			event.Enable( ( wxGetApp().rubiksCube != 0 && wxGetApp().rotationStack.size() > 0 ) ? true : false );
+			event.Enable( wxGetApp().RotationHistoryCanGoForward() );
+			break;
+		}
+		case ID_RotationHistoryGoBackward:
+		{
+			event.Enable( wxGetApp().RotationHistoryCanGoBackward() );
 			break;
 		}
 	}

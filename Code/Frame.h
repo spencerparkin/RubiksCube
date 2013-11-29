@@ -21,8 +21,8 @@ private:
 		ID_RenderWithPerspectiveProjection,
 		ID_RenderWithOrthographicProjection,
 		ID_ShowPerspectiveLabels,
-		ID_PopRotationAndApply,
-		ID_PopRotationAndNoApply,
+		ID_RotationHistoryGoForward,
+		ID_RotationHistoryGoBackward,
 		ID_Exit,
 		ID_About,
 		ID_Timer,
@@ -37,8 +37,8 @@ private:
 	void OnRenderWithPerspectiveProjection( wxCommandEvent& event );
 	void OnRenderWithOrthographicProjection( wxCommandEvent& event );
 	void OnShowPerspectiveLabels( wxCommandEvent& event );
-	void OnPopRotationAndApply( wxCommandEvent& event );
-	void OnPopRotationAndNoApply( wxCommandEvent& event );
+	void OnRotationHistoryGoForward( wxCommandEvent& event );
+	void OnRotationHistoryGoBackward( wxCommandEvent& event );
 	void OnExit( wxCommandEvent& event );
 	void OnAbout( wxCommandEvent& event );
 	void OnUpdateMenuItemUI( wxUpdateUIEvent& event );

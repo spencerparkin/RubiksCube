@@ -11,14 +11,22 @@ public:
 	virtual bool OnInit( void ) override;
 	virtual int OnExit( void ) override;
 
-	void PushRotation( const RubiksCube::Rotation& rotation );
-	bool PopRotation( RubiksCube::Rotation* rotation = 0 );
+	void RotationHistoryAppend( const RubiksCube::Rotation& rotation );
+	bool RotationHistoryGoForward( RubiksCube::Rotation& rotation );
+	bool RotationHistoryGoBackward( RubiksCube::Rotation& rotation );
+	bool RotationHistoryCanGoForward( void );
+	bool RotationHistoryCanGoBackward( void );
+	void RotationHistoryClear( void );
 
 	enum { ROTATION_STACK_CAPACITY = 50 };
 
 	RubiksCube* rubiksCube;
 
-	RubiksCube::RotationSequence rotationStack;
+private:
+
+	typedef std::vector< RubiksCube::Rotation > RotationHistory;
+	RotationHistory rotationHistory;
+	int rotationHistoryIndex;
 };
 
 //==================================================================================================

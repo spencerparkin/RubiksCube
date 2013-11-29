@@ -109,7 +109,7 @@ bool Canvas::IsAnimating( double tolerance /*= 1e-7*/ ) const
 }
 
 //==================================================================================================
-bool Canvas::ApplyRotation( const RubiksCube::Rotation& rotation, bool pushReverseRotation /*= true*/ )
+bool Canvas::ApplyRotation( const RubiksCube::Rotation& rotation, bool appendToRotationHistory /*= true*/ )
 {
 	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 	if( !rubiksCube )
@@ -119,8 +119,8 @@ bool Canvas::ApplyRotation( const RubiksCube::Rotation& rotation, bool pushRever
 	if( !rubiksCube->Apply( rotation, &this->rotation, &reverseRotation ) )
 		return false;
 
-	if( pushReverseRotation )
-		wxGetApp().PushRotation( reverseRotation );
+	if( appendToRotationHistory )
+		wxGetApp().RotationHistoryAppend( reverseRotation );
 
 	return true;
 }

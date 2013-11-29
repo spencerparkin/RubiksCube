@@ -9,6 +9,7 @@ wxIMPLEMENT_APP( Application );
 Application::Application( void )
 {
 	rubiksCube = 0;
+	rotationHistoryIndex = -1;
 }
 
 //==================================================================================================
@@ -36,25 +37,61 @@ Application::Application( void )
 }
 
 //==================================================================================================
-void Application::PushRotation( const RubiksCube::Rotation& rotation )
+void Application::RotationHistoryAppend( const RubiksCube::Rotation& rotation )
 {
-	if( rotationStack.size() == ROTATION_STACK_CAPACITY )
-		rotationStack.pop_front();
+	// We always append to the history at our current location, which means
+	// forfeiting any rotations that are in our future.
+	if( rotationHistoryIndex != -1 )
+		rotationHistory.resize( rotationHistoryIndex );
+	else
+		rotationHistoryIndex = 0;
 
-	rotationStack.push_back( rotation );
+	rotationHistory.push_back( rotation );
+	rotationHistoryIndex++;
 }
 
 //==================================================================================================
-bool Application::PopRotation( RubiksCube::Rotation* rotation /*= 0*/ )
+bool Application::RotationHistoryGoForward( RubiksCube::Rotation& rotation )
 {
-	if( rotationStack.size() == 0 )
+	if( !RotationHistoryCanGoForward() )
 		return false;
 
-	if( rotation )
-		*rotation = rotationStack.back();
-
-	rotationStack.pop_back();
+	rotation = rotationHistory[ rotationHistoryIndex++ ];
+	rotation.angle *= -1.0;
 	return true;
+}
+
+//==================================================================================================
+bool Application::RotationHistoryGoBackward( RubiksCube::Rotation& rotation )
+{
+	if( !RotationHistoryCanGoBackward() )
+		return false;
+
+	rotation = rotationHistory[ --rotationHistoryIndex ];
+	return true;
+}
+
+//==================================================================================================
+bool Application::RotationHistoryCanGoForward( void )
+{
+	if( rotationHistoryIndex == -1 || rotationHistoryIndex == rotationHistory.size() )
+		return false;
+	return true;
+}
+
+//==================================================================================================
+bool Application::RotationHistoryCanGoBackward( void )
+{
+	if( rotationHistoryIndex == -1 || rotationHistoryIndex == 0 )
+		return false;
+	return true;
+}
+
+//==================================================================================================
+void Application::RotationHistoryClear( void )
+{
+	rotationHistory.clear();
+	rotationHistoryIndex = -1;
 }
 
 // Application.cpp
