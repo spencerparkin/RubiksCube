@@ -54,10 +54,10 @@ SolverForCase3::SolverForCase3( void )
 		PerformStageFunc performStageFunc = performStageFuncArray[ stage ];
 		( this->*performStageFunc )( rubiksCube, rotationSequence );
 		if( rotationSequence.size() > 0 )
-			return true;
+			break;
 	}
 
-	return false;
+	return true;
 }
 
 //==================================================================================================

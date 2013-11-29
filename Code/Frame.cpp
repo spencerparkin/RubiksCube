@@ -243,23 +243,6 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnTimer( wxTimerEvent& event )
 {
-	if( executionSequence.size() == 0 )
-	{
-		RubiksCube* rubiksCube = wxGetApp().rubiksCube;
-		Solver* solver = wxGetApp().solver;
-
-		if( rubiksCube && solver )
-		{
-			if( solver->MakeRotationSequence( rubiksCube, executionSequence ) )
-				RubiksCube::CompressRotationSequence( executionSequence );
-			else
-			{
-				delete solver;
-				wxGetApp().solver = 0;
-			}
-		}
-	}
-	
 	if( !canvas->IsAnimating( animationTolerance ) && executionSequence.size() > 0 )
 	{
 		RubiksCube::RotationSequence::iterator iter = executionSequence.begin();
@@ -282,11 +265,7 @@ void Frame::OnCreateCube( wxCommandEvent& event )
 	if( subCubeMatrixSize < 0 )
 		return;
 
-	int colorCount = ( int )wxGetNumberFromUser( "Enter the number of face colors for the cube in the solved state.", "Colors (1-6):", "Rubik's Cube Color Count", 6, 1, 6 );
-	if( colorCount < 0 )
-		return;
-
-	wxGetApp().rubiksCube = new RubiksCube( subCubeMatrixSize, colorCount );
+	wxGetApp().rubiksCube = new RubiksCube( subCubeMatrixSize );
 	canvas->AdjustSizeFor( wxGetApp().rubiksCube );
 	canvas->Refresh();
 
@@ -332,12 +311,11 @@ void Frame::OnScrambleCube( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnSolveCube( wxCommandEvent& event )
 {
-	if( wxGetApp().solver )
-		return;
-
 	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 	if( !rubiksCube )
 		return;
+
+	Solver* solver = 0;
 
 	switch( rubiksCube->SubCubeMatrixSize() )
 	{
@@ -348,24 +326,31 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 		}
 		case 2:
 		{
-			wxGetApp().solver = new SolverForCase2();
+			solver = new SolverForCase2();
 			break;
 		}
 		case 3:
 		{
-			wxGetApp().solver = new SolverForCase3();
+			solver = new SolverForCase3();
 			break;
 		}
 		default:
 		{
-			wxGetApp().solver = new SolverForCaseGreaterThan3();
+			solver = new SolverForCaseGreaterThan3();
 			break;
 		}
 	}
 
-	// NOTE: If we generated the entire solution sequence here, then we would
-	//       get better compression across that entire sequence than by doing
-	//       the compression of the contiguous sub-sequences as we go along.
+	if( !solver )
+		return;
+
+	if( !solver->MakeEntireSolutionSequence( rubiksCube, executionSequence ) )
+	{
+		executionSequence.clear();
+		wxMessageBox( "An internal error occurred while attempting to solve the cube.", "Error" );
+	}
+
+	delete solver;
 
 	animationTolerance = 0.01;
 }
@@ -418,6 +403,7 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		}
 		case ID_DestroyCube:
 		case ID_SaveCube:
+		case ID_SolveCube:
 		{
 			event.Enable( wxGetApp().rubiksCube != 0 ? true : false );
 			break;
@@ -425,11 +411,6 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		case ID_ScrambleCube:
 		{
 			event.Enable( ( wxGetApp().rubiksCube != 0 && executionSequence.size() == 0 ) ? true : false );
-			break;
-		}
-		case ID_SolveCube:
-		{
-			event.Enable( ( wxGetApp().rubiksCube != 0 && wxGetApp().solver == 0 ) ? true : false );
 			break;
 		}
 		case ID_RenderWithPerspectiveProjection:

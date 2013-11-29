@@ -19,8 +19,6 @@ public:
 	RubiksCube* rubiksCube;
 
 	RubiksCube::RotationSequence rotationStack;
-
-	Solver* solver;
 };
 
 //==================================================================================================

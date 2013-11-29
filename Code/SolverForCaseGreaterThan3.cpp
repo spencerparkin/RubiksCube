@@ -42,7 +42,7 @@ SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( void )
 		// TODO: Get the cube into the reduced state here.
 	}
 
-	return false;
+	return true;
 }
 
 //==================================================================================================

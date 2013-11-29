@@ -5,7 +5,7 @@ class RubiksCube
 {
 public:
 
-	RubiksCube( int subCubeMatrixSize = 3, int colorCount = 6 );
+	RubiksCube( int subCubeMatrixSize = 3 );
 	~RubiksCube( void );
 
 	enum RelativeRotation
@@ -102,6 +102,10 @@ public:
 		Color faceColor[ CUBE_FACE_COUNT ];
 		int x, y, z;
 	};
+
+	typedef void ( *CopyMapFunc )( int& x, int& y, int& z );
+	bool Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc );
+	static void CopyMap( int& x, int& y, int& z );
 
 	const SubCube* Matrix( int x, int y, int z ) const;
 	bool ValidMatrixCoordinates( int x, int y, int z ) const;

@@ -9,14 +9,12 @@ wxIMPLEMENT_APP( Application );
 Application::Application( void )
 {
 	rubiksCube = 0;
-	solver = 0;
 }
 
 //==================================================================================================
 /*virtual*/ Application::~Application( void )
 {
 	delete rubiksCube;
-	delete solver;
 }
 
 //==================================================================================================

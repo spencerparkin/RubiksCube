@@ -3,7 +3,7 @@
 #include "Header.h"
 
 //==================================================================================================
-RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, int colorCount /*= 6*/ )
+RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/ )
 {
 	this->subCubeMatrixSize = subCubeMatrixSize;
 	subCubeMatrix = new SubCube**[ subCubeMatrixSize ];
@@ -17,12 +17,12 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, int colorCount /*= 6*/ )
 			{
 				SubCube* subCube = &subCubeMatrix[x][y][z];
 
-				subCube->faceColor[ NEG_X ] = ( x == 0 ) ? ( colorCount > 1 ? WHITE : GREY ) : GREY;
-				subCube->faceColor[ POS_X ] = ( x == subCubeMatrixSize - 1 ) ? ( colorCount > 0 ? YELLOW : GREY ) : GREY;
-				subCube->faceColor[ NEG_Y ] = ( y == 0 ) ? ( colorCount > 3 ? GREEN : GREY ) : GREY;
-				subCube->faceColor[ POS_Y ] = ( y == subCubeMatrixSize - 1 ) ? ( colorCount > 2 ? BLUE : GREY ) : GREY;
-				subCube->faceColor[ NEG_Z ] = ( z == 0 ) ? ( colorCount > 5 ? ORANGE : GREY ) : GREY;
-				subCube->faceColor[ POS_Z ] = ( z == subCubeMatrixSize - 1 ) ? ( colorCount > 4 ? RED : GREY ) : GREY;
+				subCube->faceColor[ NEG_X ] = ( x == 0 ) ? WHITE : GREY;
+				subCube->faceColor[ POS_X ] = ( x == subCubeMatrixSize - 1 ) ? YELLOW : GREY;
+				subCube->faceColor[ NEG_Y ] = ( y == 0 ) ? GREEN : GREY;
+				subCube->faceColor[ POS_Y ] = ( y == subCubeMatrixSize - 1 ) ? BLUE : GREY;
+				subCube->faceColor[ NEG_Z ] = ( z == 0 ) ? ORANGE : GREY;
+				subCube->faceColor[ POS_Z ] = ( z == subCubeMatrixSize - 1 ) ? RED : GREY;
 
 				subCube->x = x;
 				subCube->y = y;
@@ -42,6 +42,42 @@ RubiksCube::~RubiksCube( void )
 		delete[] subCubeMatrix[x];
 	}
 	delete[] subCubeMatrix;
+}
+
+//==================================================================================================
+bool RubiksCube::Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc )
+{
+	for( int dst_x = 0; dst_x < subCubeMatrixSize; dst_x++ )
+	{
+		for( int dst_y = 0; dst_y < subCubeMatrixSize; dst_y++ )
+		{
+			for( int dst_z = 0; dst_z < subCubeMatrixSize; dst_z++ )
+			{
+				SubCube* dstSubCube = &subCubeMatrix[ dst_x ][ dst_y ][ dst_z ];
+
+				int src_x = dst_x;
+				int src_y = dst_y;
+				int src_z = dst_z;
+
+				copyMapFunc( src_x, src_y, src_z );
+				if( !rubiksCube.ValidMatrixCoordinates( src_x, src_y, src_z ) )
+					return false;
+
+				const SubCube* srcSubCube = &rubiksCube.subCubeMatrix[ src_x ][ src_y ][ src_z ];
+
+				for( int face = 0; face < CUBE_FACE_COUNT; face++ )
+					dstSubCube->faceColor[ face ] = srcSubCube->faceColor[ face ];
+			}
+		}
+	}
+
+	return true;
+}
+
+//==================================================================================================
+/*static*/ void RubiksCube::CopyMap( int& x, int& y, int& z )
+{
+	// Leave the given coordinates untouched.
 }
 
 //==================================================================================================
@@ -818,7 +854,7 @@ bool RubiksCube::SaveToFile( const wxString& file ) const
 		if( !sizeString.ToLong( &size ) )
 			break;
 
-		rubiksCube = new RubiksCube( int( size ), 0 );
+		rubiksCube = new RubiksCube( int( size ) );
 		if( !rubiksCube->LoadFromXml( xmlRoot ) )
 			break;
 
