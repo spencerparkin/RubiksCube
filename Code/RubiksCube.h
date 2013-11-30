@@ -131,6 +131,7 @@ public:
 	static c3ga::vectorE3GA TranslateColor( Color color );
 	static c3ga::vectorE3GA TranslateAxis( Axis axis );
 	static c3ga::vectorE3GA TranslateNormal( Face face );
+	static Face TranslateNormal( const c3ga::vectorE3GA& unitNormal );
 	static bool TranslateGrip( Grip& grip, int x, int y, int z, Face face );
 	static void TranslateAxis( wxString& axisString, Axis axis );
 	bool TranslateRotation( const Perspective& perspective, RelativeRotation relativeRotation, Rotation& rotation ) const;

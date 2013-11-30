@@ -140,6 +140,7 @@ void Frame::OnLoadCube( wxCommandEvent& event )
 		wxMessageBox( "Failed to load file \"" + file + "\".", "Load Failure" );
 	else
 	{
+		canvas->AdjustSizeFor( wxGetApp().rubiksCube );
 		canvas->Refresh();
 		wxGetApp().RotationHistoryClear();
 	}

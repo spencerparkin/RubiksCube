@@ -338,6 +338,28 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga:
 }
 
 //==================================================================================================
+/*static*/ RubiksCube::Face RubiksCube::TranslateNormal( const c3ga::vectorE3GA& unitNormal )
+{
+	Face face = CUBE_FACE_COUNT;
+
+	double epsilon = 1e-7;
+	if( fabs( unitNormal.get_e1() + 1.0 ) < epsilon )
+		face = NEG_X;
+	else if( fabs( unitNormal.get_e1() - 1.0 ) < epsilon )
+		face = POS_X;
+	else if( fabs( unitNormal.get_e2() + 1.0 ) < epsilon )
+		face = NEG_Y;
+	else if( fabs( unitNormal.get_e2() - 1.0 ) < epsilon )
+		face = POS_Y;
+	else if( fabs( unitNormal.get_e3() + 1.0 ) < epsilon )
+		face = NEG_Z;
+	else if( fabs( unitNormal.get_e3() - 1.0 ) < epsilon )
+		face = POS_Z;
+	
+	return face;
+}
+
+//==================================================================================================
 /*static*/ bool RubiksCube::TranslateGrip( Grip& grip, int x, int y, int z, Face face )
 {
 	// If I'm touching the given face of the given sub-cube, what are
