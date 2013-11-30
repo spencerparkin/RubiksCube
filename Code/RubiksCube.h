@@ -116,6 +116,7 @@ public:
 	const SubCube* CollectSubCube( Color* colorArray, int colorCount ) const;
 
 	static bool CubeHasColor( const SubCube* subCube, Color color );
+	static bool CubeHasAllColors( const SubCube* subCube, Color* colorArray, int colorCount );
 
 	typedef std::list< Rotation > RotationSequence;
 	typedef std::list< RelativeRotation > RelativeRotationSequence;

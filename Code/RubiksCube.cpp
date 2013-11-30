@@ -96,16 +96,8 @@ void RubiksCube::CollectSubCubes( Color* colorArray, int colorCount, SubCubeList
 					( ( y == 0 || y == subCubeMatrixSize - 1 ) ? 1 : 0 ) +
 					( ( z == 0 || z == subCubeMatrixSize - 1 ) ? 1 : 0 );
 
-				if( expositionCount == colorCount )
-				{
-					int colorIndex;
-					for( colorIndex = 0; colorIndex < colorCount; colorIndex++ )
-						if( !CubeHasColor( subCube, colorArray[ colorIndex ] ) )
-							break;
-
-					if( colorIndex == colorCount )
-						subCubeList.push_back( subCube );
-				}
+				if( expositionCount == colorCount && CubeHasAllColors( subCube, colorArray, colorCount ) )
+					subCubeList.push_back( subCube );
 			}
 		}
 	}
@@ -128,6 +120,17 @@ const RubiksCube::SubCube* RubiksCube::CollectSubCube( Color* colorArray, int co
 		if( subCube->faceColor[ face ] == color )
 			return true;
 	return false;
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::CubeHasAllColors( const SubCube* subCube, Color* colorArray, int colorCount )
+{
+	int colorIndex;
+	for( colorIndex = 0; colorIndex < colorCount; colorIndex++ )
+		if( !CubeHasColor( subCube, colorArray[ colorIndex ] ) )
+			break;
+
+	return colorIndex == colorCount ? true : false;
 }
 
 //==================================================================================================
@@ -684,6 +687,7 @@ bool RubiksCube::IsInSolvedState( void ) const
 }
 
 //==================================================================================================
+// Notice here that we do not clear the given list before appending to it.
 bool RubiksCube::TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const
 {
 	for( RelativeRotationSequence::const_iterator iter = relativeRotationSequence.begin(); iter != relativeRotationSequence.end(); iter++ )

@@ -7,13 +7,14 @@ c3ga::vectorE3GA SolverForCase3::yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1
 c3ga::vectorE3GA SolverForCase3::zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
 
 RubiksCube::Perspective SolverForCase3::redEdgeOrCornerPerspectives[4];
+RubiksCube::Perspective SolverForCase3::middleEdgePerspectives[4];
 
 RubiksCube::Color SolverForCase3::redEdgeColors[4][2] =
 {
-	RubiksCube::RED, RubiksCube::YELLOW,
-	RubiksCube::RED, RubiksCube::GREEN,
-	RubiksCube::RED, RubiksCube::WHITE,
-	RubiksCube::RED, RubiksCube::BLUE,
+	{ RubiksCube::RED, RubiksCube::YELLOW },
+	{ RubiksCube::RED, RubiksCube::GREEN },
+	{ RubiksCube::RED, RubiksCube::WHITE },
+	{ RubiksCube::RED, RubiksCube::BLUE },
 };
 
 int SolverForCase3::redEdgeTargetLocations[4][3] =
@@ -26,10 +27,10 @@ int SolverForCase3::redEdgeTargetLocations[4][3] =
 
 RubiksCube::Color SolverForCase3::redCornerColors[4][3] =
 {
-	RubiksCube::RED, RubiksCube::YELLOW, RubiksCube::GREEN,
-	RubiksCube::RED, RubiksCube::GREEN, RubiksCube::WHITE,
-	RubiksCube::RED, RubiksCube::WHITE, RubiksCube::BLUE,
-	RubiksCube::RED, RubiksCube::BLUE, RubiksCube::YELLOW,
+	{ RubiksCube::RED, RubiksCube::YELLOW, RubiksCube::GREEN },
+	{ RubiksCube::RED, RubiksCube::GREEN, RubiksCube::WHITE },
+	{ RubiksCube::RED, RubiksCube::WHITE, RubiksCube::BLUE },
+	{ RubiksCube::RED, RubiksCube::BLUE, RubiksCube::YELLOW },
 };
 
 int SolverForCase3::redCornerTargetLocations[4][3] =
@@ -38,6 +39,22 @@ int SolverForCase3::redCornerTargetLocations[4][3] =
 	{ 0, 0, 2 },
 	{ 0, 2, 2 },
 	{ 2, 2, 2 },
+};
+
+RubiksCube::Color SolverForCase3::middleEdgeColors[4][2] =
+{
+	{ RubiksCube::YELLOW, RubiksCube::GREEN },
+	{ RubiksCube::BLUE, RubiksCube::YELLOW },
+	{ RubiksCube::WHITE, RubiksCube::BLUE },
+	{ RubiksCube::GREEN, RubiksCube::WHITE },
+};
+
+int SolverForCase3::middleEdgeTargetLocations[4][3] =
+{
+	{ 2, 0, 1 },
+	{ 2, 2, 1 },
+	{ 0, 2, 1 },
+	{ 0, 0, 1 },
 };
 
 //==================================================================================================
@@ -58,6 +75,22 @@ SolverForCase3::SolverForCase3( void )
 	redEdgeOrCornerPerspectives[3].rAxis = yAxis;
 	redEdgeOrCornerPerspectives[3].uAxis = zAxis;
 	redEdgeOrCornerPerspectives[3].fAxis = xAxis;
+
+	middleEdgePerspectives[0].rAxis = -yAxis;
+	middleEdgePerspectives[0].uAxis = -zAxis;
+	middleEdgePerspectives[0].fAxis = xAxis;
+
+	middleEdgePerspectives[1].rAxis = xAxis;
+	middleEdgePerspectives[1].uAxis = -zAxis;
+	middleEdgePerspectives[1].fAxis = yAxis;
+
+	middleEdgePerspectives[2].rAxis = yAxis;
+	middleEdgePerspectives[2].uAxis = -zAxis;
+	middleEdgePerspectives[2].fAxis = -xAxis;
+
+	middleEdgePerspectives[3].rAxis = -xAxis;
+	middleEdgePerspectives[3].uAxis = -zAxis;
+	middleEdgePerspectives[3].fAxis = -yAxis;
 }
 
 //==================================================================================================
@@ -72,13 +105,14 @@ SolverForCase3::SolverForCase3( void )
 		return false;
 
 	typedef void ( SolverForCase3::* PerformStageFunc )( const RubiksCube*, RubiksCube::RotationSequence& );
-	PerformStageFunc performStageFuncArray[5] =
+	PerformStageFunc performStageFuncArray[6] =
 	{
 		&SolverForCase3::PerformCubeOrientingStage,
 		&SolverForCase3::PerformRedCrossPositioningStage,
 		&SolverForCase3::PerformRedCrossOrientingStage,
 		&SolverForCase3::PerformRedCornersPositioningStage,
 		&SolverForCase3::PerformRedCornersOrientingStage,
+		&SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage,
 	};
 
 	int stageCount = sizeof( performStageFuncArray ) / sizeof( PerformStageFunc );
@@ -397,6 +431,116 @@ void SolverForCase3::PerformRedCornersOrientingStage( const RubiksCube* rubiksCu
 		relativeRotationSequence.push_back( RubiksCube::Di );
 		relativeRotationSequence.push_back( RubiksCube::R );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
+		break;
+	}
+}
+
+//==================================================================================================
+// Here we always look for middle edges in the Z=0 plane first and position/orient them first,
+// because in doing so, it may bubble some of our wrongly positioned/oriented middle edges in
+// the Z=1 plane up into the Z=0 plane where they are ready to be moved into where they should be.
+// Only when we don't find any in the Z=0 plane do we go pull them out of the Z=1 plane and into
+// the Z=0 plane.
+void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+	for( int edge = 0; edge < 4; edge++ )
+	{
+		const RubiksCube::SubCube* subCube = rubiksCube->CollectSubCube( middleEdgeColors[ edge ], 2 );
+
+		if( subCube->z != 0 )
+			continue;
+
+		RubiksCube::Perspective* perspective = &middleEdgePerspectives[ edge ];
+
+		RubiksCube::Rotation rotation;
+		rotation.plane.axis = RubiksCube::Z_AXIS;
+		rotation.plane.index = 0;
+		rotation.angle = 0.0;
+
+		c3ga::vectorE3GA targetAxis;
+		if( subCube->faceColor[ RubiksCube::NEG_Z ] == middleEdgeColors[ edge ][0] )
+			targetAxis = perspective->rAxis;
+		else if( subCube->faceColor[ RubiksCube::NEG_Z ] == middleEdgeColors[ edge ][1] )
+			targetAxis = perspective->fAxis;
+		else
+			wxASSERT( false );
+
+		c3ga::vectorE3GA axis( c3ga::vectorE3GA::coord_e1_e2_e3, double( subCube->x - 1 ), double( subCube->y - 1 ), 0.0 );
+		double dot = c3ga::lc( axis, targetAxis );
+		double epsilon = 1e-7;
+		if( fabs( dot + 1.0 ) < epsilon )
+			rotation.angle = M_PI;
+		else if( fabs( dot - 1.0 ) >= epsilon )
+		{
+			rotation.angle = M_PI / 2.0;
+			c3ga::trivectorE3GA trivector = axis ^ -zAxis ^ targetAxis;
+			rotation.angle *= trivector.get_e1_e2_e3();
+		}
+
+		if( rotation.angle != 0.0 )
+			rotationSequence.push_back( rotation );
+
+		// Move the edge piece into the correct position and orientation.  :)
+		RubiksCube::RelativeRotationSequence relativeRotationSequence;
+		if( subCube->faceColor[ RubiksCube::NEG_Z ] == middleEdgeColors[ edge ][0] )
+		{
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::Fi );
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::F );
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::R );
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::Ri );
+		}
+		else
+		{
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::R );
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::Ri );
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::Fi );
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::F );
+		}
+
+		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
+
+		break;
+	}
+
+	if( rotationSequence.size() > 0 )
+		return;
+
+	for( int edge = 0; edge < 4; edge++ )
+	{
+		const RubiksCube::SubCube* subCube = rubiksCube->CollectSubCube( middleEdgeColors[ edge ], 2 );
+		wxASSERT( subCube->z == 1 );
+
+		RubiksCube::Perspective* perspective = &middleEdgePerspectives[ edge ];
+
+		int* targetLocation = middleEdgeTargetLocations[ edge ];
+		if( subCube->x == targetLocation[0] && subCube->y == targetLocation[1] && subCube->z == targetLocation[2] )
+		{
+			RubiksCube::Face forwardFace = RubiksCube::TranslateNormal( perspective->fAxis );
+			RubiksCube::Face rightFace = RubiksCube::TranslateNormal( perspective->rAxis );
+			
+			if( subCube->faceColor[ forwardFace ] == middleEdgeColors[ edge ][0] && subCube->faceColor[ rightFace ] == middleEdgeColors[ edge ][1] )
+				continue;
+		}
+
+		// Get the edge sub-cube up into the Z=0 plane.
+		RubiksCube::RelativeRotationSequence relativeRotationSequence;
+		relativeRotationSequence.push_back( RubiksCube::R );
+		relativeRotationSequence.push_back( RubiksCube::Ui );
+		relativeRotationSequence.push_back( RubiksCube::Ri );
+		relativeRotationSequence.push_back( RubiksCube::Ui );
+		relativeRotationSequence.push_back( RubiksCube::Fi );
+		relativeRotationSequence.push_back( RubiksCube::U );
+		relativeRotationSequence.push_back( RubiksCube::F );
+		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
+
 		break;
 	}
 }
