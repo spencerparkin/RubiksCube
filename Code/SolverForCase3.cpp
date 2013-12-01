@@ -6,8 +6,8 @@ c3ga::vectorE3GA SolverForCase3::xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0
 c3ga::vectorE3GA SolverForCase3::yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
 c3ga::vectorE3GA SolverForCase3::zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
 
-RubiksCube::Perspective SolverForCase3::redEdgeOrCornerPerspectives[4];
-RubiksCube::Perspective SolverForCase3::middleEdgePerspectives[4];
+RubiksCube::Perspective SolverForCase3::standardPerspectives[4];
+RubiksCube::Perspective SolverForCase3::standardPerspectivesNegated[4];
 
 RubiksCube::Color SolverForCase3::redEdgeColors[4][2] =
 {
@@ -57,40 +57,56 @@ int SolverForCase3::middleEdgeTargetLocations[4][3] =
 	{ 0, 0, 1 },
 };
 
+RubiksCube::Color SolverForCase3::orangeEdgeColors[4][2] =
+{
+	{ RubiksCube::ORANGE, RubiksCube::GREEN },
+	{ RubiksCube::ORANGE, RubiksCube::YELLOW },
+	{ RubiksCube::ORANGE, RubiksCube::BLUE },
+	{ RubiksCube::ORANGE, RubiksCube::WHITE },
+};
+
+int SolverForCase3::orangeEdgeTargetLocations[4][3] =
+{
+	{ 1, 0, 0 },
+	{ 2, 1, 0 },
+	{ 1, 2, 0 },
+	{ 0, 1, 0 },
+};
+
 //==================================================================================================
 SolverForCase3::SolverForCase3( void )
 {
-	redEdgeOrCornerPerspectives[0].rAxis = xAxis;
-	redEdgeOrCornerPerspectives[0].uAxis = zAxis;
-	redEdgeOrCornerPerspectives[0].fAxis = -yAxis;
+	standardPerspectives[0].rAxis = xAxis;
+	standardPerspectives[0].uAxis = zAxis;
+	standardPerspectives[0].fAxis = -yAxis;
 
-	redEdgeOrCornerPerspectives[1].rAxis = -yAxis;
-	redEdgeOrCornerPerspectives[1].uAxis = zAxis;
-	redEdgeOrCornerPerspectives[1].fAxis = -xAxis;
+	standardPerspectives[1].rAxis = -yAxis;
+	standardPerspectives[1].uAxis = zAxis;
+	standardPerspectives[1].fAxis = -xAxis;
 
-	redEdgeOrCornerPerspectives[2].rAxis = -xAxis;
-	redEdgeOrCornerPerspectives[2].uAxis = zAxis;
-	redEdgeOrCornerPerspectives[2].fAxis = yAxis;
+	standardPerspectives[2].rAxis = -xAxis;
+	standardPerspectives[2].uAxis = zAxis;
+	standardPerspectives[2].fAxis = yAxis;
 
-	redEdgeOrCornerPerspectives[3].rAxis = yAxis;
-	redEdgeOrCornerPerspectives[3].uAxis = zAxis;
-	redEdgeOrCornerPerspectives[3].fAxis = xAxis;
+	standardPerspectives[3].rAxis = yAxis;
+	standardPerspectives[3].uAxis = zAxis;
+	standardPerspectives[3].fAxis = xAxis;
 
-	middleEdgePerspectives[0].rAxis = -yAxis;
-	middleEdgePerspectives[0].uAxis = -zAxis;
-	middleEdgePerspectives[0].fAxis = xAxis;
+	standardPerspectivesNegated[0].rAxis = -yAxis;
+	standardPerspectivesNegated[0].uAxis = -zAxis;
+	standardPerspectivesNegated[0].fAxis = xAxis;
 
-	middleEdgePerspectives[1].rAxis = xAxis;
-	middleEdgePerspectives[1].uAxis = -zAxis;
-	middleEdgePerspectives[1].fAxis = yAxis;
+	standardPerspectivesNegated[1].rAxis = xAxis;
+	standardPerspectivesNegated[1].uAxis = -zAxis;
+	standardPerspectivesNegated[1].fAxis = yAxis;
 
-	middleEdgePerspectives[2].rAxis = yAxis;
-	middleEdgePerspectives[2].uAxis = -zAxis;
-	middleEdgePerspectives[2].fAxis = -xAxis;
+	standardPerspectivesNegated[2].rAxis = yAxis;
+	standardPerspectivesNegated[2].uAxis = -zAxis;
+	standardPerspectivesNegated[2].fAxis = -xAxis;
 
-	middleEdgePerspectives[3].rAxis = -xAxis;
-	middleEdgePerspectives[3].uAxis = -zAxis;
-	middleEdgePerspectives[3].fAxis = -yAxis;
+	standardPerspectivesNegated[3].rAxis = -xAxis;
+	standardPerspectivesNegated[3].uAxis = -zAxis;
+	standardPerspectivesNegated[3].fAxis = -yAxis;
 }
 
 //==================================================================================================
@@ -105,7 +121,7 @@ SolverForCase3::SolverForCase3( void )
 		return false;
 
 	typedef void ( SolverForCase3::* PerformStageFunc )( const RubiksCube*, RubiksCube::RotationSequence& );
-	PerformStageFunc performStageFuncArray[6] =
+	PerformStageFunc performStageFuncArray[7] =
 	{
 		&SolverForCase3::PerformCubeOrientingStage,
 		&SolverForCase3::PerformRedCrossPositioningStage,
@@ -113,6 +129,7 @@ SolverForCase3::SolverForCase3( void )
 		&SolverForCase3::PerformRedCornersPositioningStage,
 		&SolverForCase3::PerformRedCornersOrientingStage,
 		&SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage,
+		&SolverForCase3::PerformOrangeCrossOrientationStage,
 	};
 
 	int stageCount = sizeof( performStageFuncArray ) / sizeof( PerformStageFunc );
@@ -261,7 +278,7 @@ void SolverForCase3::PerformRedCrossPositioningStage( const RubiksCube* rubiksCu
 		c3ga::vectorE3GA axis = RubiksCube::TranslateAxis( plane.axis );
 		if( plane.index == 0 )
 			axis = -axis;
-		RubiksCube::Perspective* perspective = &redEdgeOrCornerPerspectives[ edge ];
+		RubiksCube::Perspective* perspective = &standardPerspectives[ edge ];
 		double dot = c3ga::lc( axis, perspective->rAxis );
 		double epsilon = 1e-7;
 		if( fabs( dot + 1.0 ) < epsilon )
@@ -311,7 +328,7 @@ void SolverForCase3::PerformRedCrossOrientingStage( const RubiksCube* rubiksCube
 		if( subCube->faceColor[ RubiksCube::POS_Z ] == RubiksCube::RED )
 			continue;
 
-		RubiksCube::Perspective* perspective = &redEdgeOrCornerPerspectives[ edge ];
+		RubiksCube::Perspective* perspective = &standardPerspectives[ edge ];
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
 		relativeRotationSequence.push_back( RubiksCube::Ri );
 		relativeRotationSequence.push_back( RubiksCube::U );
@@ -346,7 +363,7 @@ void SolverForCase3::PerformRedCornersPositioningStage( const RubiksCube* rubiks
 				break;
 		}
 		wxASSERT( foundCorner != 4 );
-		RubiksCube::Perspective* foundPerspective = &redEdgeOrCornerPerspectives[ foundCorner ];
+		RubiksCube::Perspective* foundPerspective = &standardPerspectives[ foundCorner ];
 
 		// Get the sub-cube into the Z=0 plane if it is not there already.
 		if( subCube->z == 2 )
@@ -360,7 +377,7 @@ void SolverForCase3::PerformRedCornersPositioningStage( const RubiksCube* rubiks
 		rotation.plane.axis = RubiksCube::Z_AXIS;
 		rotation.plane.index = 0;
 		rotation.angle = 0.0;
-		RubiksCube::Perspective* perspective = &redEdgeOrCornerPerspectives[ corner ];
+		RubiksCube::Perspective* perspective = &standardPerspectives[ corner ];
 		double dot = c3ga::lc( perspective->rAxis, foundPerspective->rAxis );
 		double epsilon = 1e-7;
 		if( fabs( dot + 1.0 ) < epsilon )
@@ -421,7 +438,7 @@ void SolverForCase3::PerformRedCornersOrientingStage( const RubiksCube* rubiksCu
 		if( subCube->faceColor[ RubiksCube::POS_Z ] == RubiksCube::RED )
 			continue;
 
-		RubiksCube::Perspective* perspective = &redEdgeOrCornerPerspectives[ corner ];
+		RubiksCube::Perspective* perspective = &standardPerspectives[ corner ];
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
 		relativeRotationSequence.push_back( RubiksCube::Ri );
 		relativeRotationSequence.push_back( RubiksCube::Di );
@@ -450,7 +467,7 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 		if( subCube->z != 0 )
 			continue;
 
-		RubiksCube::Perspective* perspective = &middleEdgePerspectives[ edge ];
+		RubiksCube::Perspective* perspective = &standardPerspectivesNegated[ edge ];
 
 		RubiksCube::Rotation rotation;
 		rotation.plane.axis = RubiksCube::Z_AXIS;
@@ -518,7 +535,7 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 		const RubiksCube::SubCube* subCube = rubiksCube->CollectSubCube( middleEdgeColors[ edge ], 2 );
 		wxASSERT( subCube->z == 1 );
 
-		RubiksCube::Perspective* perspective = &middleEdgePerspectives[ edge ];
+		RubiksCube::Perspective* perspective = &standardPerspectivesNegated[ edge ];
 
 		int* targetLocation = middleEdgeTargetLocations[ edge ];
 		if( subCube->x == targetLocation[0] && subCube->y == targetLocation[1] && subCube->z == targetLocation[2] )
@@ -543,6 +560,137 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 
 		break;
 	}
+}
+
+//==================================================================================================
+void SolverForCase3::PerformOrangeCrossOrientationStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+	int properOrientationCount = 0;
+	bool orientedProperly[4];
+
+	int edge;
+	for( edge = 0; edge < 4; edge++ )
+	{
+		int* location = orangeEdgeTargetLocations[ edge ];
+		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( location[0], location[1], 0 );
+
+		orientedProperly[ edge ] = false;
+		if( subCube->faceColor[ RubiksCube::NEG_Z ] == RubiksCube::ORANGE )
+		{
+			orientedProperly[ edge ] = true;
+			properOrientationCount++;
+		}
+	}
+
+	RubiksCube::Perspective perspective;
+	RubiksCube::RelativeRotationSequence relativeRotationSequence;
+
+	enum Sequence
+	{
+		NO_SEQUENCE,
+		SEQUENCE_NORMAL,
+		SEQUENCE_INVERSE,
+	};
+
+	Sequence sequence = NO_SEQUENCE;
+
+	switch( properOrientationCount )
+	{
+		case 0:		// Take us to case 2.
+		{
+			sequence = SEQUENCE_NORMAL;
+			perspective = standardPerspectivesNegated[0];	// Choose any of the 4 perspectives arbitrarily.
+			break;
+		}
+		case 1:		// Take us to case 2.
+		{
+			sequence = SEQUENCE_NORMAL;
+			for( edge = 0; edge < 4; edge++ )
+			{
+				if( orientedProperly[ edge ] )
+				{
+					perspective = standardPerspectivesNegated[ edge ];
+					break;
+				}
+			}
+			wxASSERT( edge < 4 );
+			break;
+		}
+		case 2:		// Take us to case 4.
+		{
+			if( orientedProperly[0] && orientedProperly[2] )
+			{
+				sequence = SEQUENCE_NORMAL;
+				perspective = standardPerspectivesNegated[0];	// Choose between 2 of the 4 perspectives arbitrarily.
+			}
+			else if( orientedProperly[1] && orientedProperly[3] )
+			{
+				sequence = SEQUENCE_NORMAL;
+				perspective = standardPerspectivesNegated[1];	// Choose between 2 of the 4 perspectives arbitrarily.
+			}
+			else
+			{
+				sequence = SEQUENCE_INVERSE;
+				for( edge = 0; edge < 4; edge++ )
+				{
+					if( orientedProperly[ edge ] && orientedProperly[ ( edge + 1 ) % 4 ] )
+					{
+						perspective = standardPerspectivesNegated[ ( edge + 2 ) % 4 ];	// Choose the only correct perspective.
+						break;
+					}
+				}
+				wxASSERT( edge < 4 );
+			}
+
+			break;
+		}
+		case 3:		// Take us to case 1.
+		{
+			sequence = SEQUENCE_NORMAL;
+			for( edge = 0; edge < 4; edge++ )
+			{
+				if( !orientedProperly[ edge ] && orientedProperly[ ( edge + 1 ) % 4 ] )
+				{
+					perspective = standardPerspectivesNegated[ ( edge + 2 ) % 4 ];
+					break;
+				}
+			}
+			wxASSERT( edge < 4 );
+			break;
+		}
+		case 4:		// In this case, our work is done!
+		{
+			sequence = NO_SEQUENCE;
+			break;
+		}
+	}
+
+	switch( sequence )
+	{
+		case SEQUENCE_NORMAL:
+		{
+			relativeRotationSequence.push_back( RubiksCube::F );
+			relativeRotationSequence.push_back( RubiksCube::R );
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::Ri );
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::Fi );
+			break;
+		}
+		case SEQUENCE_INVERSE:
+		{
+			relativeRotationSequence.push_back( RubiksCube::F );
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::R );
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::Ri );
+			relativeRotationSequence.push_back( RubiksCube::Fi );
+			break;
+		}
+	}
+
+	if( relativeRotationSequence.size() > 0 )
+		rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, rotationSequence );
 }
 
 // SolverForCase3.cpp

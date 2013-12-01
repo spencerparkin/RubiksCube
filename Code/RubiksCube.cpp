@@ -81,6 +81,7 @@ bool RubiksCube::Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc )
 }
 
 //==================================================================================================
+// Notice here that we don't clear the given list.  We just append to it.
 void RubiksCube::CollectSubCubes( Color* colorArray, int colorCount, SubCubeList& subCubeList ) const
 {
 	for( int x = 0; x < subCubeMatrixSize; x++ )
