@@ -40,30 +40,6 @@ private:
 	static int orangeCornerTargetLocations[4][3];
 
 	static c3ga::vectorE3GA xAxis, yAxis, zAxis;
-
-	struct CycleAction
-	{
-		enum CycleType
-		{
-			NO_CYCLE,
-			QUAD_CYCLE_FORWARD,
-			QUAD_CYCLE_BACKWARD,
-			TRI_CYCLE_FORWARD,
-			TRI_CYCLE_BACKWARD,
-		};
-
-		CycleType cycleType;
-
-		union
-		{
-			int triCycleInvariantIndex;
-			int quadCycleCount;
-		};
-	};
-
-	typedef std::list< CycleAction > CycleActionList;
-
-	static void SolveQuadAndTriCycleProblem( int* order, CycleActionList& cycleActionList, bool solveCompletely = false );
 };
 
 // SolverForCase3.h
