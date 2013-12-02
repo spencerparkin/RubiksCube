@@ -19,7 +19,10 @@ private:
 	void PerformRedCornersPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
 	void PerformRedCornersOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
 	void PerformMiddleEdgePositioningAndOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
-	void PerformOrangeCrossOrientationStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	void PerformOrangeCrossOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	void PerformOrangeCrossPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	void PerformOrangeCornerPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	void PerformOrangeCornerOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
 
 	static RubiksCube::Perspective standardPerspectives[4];
 	static RubiksCube::Perspective standardPerspectivesNegated[4];
@@ -35,6 +38,28 @@ private:
 	static int orangeEdgeTargetLocations[4][3];
 
 	static c3ga::vectorE3GA xAxis, yAxis, zAxis;
+
+	struct CycleAction
+	{
+		enum CycleType
+		{
+			NO_CYCLE,
+			QUAD_CYCLE_FORWARD,
+			QUAD_CYCLE_BACKWARD,
+			TRI_CYCLE_FORWARD,
+			TRI_CYCLE_BACKWARD,
+		};
+
+		CycleType cycleType;
+
+		union
+		{
+			int triCycleInvariantIndex;
+			int quadCycleCount;
+		};
+	};
+
+	static void SolveQuadAndTriCycleProblem( int* order, CycleAction& cycleAction );
 };
 
 // SolverForCase3.h

@@ -121,7 +121,7 @@ SolverForCase3::SolverForCase3( void )
 		return false;
 
 	typedef void ( SolverForCase3::* PerformStageFunc )( const RubiksCube*, RubiksCube::RotationSequence& );
-	PerformStageFunc performStageFuncArray[7] =
+	PerformStageFunc performStageFuncArray[8] =
 	{
 		&SolverForCase3::PerformCubeOrientingStage,
 		&SolverForCase3::PerformRedCrossPositioningStage,
@@ -129,7 +129,8 @@ SolverForCase3::SolverForCase3( void )
 		&SolverForCase3::PerformRedCornersPositioningStage,
 		&SolverForCase3::PerformRedCornersOrientingStage,
 		&SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage,
-		&SolverForCase3::PerformOrangeCrossOrientationStage,
+		&SolverForCase3::PerformOrangeCrossOrientingStage,
+		&SolverForCase3::PerformOrangeCrossPositioningStage,
 	};
 
 	int stageCount = sizeof( performStageFuncArray ) / sizeof( PerformStageFunc );
@@ -563,7 +564,7 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 }
 
 //==================================================================================================
-void SolverForCase3::PerformOrangeCrossOrientationStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
 	int properOrientationCount = 0;
 	bool orientedProperly[4];
@@ -691,6 +692,171 @@ void SolverForCase3::PerformOrangeCrossOrientationStage( const RubiksCube* rubik
 
 	if( relativeRotationSequence.size() > 0 )
 		rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, rotationSequence );
+}
+
+//==================================================================================================
+void SolverForCase3::PerformOrangeCrossPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+	int order[4];
+	for( int edge = 0; edge < 4; edge++ )
+	{
+		int* location = orangeEdgeTargetLocations[ edge ];
+		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( location[0], location[1], 0 );
+
+		c3ga::vectorE3GA normal( c3ga::vectorE3GA::coord_e1_e2_e3, double( location[0] - 1 ), double( location[1] - 1 ), 0.0 );
+		RubiksCube::Face face = RubiksCube::TranslateNormal( normal );
+		RubiksCube::Color color = subCube->faceColor[ face ];
+
+		int index;
+		for( index = 0; index < 4; index++ )
+			if( orangeEdgeColors[ index ][1] == color )
+				break;
+
+		wxASSERT( index != 4 );
+		order[ edge ] = index;
+	}
+
+	CycleAction cycleAction;
+	SolveQuadAndTriCycleProblem( order, cycleAction );
+
+	RubiksCube::RelativeRotationSequence relativeRotationSequence;
+	RubiksCube::Perspective perspective;
+
+	switch( cycleAction.cycleType )
+	{
+		case CycleAction::QUAD_CYCLE_FORWARD:
+		{
+			for( int count = 0; count < cycleAction.quadCycleCount; count++ )
+				relativeRotationSequence.push_back( RubiksCube::U );
+			perspective = standardPerspectivesNegated[0];
+			break;
+		}
+		case CycleAction::QUAD_CYCLE_BACKWARD:
+		{
+			for( int count = 0; count < cycleAction.quadCycleCount; count++ )
+				relativeRotationSequence.push_back( RubiksCube::Ui );
+			perspective = standardPerspectivesNegated[0];
+			break;
+		}
+		case CycleAction::TRI_CYCLE_FORWARD:
+		{
+			relativeRotationSequence.push_back( RubiksCube::R );
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::Ri );
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::R );
+			relativeRotationSequence.push_back( RubiksCube::Ui );
+			relativeRotationSequence.push_back( RubiksCube::R );
+			
+			perspective = standardPerspectivesNegated[ ( cycleAction.triCycleInvariantIndex + 3 ) % 4 ];
+			break;
+		}
+		case CycleAction::TRI_CYCLE_BACKWARD:
+		{
+			relativeRotationSequence.push_back( RubiksCube::R );
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::Ri );
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::R );
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::U );
+			relativeRotationSequence.push_back( RubiksCube::Ri );
+
+			perspective = standardPerspectivesNegated[ ( cycleAction.triCycleInvariantIndex + 3 ) % 4 ];
+			break;
+		}
+	}
+
+	if( relativeRotationSequence.size() > 0 )
+		rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, rotationSequence );
+}
+
+//==================================================================================================
+void SolverForCase3::PerformOrangeCornerPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+}
+
+//==================================================================================================
+void SolverForCase3::PerformOrangeCornerOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+}
+
+//==================================================================================================
+// What I'm calling here the quad- and tri-cycle problem is the problem of having
+// some permutation of the integers in [0,3] and wanting to know what sequence of
+// quad- and tri-cycles can be performed, (the smallest such sequence being the most
+// desirable), such that order of these integers is sorted to {0,1,2,3}.  There are
+// 4!=24 cases to consider, but here we only consider 3!=6 cases by normalizing the
+// problem, and then unormalizing it, if you will.  A quad-cycle rotates all 4 numbers
+// forward or backwards, with one number wrapping back around.  A try-cycle leaves one
+// of the 4 numbers invariant in terms of its order position, while the remaining 3 are
+// cycled forward or backwards in terms of their ordering with wrapping as well.  The
+// returned value of this routine is not meant to necessarily solve the problem in one
+// step; rather, repeated calls to this routine with the returned action applied to the
+// given order at each step should eventually lead to the solution.
+/*static*/ void SolverForCase3::SolveQuadAndTriCycleProblem( int* order, CycleAction& cycleAction )
+{
+	// In some of the cases to follow there is more than one good answer, and in not all
+	// of these cases am I completely sure that I found the fasted path to the solution.
+
+	cycleAction.quadCycleCount = 1;
+
+	int normalizingShift = 0;
+	for( normalizingShift = 0; normalizingShift < 4; normalizingShift++ )
+		if( order[ normalizingShift ] == normalizingShift )
+			break;
+
+	if( normalizingShift == 4 )
+	{
+		cycleAction.cycleType = CycleAction::QUAD_CYCLE_BACKWARD;
+		for( cycleAction.quadCycleCount = 0; cycleAction.quadCycleCount < 4; cycleAction.quadCycleCount++ )
+			if( order[ cycleAction.quadCycleCount ] == 0 )
+				break;
+		wxASSERT( cycleAction.quadCycleCount < 4 );
+		return;
+	}
+
+	int normalizedOrder[4];
+	for( int index = 0; index < 4; index++ )
+		normalizedOrder[ index ] = order[ ( index + normalizingShift ) % 4 ];
+
+	int normalizingOffset = 4 - normalizedOrder[0];
+	for( int index = 0; index < 4; index++ )
+		normalizedOrder[ index ] = ( normalizingOffset + normalizedOrder[ index ] ) % 4;
+
+	if( normalizedOrder[1] == 1 )
+	{
+		if( normalizedOrder[2] == 2 && normalizedOrder[3] == 3 )
+			cycleAction.cycleType = CycleAction::NO_CYCLE;
+		else if( normalizedOrder[2] == 3 && normalizedOrder[3] == 2 )
+			cycleAction.cycleType = CycleAction::QUAD_CYCLE_BACKWARD;
+		else
+			wxASSERT( false );
+	}
+	else if( normalizedOrder[1] == 2 )
+	{
+		if( normalizedOrder[2] == 1 && normalizedOrder[3] == 3 )
+			cycleAction.cycleType = CycleAction::QUAD_CYCLE_BACKWARD;
+		else if( normalizedOrder[2] == 3 && normalizedOrder[3] == 1 )
+			cycleAction.cycleType = CycleAction::TRI_CYCLE_FORWARD;
+		else
+			wxASSERT( false );
+	}
+	else if( normalizedOrder[1] == 3 )
+	{
+		if( normalizedOrder[2] == 1 && normalizedOrder[3] == 2 )
+			cycleAction.cycleType = CycleAction::TRI_CYCLE_BACKWARD;
+		else if( normalizedOrder[2] == 2 && normalizedOrder[3] == 1 )
+			cycleAction.cycleType = CycleAction::TRI_CYCLE_FORWARD;
+	}
+	else
+	{
+		wxASSERT( false );
+	}
+
+	if( cycleAction.cycleType == CycleAction::TRI_CYCLE_FORWARD || cycleAction.cycleType == CycleAction::TRI_CYCLE_BACKWARD )
+		cycleAction.triCycleInvariantIndex = normalizingShift;
 }
 
 // SolverForCase3.cpp
