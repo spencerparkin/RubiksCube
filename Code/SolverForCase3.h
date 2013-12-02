@@ -31,11 +31,13 @@ private:
 	static RubiksCube::Color redCornerColors[4][3];
 	static RubiksCube::Color middleEdgeColors[4][2];
 	static RubiksCube::Color orangeEdgeColors[4][2];
+	static RubiksCube::Color orangeCornerColors[4][3];
 
 	static int redEdgeTargetLocations[4][3];
 	static int redCornerTargetLocations[4][3];
 	static int middleEdgeTargetLocations[4][3];
 	static int orangeEdgeTargetLocations[4][3];
+	static int orangeCornerTargetLocations[4][3];
 
 	static c3ga::vectorE3GA xAxis, yAxis, zAxis;
 
@@ -59,7 +61,9 @@ private:
 		};
 	};
 
-	static void SolveQuadAndTriCycleProblem( int* order, CycleAction& cycleAction );
+	typedef std::list< CycleAction > CycleActionList;
+
+	static void SolveQuadAndTriCycleProblem( int* order, CycleActionList& cycleActionList, bool solveCompletely = false );
 };
 
 // SolverForCase3.h
