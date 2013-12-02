@@ -20,9 +20,9 @@ private:
 	void PerformRedCornersOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
 	void PerformMiddleEdgePositioningAndOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
 	void PerformOrangeCrossOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
-	void PerformOrangeCrossPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
-	void PerformOrangeCornerPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	void PerformOrangeCrossAndCornersRelativePositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
 	void PerformOrangeCornerOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	void PerformOrangeCrossAndCornersPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence );
 
 	static RubiksCube::Perspective standardPerspectives[4];
 	static RubiksCube::Perspective standardPerspectivesNegated[4];

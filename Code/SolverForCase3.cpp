@@ -137,7 +137,7 @@ SolverForCase3::SolverForCase3( void )
 		return false;
 
 	typedef void ( SolverForCase3::* PerformStageFunc )( const RubiksCube*, RubiksCube::RotationSequence& );
-	PerformStageFunc performStageFuncArray[9] =
+	PerformStageFunc performStageFuncArray[10] =
 	{
 		&SolverForCase3::PerformCubeOrientingStage,
 		&SolverForCase3::PerformRedCrossPositioningStage,
@@ -146,8 +146,9 @@ SolverForCase3::SolverForCase3( void )
 		&SolverForCase3::PerformRedCornersOrientingStage,
 		&SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage,
 		&SolverForCase3::PerformOrangeCrossOrientingStage,
-		&SolverForCase3::PerformOrangeCrossPositioningStage,
-		&SolverForCase3::PerformOrangeCornerPositioningStage,
+		&SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage,
+		&SolverForCase3::PerformOrangeCornerOrientingStage,
+		&SolverForCase3::PerformOrangeCrossAndCornersPositioningStage,
 	};
 
 	int stageCount = sizeof( performStageFuncArray ) / sizeof( PerformStageFunc );
@@ -712,17 +713,159 @@ void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksC
 }
 
 //==================================================================================================
-void SolverForCase3::PerformOrangeCrossPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
+	int edgeQuad[4];
+	for( int edge = 0; edge < 4; edge++ )
+	{
+		int* location = orangeEdgeTargetLocations[ edge ];
+		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( location[0], location[1], 0 );
+
+		c3ga::vectorE3GA normal( c3ga::vectorE3GA::coord_e1_e2_e3, double( location[0] - 1 ), double( location[1] - 1 ), 0.0 );
+		RubiksCube::Face face = RubiksCube::TranslateNormal( normal );
+		RubiksCube::Color color = subCube->faceColor[ face ];
+
+		int index;
+		for( index = 0; index < 4; index++ )
+			if( orangeEdgeColors[ index ][1] == color )
+				break;
+
+		wxASSERT( index != 4 );
+		edgeQuad[ edge ] = index;
+	}
+
+	if( !TriCycleSolver::IsQuadInOrder( edgeQuad ) )
+	{
+		TriCycleSolver::TriCycleSequence triCycleSequence;
+		bool found = TriCycleSolver::FindSmallestTriCycleSequenceThatOrdersQuad( edgeQuad, triCycleSequence );
+		wxASSERT( found );
+
+		for( TriCycleSolver::TriCycleSequence::iterator iter = triCycleSequence.begin(); iter != triCycleSequence.end(); iter++ )
+		{
+			TriCycleSolver::TriCycle triCycle = *iter;
+
+			RubiksCube::RelativeRotationSequence relativeRotationSequence;
+			RubiksCube::Perspective perspective;
+
+			switch( triCycle.direction )
+			{
+				case TriCycleSolver::TriCycle::FORWARD:
+				{
+					relativeRotationSequence.push_back( RubiksCube::R );
+					relativeRotationSequence.push_back( RubiksCube::Ui );
+					relativeRotationSequence.push_back( RubiksCube::Ui );
+					relativeRotationSequence.push_back( RubiksCube::Ri );
+					relativeRotationSequence.push_back( RubiksCube::Ui );
+					relativeRotationSequence.push_back( RubiksCube::R );
+					relativeRotationSequence.push_back( RubiksCube::Ui );
+					relativeRotationSequence.push_back( RubiksCube::R );
+					
+					perspective = standardPerspectivesNegated[ ( triCycle.invariantIndex + 3 ) % 4 ];
+					break;
+				}
+				case TriCycleSolver::TriCycle::BACKWARD:
+				{
+					relativeRotationSequence.push_back( RubiksCube::R );
+					relativeRotationSequence.push_back( RubiksCube::U );
+					relativeRotationSequence.push_back( RubiksCube::Ri );
+					relativeRotationSequence.push_back( RubiksCube::U );
+					relativeRotationSequence.push_back( RubiksCube::R );
+					relativeRotationSequence.push_back( RubiksCube::U );
+					relativeRotationSequence.push_back( RubiksCube::U );
+					relativeRotationSequence.push_back( RubiksCube::Ri );
+
+					perspective = standardPerspectivesNegated[ ( triCycle.invariantIndex + 3 ) % 4 ];
+					break;
+				}
+			}
+
+			if( relativeRotationSequence.size() > 0 )
+				rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, rotationSequence );
+		}
+
+		return;
+	}
+
+	// Notice that we must consider the corner relative positioning after that of the edges,
+	// because the rotation sequences we use to position the corners leaves the edges invariant,
+	// but the opposite is not true.  That is, the sequences we use to position the edges do
+	// not leave the corner positions invariant.
+	
+	int cornerQuad[4];
+	for( int corner = 0; corner < 4; corner++ )
+	{
+		int* location = orangeCornerTargetLocations[ corner ];
+		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( location[0], location[1], 0 );
+
+		int index;
+		for( index = 0; index < 4; index++ )
+			if( RubiksCube::CubeHasAllColors( subCube, orangeCornerColors[ index ], 3 ) )
+				break;
+		
+		wxASSERT( index != 4 );
+		cornerQuad[ corner ] = index;
+	}
+
+	if( !TriCycleSolver::AreQuadsInSameOrder( cornerQuad, edgeQuad ) )
+	{
+		// I must admit that I have no proof that such a sequence will always be found.
+		TriCycleSolver::TriCycleSequence triCycleSequence;
+		bool found = TriCycleSolver::FindSmallestTriCycleSequenceThatOrdersQuadTheSame( cornerQuad, edgeQuad, triCycleSequence );
+		wxASSERT( found );
+
+		for( TriCycleSolver::TriCycleSequence::iterator iter = triCycleSequence.begin(); iter != triCycleSequence.end(); iter++ )
+		{
+			TriCycleSolver::TriCycle triCycle = *iter;
+
+			RubiksCube::RelativeRotationSequence relativeRotationSequence;
+			RubiksCube::Perspective perspective;
+
+			switch( triCycle.direction )
+			{
+				case TriCycleSolver::TriCycle::FORWARD:
+				{
+					relativeRotationSequence.push_back( RubiksCube::Li );
+					relativeRotationSequence.push_back( RubiksCube::U );
+					relativeRotationSequence.push_back( RubiksCube::R );
+					relativeRotationSequence.push_back( RubiksCube::Ui );
+					relativeRotationSequence.push_back( RubiksCube::L );
+					relativeRotationSequence.push_back( RubiksCube::U );
+					relativeRotationSequence.push_back( RubiksCube::Ri );
+					relativeRotationSequence.push_back( RubiksCube::Ui );
+					
+					perspective = standardPerspectivesNegated[ triCycle.invariantIndex ];
+					break;
+				}
+				case TriCycleSolver::TriCycle::BACKWARD:
+				{
+					relativeRotationSequence.push_back( RubiksCube::U );
+					relativeRotationSequence.push_back( RubiksCube::R );
+					relativeRotationSequence.push_back( RubiksCube::Ui );
+					relativeRotationSequence.push_back( RubiksCube::Li );
+					relativeRotationSequence.push_back( RubiksCube::U );
+					relativeRotationSequence.push_back( RubiksCube::Ri );
+					relativeRotationSequence.push_back( RubiksCube::Ui );
+					relativeRotationSequence.push_back( RubiksCube::L );
+
+					perspective = standardPerspectivesNegated[ triCycle.invariantIndex ];
+					break;
+				}
+			}
+
+			if( relativeRotationSequence.size() > 0 )
+				rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, rotationSequence );
+		}
+	}
 }
 
-//==================================================================================================
-void SolverForCase3::PerformOrangeCornerPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
-{
-}
 
 //==================================================================================================
 void SolverForCase3::PerformOrangeCornerOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+}
+
+//==================================================================================================
+void SolverForCase3::PerformOrangeCrossAndCornersPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
 }
 
