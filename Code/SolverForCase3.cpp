@@ -137,7 +137,7 @@ SolverForCase3::SolverForCase3( void )
 		return false;
 
 	typedef void ( SolverForCase3::* PerformStageFunc )( const RubiksCube*, RubiksCube::RotationSequence& );
-	PerformStageFunc performStageFuncArray[9] =
+	PerformStageFunc performStageFuncArray[10] =
 	{
 		&SolverForCase3::PerformCubeOrientingStage,
 		&SolverForCase3::PerformRedCrossPositioningStage,
@@ -148,7 +148,7 @@ SolverForCase3::SolverForCase3( void )
 		&SolverForCase3::PerformOrangeCrossOrientingStage,
 		&SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage,
 		&SolverForCase3::PerformOrangeCornerOrientingStage,
-		//&SolverForCase3::PerformOrangeCrossAndCornersPositioningStage,
+		&SolverForCase3::PerformOrangeCrossAndCornersPositioningStage,
 	};
 
 	int stageCount = sizeof( performStageFuncArray ) / sizeof( PerformStageFunc );
@@ -937,8 +937,34 @@ void SolverForCase3::PerformOrangeCornerOrientingStage( const RubiksCube* rubiks
 }
 
 //==================================================================================================
+// At this point, the relative positions of all sub-cubes in the Z=0 plane are correct,
+// as well as their orientations.  Here we get the actuals positions of these sub-cubes
+// correct; and to do so, we need only rotation one of them into the correct position, as
+// the rest will follow, being relatively positioned as they should be.
 void SolverForCase3::PerformOrangeCrossAndCornersPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
+	int edge;
+	for( edge = 0; edge < 4; edge++ )
+	{
+		int* location = orangeEdgeTargetLocations[ edge ];
+		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( location[0], location[1], 0 );
+		if( RubiksCube::CubeHasAllColors( subCube, orangeEdgeColors[0], 2 ) )
+			break;
+	}
+	wxASSERT( edge < 4 );
+	
+	int* targetLocation = orangeEdgeTargetLocations[0];
+	c3ga::vectorE3GA targetVec( c3ga::vectorE3GA::coord_e1_e2_e3, double( targetLocation[0] - 1 ), double( targetLocation[1] - 1 ), 0.0 );
+
+	int* location = orangeEdgeTargetLocations[ edge ];
+	c3ga::vectorE3GA vec( c3ga::vectorE3GA::coord_e1_e2_e3, double( location[0] - 1 ), double( location[1] - 1 ), 0.0 );
+
+	RubiksCube::Rotation rotation;
+	rotation.plane.axis = RubiksCube::Z_AXIS;
+	rotation.plane.index = 0;
+	rotation.angle = CalculateRotationAngle( vec, targetVec, zAxis );
+	if( rotation.angle != 0.0 )
+		rotationSequence.push_back( rotation );
 }
 
 //==================================================================================================
