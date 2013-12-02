@@ -137,7 +137,7 @@ SolverForCase3::SolverForCase3( void )
 		return false;
 
 	typedef void ( SolverForCase3::* PerformStageFunc )( const RubiksCube*, RubiksCube::RotationSequence& );
-	PerformStageFunc performStageFuncArray[10] =
+	PerformStageFunc performStageFuncArray[9] =
 	{
 		&SolverForCase3::PerformCubeOrientingStage,
 		&SolverForCase3::PerformRedCrossPositioningStage,
@@ -148,7 +148,7 @@ SolverForCase3::SolverForCase3( void )
 		&SolverForCase3::PerformOrangeCrossOrientingStage,
 		&SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage,
 		&SolverForCase3::PerformOrangeCornerOrientingStage,
-		&SolverForCase3::PerformOrangeCrossAndCornersPositioningStage,
+		//&SolverForCase3::PerformOrangeCrossAndCornersPositioningStage,
 	};
 
 	int stageCount = sizeof( performStageFuncArray ) / sizeof( PerformStageFunc );
@@ -858,15 +858,106 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 	}
 }
 
-
 //==================================================================================================
 void SolverForCase3::PerformOrangeCornerOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
+	// Collect a list of all the improperly-oriented corners.
+	std::list< int > improperlyOrientedCornerList;
+	int corner;
+	for( corner = 0; corner < 4; corner++ )
+	{
+		int* location = orangeCornerTargetLocations[ corner ];
+		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( location[0], location[1], 0 );
+		if( subCube->faceColor[ RubiksCube::NEG_Z ] != RubiksCube::ORANGE )
+			improperlyOrientedCornerList.push_back( corner );
+	}
+
+	if( improperlyOrientedCornerList.size() == 0 )
+		return;
+
+	corner = improperlyOrientedCornerList.front();
+	RubiksCube::Perspective perspective = standardPerspectivesNegated[ corner ];
+	
+	int* location = orangeCornerTargetLocations[ corner ];
+	c3ga::vectorE3GA perspectiveCornerVec( c3ga::vectorE3GA::coord_e1_e2_e3, double( location[0] - 1 ), double( location[1] - 1 ), 0.0 );
+	perspectiveCornerVec = c3ga::unit( perspectiveCornerVec );
+
+	RubiksCube::RelativeRotationSequence relativeRotationSequence;
+	relativeRotationSequence.push_back( RubiksCube::Ri );
+	relativeRotationSequence.push_back( RubiksCube::Di );
+	relativeRotationSequence.push_back( RubiksCube::R );
+	relativeRotationSequence.push_back( RubiksCube::D );
+	relativeRotationSequence.push_back( RubiksCube::Ri );
+	relativeRotationSequence.push_back( RubiksCube::Di );
+	relativeRotationSequence.push_back( RubiksCube::R );
+	relativeRotationSequence.push_back( RubiksCube::D );
+
+	RubiksCube::RelativeRotationSequence relativeRotationSequenceInverse;
+	relativeRotationSequenceInverse.push_back( RubiksCube::Di );
+	relativeRotationSequenceInverse.push_back( RubiksCube::Ri );
+	relativeRotationSequenceInverse.push_back( RubiksCube::D );
+	relativeRotationSequenceInverse.push_back( RubiksCube::R );
+	relativeRotationSequenceInverse.push_back( RubiksCube::Di );
+	relativeRotationSequenceInverse.push_back( RubiksCube::Ri );
+	relativeRotationSequenceInverse.push_back( RubiksCube::D );
+	relativeRotationSequenceInverse.push_back( RubiksCube::R );
+
+	while( improperlyOrientedCornerList.size() > 0 )
+	{
+		std::list< int >::iterator iter = improperlyOrientedCornerList.begin();
+		corner = *iter;
+		improperlyOrientedCornerList.erase( iter );
+		int* location = orangeCornerTargetLocations[ corner ];
+		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( location[0], location[1], 0 );
+		c3ga::vectorE3GA cornerVec( c3ga::vectorE3GA::coord_e1_e2_e3, double( location[0] - 1 ), double( location[1] - 1 ), 0.0 );
+		cornerVec = c3ga::unit( cornerVec );
+
+		RubiksCube::Rotation rotation;
+		rotation.plane.axis = RubiksCube::Z_AXIS;
+		rotation.plane.index = 0;
+		rotation.angle = CalculateRotationAngle( cornerVec, perspectiveCornerVec, zAxis );
+		if( rotation.angle != 0.0 )
+		{
+			rotationSequence.push_back( rotation );
+			c3ga::bivectorE3GA blade = xAxis ^ yAxis;
+			c3ga::rotorE3GA rotor = c3ga::exp( blade * 0.5 * rotation.angle );
+			perspectiveCornerVec = c3ga::applyUnitVersor( rotor, perspectiveCornerVec );
+		}
+
+		RubiksCube::Face rightFace = RubiksCube::TranslateNormal( standardPerspectivesNegated[ corner ].rAxis );
+		RubiksCube::Face forwardFace = RubiksCube::TranslateNormal( standardPerspectivesNegated[ corner ].fAxis );
+
+		if( subCube->faceColor[ rightFace ] == RubiksCube::ORANGE )
+			rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, rotationSequence );
+		else if( subCube->faceColor[ forwardFace ] == RubiksCube::ORANGE )
+			rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequenceInverse, rotationSequence );
+		else
+			wxASSERT( false );
+	}
 }
 
 //==================================================================================================
 void SolverForCase3::PerformOrangeCrossAndCornersPositioningStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
+}
+
+//==================================================================================================
+// TODO: This routine needs to be used throughout the stage routines.  For now, it's only being used in a few places.
+// We assume here that the given vectors are of unit-length.
+/*static*/ double SolverForCase3::CalculateRotationAngle( const c3ga::vectorE3GA& unitVec0, const c3ga::vectorE3GA& unitVec1, const c3ga::vectorE3GA& axis, double epsilon /*= 1e-7*/ )
+{
+	double angle = 0.0;
+	double dot = c3ga::lc( unitVec0, unitVec1 );
+	if( fabs( dot + 1.0 ) < epsilon )
+		angle = M_PI;
+	else if( fabs( dot ) < epsilon )
+	{
+		c3ga::trivectorE3GA trivector = unitVec0 ^ unitVec1 ^ axis;
+		angle = M_PI / 2.0;
+		if( trivector.get_e1_e2_e3() < 0.0 )
+			angle = -angle;
+	}
+	return angle;
 }
 
 // SolverForCase3.cpp

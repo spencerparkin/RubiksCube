@@ -40,6 +40,8 @@ private:
 	static int orangeCornerTargetLocations[4][3];
 
 	static c3ga::vectorE3GA xAxis, yAxis, zAxis;
+
+	static double CalculateRotationAngle( const c3ga::vectorE3GA& unitVec0, const c3ga::vectorE3GA& unitVec1, const c3ga::vectorE3GA& axis, double epsilon = 1e-7 );
 };
 
 // SolverForCase3.h
