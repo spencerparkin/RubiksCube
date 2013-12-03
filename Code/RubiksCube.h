@@ -145,6 +145,9 @@ public:
 	static bool SaveToFile( const RubiksCube* rubiksCube, const wxString& file );
 	static RubiksCube* LoadFromFile( const wxString& file );
 
+	void Scramble( int seed, int rotationCount, RotationSequence* rotationSequence = 0, bool apply = true );
+	Solver* MakeSolver( void ) const;
+
 private:
 
 	bool SaveToXml( wxXmlNode* xmlNode ) const;

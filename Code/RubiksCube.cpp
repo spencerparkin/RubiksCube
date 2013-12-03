@@ -1002,4 +1002,58 @@ bool RubiksCube::LoadColorFromXml( const wxXmlNode* xmlSubCube, const wxString& 
 	return true;
 }
 
+//==================================================================================================
+void RubiksCube::Scramble( int seed, int rotationCount, RotationSequence* rotationSequence /*= 0*/, bool apply /*= true*/ )
+{
+	srand( seed );
+
+	RotationSequence localRotationSequence;
+	if( !rotationSequence )
+		rotationSequence = &localRotationSequence;
+
+	for( int count = 0; count < rotationCount; count++ )
+	{
+		Rotation rotation;
+		rotation.plane.index = rand() % subCubeMatrixSize;
+		rotation.plane.axis = Axis( rand() % 3 );
+		rotation.angle = double( 1 + rand() % 3 ) * M_PI / 2.0;
+		rotationSequence->push_back( rotation );
+	}
+
+	if( apply )
+		ApplySequence( *rotationSequence );
+}
+
+//==================================================================================================
+Solver* RubiksCube::MakeSolver( void ) const
+{
+	Solver* solver = 0;
+
+	switch( subCubeMatrixSize )
+	{
+		case 1:
+		{
+			// It's already solved.  ;)
+			break;
+		}
+		case 2:
+		{
+			solver = new SolverForCase2();
+			break;
+		}
+		case 3:
+		{
+			solver = new SolverForCase3();
+			break;
+		}
+		default:
+		{
+			solver = new SolverForCaseGreaterThan3();
+			break;
+		}
+	}
+
+	return solver;
+}
+
 // RubiksCube.cpp

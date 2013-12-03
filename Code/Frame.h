@@ -24,6 +24,7 @@ private:
 		ID_RotationHistoryGoForward,
 		ID_RotationHistoryGoBackward,
 		ID_Exit,
+		ID_DebugMode,
 		ID_About,
 		ID_Timer,
 	};
@@ -40,6 +41,7 @@ private:
 	void OnRotationHistoryGoForward( wxCommandEvent& event );
 	void OnRotationHistoryGoBackward( wxCommandEvent& event );
 	void OnExit( wxCommandEvent& event );
+	void OnDebugMode( wxCommandEvent& event );
 	void OnAbout( wxCommandEvent& event );
 	void OnUpdateMenuItemUI( wxUpdateUIEvent& event );
 	void OnTimer( wxTimerEvent& event );
@@ -53,6 +55,15 @@ private:
 
 	RubiksCube::RotationSequence executionSequence;
 	double animationTolerance;
+
+	enum DebugMode
+	{
+		DEBUG_MODE_NONE,
+		DEBUG_MODE_SCRAMBLE,
+		DEBUG_MODE_SOLVE,
+	};
+
+	DebugMode debugMode;
 };
 
 // Frame.h

@@ -5,6 +5,8 @@
 //==================================================================================================
 Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFrame( parent, wxID_ANY, "Rubik's Cube", pos, size ), timer( this, ID_Timer )
 {
+	debugMode = DEBUG_MODE_NONE;
+
 	animationTolerance = 0.01;
 
 	wxMenu* programMenu = new wxMenu();
@@ -42,7 +44,10 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	viewMenu->Append( renderWithOrthographicProjectionMenuItem );
 
 	wxMenu* helpMenu = new wxMenu();
+	wxMenuItem* debugModeMenuItem = new wxMenuItem( helpMenu, ID_DebugMode, "Debug Mode", "Continually scramble and solve the Rubik's Cube.", wxITEM_CHECK );
 	wxMenuItem* aboutMenuItem = new wxMenuItem( helpMenu, ID_About, "About\tF1", "Show the about-box." );
+	helpMenu->Append( debugModeMenuItem );
+	helpMenu->AppendSeparator();
 	helpMenu->Append( aboutMenuItem );
 
 	wxMenuBar* menuBar = new wxMenuBar();
@@ -86,6 +91,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnRotationHistoryGoForward, this, ID_RotationHistoryGoForward );
 	Bind( wxEVT_MENU, &Frame::OnRotationHistoryGoBackward, this, ID_RotationHistoryGoBackward );
 	Bind( wxEVT_MENU, &Frame::OnExit, this, ID_Exit );
+	Bind( wxEVT_MENU, &Frame::OnDebugMode, this, ID_DebugMode );
 	Bind( wxEVT_MENU, &Frame::OnAbout, this, ID_About );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_CreateCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DestroyCube );
@@ -98,6 +104,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithOrthographicProjection );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryGoForward );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryGoBackward );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DebugMode );
 	Bind( wxEVT_TIMER, &Frame::OnTimer, this, ID_Timer );
 	Bind( wxEVT_COMMAND_TEXT_ENTER, &Frame::OnTextCtrlEnter, this );
 
@@ -107,6 +114,15 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 //==================================================================================================
 /*virtual*/ Frame::~Frame( void )
 {
+}
+
+//==================================================================================================
+void Frame::OnDebugMode( wxCommandEvent& event )
+{
+	if( debugMode == DEBUG_MODE_NONE )
+		debugMode = DEBUG_MODE_SCRAMBLE;
+	else
+		debugMode = DEBUG_MODE_NONE;
 }
 
 //==================================================================================================
@@ -243,12 +259,42 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnTimer( wxTimerEvent& event )
 {
-	if( !canvas->IsAnimating( animationTolerance ) && executionSequence.size() > 0 )
+	if( !canvas->IsAnimating( animationTolerance ) )
 	{
-		RubiksCube::RotationSequence::iterator iter = executionSequence.begin();
-		RubiksCube::Rotation rotation = *iter;
-		executionSequence.erase( iter );
-		canvas->ApplyRotation( rotation );
+		if( executionSequence.size() > 0 )
+		{
+			RubiksCube::RotationSequence::iterator iter = executionSequence.begin();
+			RubiksCube::Rotation rotation = *iter;
+			executionSequence.erase( iter );
+			canvas->ApplyRotation( rotation );
+		}
+		else if( debugMode != DEBUG_MODE_NONE && wxGetApp().rubiksCube )
+		{
+			switch( debugMode )
+			{
+				case DEBUG_MODE_SCRAMBLE:
+				{
+					// This assert doesn't mean anything if we entered debug mode with an unsolved cube.
+					wxASSERT( wxGetApp().rubiksCube->IsInSolvedState() );
+					wxGetApp().rubiksCube->Scramble( time(0), 100, &executionSequence, false );
+					debugMode = DEBUG_MODE_SOLVE;
+					animationTolerance = 1.0;
+					break;
+				}
+				case DEBUG_MODE_SOLVE:
+				{
+					Solver* solver = wxGetApp().rubiksCube->MakeSolver();
+					if( solver )
+					{
+						bool success = solver->MakeEntireSolutionSequence( wxGetApp().rubiksCube, executionSequence );
+						wxASSERT( success );
+						debugMode = DEBUG_MODE_SCRAMBLE;
+						animationTolerance = 0.1;
+					}
+					break;
+				}
+			}
+		}
 	}
 
 	if( canvas->Animate() )
@@ -295,16 +341,7 @@ void Frame::OnScrambleCube( wxCommandEvent& event )
 	if( !rubiksCube )
 		return;
 
-	srand( unsigned( time( 0 ) ) );
-	for( int i = 0; i < 50; i++ )
-	{
-		RubiksCube::Rotation rotation;
-		rotation.plane.index = rand() % rubiksCube->SubCubeMatrixSize();
-		rotation.plane.axis = RubiksCube::Axis( rand() % 3 );
-		rotation.angle = double( 1 + rand() % 3 ) * M_PI / 2.0;
-		executionSequence.push_back( rotation );
-	}
-
+	rubiksCube->Scramble( time(0), 100, &executionSequence, false );
 	animationTolerance = 1.0;
 }
 
@@ -315,32 +352,7 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 	if( !rubiksCube )
 		return;
 
-	Solver* solver = 0;
-
-	switch( rubiksCube->SubCubeMatrixSize() )
-	{
-		case 1:
-		{
-			// It's already solved.  ;)
-			break;
-		}
-		case 2:
-		{
-			solver = new SolverForCase2();
-			break;
-		}
-		case 3:
-		{
-			solver = new SolverForCase3();
-			break;
-		}
-		default:
-		{
-			solver = new SolverForCaseGreaterThan3();
-			break;
-		}
-	}
-
+	Solver* solver = rubiksCube->MakeSolver();
 	if( !solver )
 		return;
 
@@ -438,6 +450,11 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		case ID_RotationHistoryGoBackward:
 		{
 			event.Enable( wxGetApp().RotationHistoryCanGoBackward() );
+			break;
+		}
+		case ID_DebugMode:
+		{
+			event.Check( ( debugMode == DEBUG_MODE_NONE ) ? false : true );
 			break;
 		}
 	}
