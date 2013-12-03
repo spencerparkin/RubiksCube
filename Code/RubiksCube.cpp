@@ -43,7 +43,7 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= tru
 		}
 	}
 
-	for( int color = 0; color < MAX_COLORS + 1; color++ )
+	for( int color = 0; color < MAX_COLORS; color++ )
 		textures[ color ] = GL_INVALID_VALUE;
 
 	if( loadTextures )
