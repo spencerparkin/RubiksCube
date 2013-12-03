@@ -5,7 +5,7 @@ class RubiksCube
 {
 public:
 
-	RubiksCube( int subCubeMatrixSize = 3 );
+	RubiksCube( int subCubeMatrixSize = 3, bool loadTextures = true );
 	~RubiksCube( void );
 
 	enum RelativeRotation
@@ -170,6 +170,13 @@ private:
 
 	static double subCubeVertex[8][3];
 	static int subCubeFace[ CUBE_FACE_COUNT ][4];
+	static double subCubeTextureCoordinates[4][2];
+
+	GLuint textures[ MAX_COLORS ];
+	static const char* textureFiles[ MAX_COLORS ];
+
+	void LoadTextures( void );
+	void UnloadTextures( void );
 };
 
 // RubiksCube.h

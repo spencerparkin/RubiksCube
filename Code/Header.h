@@ -14,6 +14,7 @@
 #include <wx/textctrl.h>
 #include <wx/xml/xml.h>
 #include <wx/scopedptr.h>
+#include <wx/image.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>

@@ -24,6 +24,8 @@ Application::Application( void )
 	if( !wxApp::OnInit() )
 		return false;
 
+	wxInitAllImageHandlers();
+
 	Frame* frame = new Frame( 0, wxDefaultPosition, wxSize( 500, 500 ) );
 	frame->Show();
 

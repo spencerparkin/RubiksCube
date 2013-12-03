@@ -3,7 +3,19 @@
 #include "Header.h"
 
 //==================================================================================================
-RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/ )
+const char* RubiksCube::textureFiles[ MAX_COLORS ] =
+{
+	"blackFace.png",
+	"yellowFace.png",
+	"blueFace.png",
+	"redFace.png",
+	"whiteFace.png",
+	"greenFace.png",
+	"orangeFace.png",
+};
+
+//==================================================================================================
+RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= true*/ )
 {
 	this->subCubeMatrixSize = subCubeMatrixSize;
 	subCubeMatrix = new SubCube**[ subCubeMatrixSize ];
@@ -30,6 +42,12 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/ )
 			}
 		}
 	}
+
+	for( int color = 0; color < MAX_COLORS + 1; color++ )
+		textures[ color ] = GL_INVALID_VALUE;
+
+	if( loadTextures )
+		LoadTextures();
 }
 
 //==================================================================================================
@@ -42,6 +60,51 @@ RubiksCube::~RubiksCube( void )
 		delete[] subCubeMatrix[x];
 	}
 	delete[] subCubeMatrix;
+
+	UnloadTextures();
+}
+
+//==================================================================================================
+void RubiksCube::LoadTextures( void )
+{
+	for( int color = 0; color < MAX_COLORS; color++ )
+	{
+		if( textures[ color ] != GL_INVALID_VALUE )
+			continue;
+
+		wxImage image;
+		if( !image.LoadFile( textureFiles[ color ] ) )
+			continue;
+
+		GLuint texName;
+		glGenTextures( 1, &texName );
+		if( texName == GL_INVALID_VALUE )
+			continue;
+
+		glBindTexture( GL_TEXTURE_2D, texName );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+
+		const unsigned char* imageData = image.GetData();
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, image.GetWidth(), image.GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, imageData );
+
+		textures[ color ] = texName;
+	}
+}
+
+//==================================================================================================
+void RubiksCube::UnloadTextures( void )
+{
+	for( int color = 0; color < MAX_COLORS; color++ )
+	{
+		if( textures[ color ] == GL_INVALID_VALUE )
+			continue;
+
+		glDeleteTextures( 1, &textures[ color ] );
+		textures[ color ] = GL_INVALID_VALUE;
+	}
 }
 
 //==================================================================================================
@@ -237,6 +300,15 @@ int RubiksCube::subCubeFace[ RubiksCube::CUBE_FACE_COUNT ][4] =
 };
 
 //==================================================================================================
+double RubiksCube::subCubeTextureCoordinates[4][2] =
+{
+	{ 0.0, 0.0 },
+	{ 1.0, 0.0 },
+	{ 1.0, 1.0 },
+	{ 0.0, 1.0 },
+};
+
+//==================================================================================================
 void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga::evenVersor& vertexVersor, const c3ga::evenVersor& normalVersor ) const
 {
 	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
@@ -244,7 +316,19 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga:
 		if( mode == GL_SELECT )
 			glPushName( face );
 
-		c3ga::vectorE3GA faceColor = TranslateColor( subCube->faceColor[ face ] );
+		Color color = subCube->faceColor[ face ];
+		c3ga::vectorE3GA faceColor = TranslateColor( color );
+
+		GLuint texName = textures[ color ];
+		if( texName == GL_INVALID_VALUE )
+			glDisable( GL_TEXTURE_2D );
+		else
+		{
+			glEnable( GL_TEXTURE_2D );
+			glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL );
+			glBindTexture( GL_TEXTURE_2D, texName );
+		}
+		
 		if( GL_FALSE == glIsEnabled( GL_LIGHTING ) )
 			glColor3d( faceColor.get_e1(), faceColor.get_e2(), faceColor.get_e3() );
 		else
@@ -266,6 +350,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga:
 			c3ga::dualSphere dualPoint;
 			dualPoint.set( c3ga::no + point + 0.5 * c3ga::norm2( point ) * c3ga::ni );
 			dualPoint = c3ga::applyUnitVersor( vertexVersor, dualPoint );		// This should always be homogenized.
+			glTexCoord2dv( subCubeTextureCoordinates[ index ] );
 			glVertex3d( dualPoint.get_e1(), dualPoint.get_e2(), dualPoint.get_e3() );
 		}
 

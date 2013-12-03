@@ -4,9 +4,12 @@
 
 //==================================================================================================
 // Find the smallest tri-cycle sequence that orders the first quad in the same order as the second.
+// We asume here that the second quad is in order as we only search for tri-cycle sequences that
+// order the first quad in some way, and then compare those against the order of the second quad.
 /*static*/ bool TriCycleSolver::FindSmallestTriCycleSequenceThatOrdersQuadTheSame( const int* firstQuad, const int* secondQuad, TriCycleSequence& triCycleSequence )
 {
 	bool found = false;
+	wxASSERT( IsQuadInOrder( secondQuad ) );
 
 	TriCycleSequenceList triCycleSequenceList;
 	FindAllTriCycleSequencesThatOrderQuad( firstQuad, triCycleSequenceList, 3 );

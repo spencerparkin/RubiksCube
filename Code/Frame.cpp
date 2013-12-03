@@ -341,7 +341,7 @@ void Frame::OnScrambleCube( wxCommandEvent& event )
 	if( !rubiksCube )
 		return;
 
-	rubiksCube->Scramble( time(0), 100, &executionSequence, false );
+	rubiksCube->Scramble( time(0), 40, &executionSequence, false );
 	animationTolerance = 1.0;
 }
 
