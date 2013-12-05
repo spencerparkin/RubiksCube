@@ -145,7 +145,9 @@ public:
 	static void TranslateAxis( wxString& axisString, Axis axis );
 	bool TranslateRotation( const Perspective& perspective, const RelativeRotation& relativeRotation, Rotation& rotation ) const;
 	bool TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const;
+	static bool TranslateRelativeRotation( const std::string& relativeRotationString, RelativeRotation& relativeRotation );
 
+	static bool ParseRelativeRotationSequenceString( const std::string& relativeRotationSequenceString, RelativeRotationSequence& relativeRotationSequence );
 	static void CompressRotationSequence( RotationSequence& rotationSequence );
 
 	bool SaveToFile( const wxString& file ) const;

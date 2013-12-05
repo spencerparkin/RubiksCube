@@ -211,51 +211,11 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 /*static*/ bool Frame::ParseRelativeRotationSequenceString( const wxString& relativeRotationSequenceString, RubiksCube::RelativeRotationSequence& relativeRotationSequence )
 {
 	std::string string = ( const char* )relativeRotationSequenceString.c_str();
-
-	boost::char_separator< char > separator( " ", "," );
-	typedef boost::tokenizer< boost::char_separator< char > > Tokenizer;
-	Tokenizer tokenizer( string, separator );
-
-	// TODO: This kind of work should be done in a sub-routine of the rubiks cube object.  Also, support the plane index in the language.
-	for( Tokenizer::iterator iter = tokenizer.begin(); iter != tokenizer.end(); iter++ )
+	if( !RubiksCube::ParseRelativeRotationSequenceString( string, relativeRotationSequence ) )
 	{
-		std::string token = *iter;
-		if( token == "," )
-			continue;
-
-		RubiksCube::RelativeRotation relativeRotation;
-		relativeRotation.planeIndex = 0;
-
-		if( token == "L" )
-			relativeRotation.type = RubiksCube::RelativeRotation::L;
-		else if( token == "R" )
-			relativeRotation.type = RubiksCube::RelativeRotation::R;
-		else if( token == "D" )
-			relativeRotation.type = RubiksCube::RelativeRotation::D;
-		else if( token == "U" )
-			relativeRotation.type = RubiksCube::RelativeRotation::U;
-		else if( token == "B" )
-			relativeRotation.type = RubiksCube::RelativeRotation::B;
-		else if( token == "F" )
-			relativeRotation.type = RubiksCube::RelativeRotation::F;
-		else if( token == "Li" )
-			relativeRotation.type = RubiksCube::RelativeRotation::Li;
-		else if( token == "Ri" )
-			relativeRotation.type = RubiksCube::RelativeRotation::Ri;
-		else if( token == "Di" )
-			relativeRotation.type = RubiksCube::RelativeRotation::Di;
-		else if( token == "Ui" )
-			relativeRotation.type = RubiksCube::RelativeRotation::Ui;
-		else if( token == "Bi" )
-			relativeRotation.type = RubiksCube::RelativeRotation::Bi;
-		else if( token == "Fi" )
-			relativeRotation.type = RubiksCube::RelativeRotation::Fi;
-		else
-			return false;
-
-		relativeRotationSequence.push_back( relativeRotation );
+		wxMessageBox( "Failed to parse string \"" + relativeRotationSequenceString + "\".", "Parse Error" );
+		return false;
 	}
-
 	return true;
 }
 

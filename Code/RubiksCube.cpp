@@ -890,6 +890,65 @@ bool RubiksCube::TranslateRotation( const Perspective& perspective, const Relati
 }
 
 //==================================================================================================
+/*static*/ bool RubiksCube::ParseRelativeRotationSequenceString( const std::string& relativeRotationSequenceString, RelativeRotationSequence& relativeRotationSequence )
+{
+	boost::char_separator< char > separator( " ", "," );
+	typedef boost::tokenizer< boost::char_separator< char > > Tokenizer;
+	Tokenizer tokenizer( relativeRotationSequenceString, separator );
+
+	for( Tokenizer::iterator iter = tokenizer.begin(); iter != tokenizer.end(); iter++ )
+	{
+		std::string token = *iter;
+		if( token == "," )
+			continue;
+
+		RubiksCube::RelativeRotation relativeRotation;
+		if( TranslateRelativeRotation( token, relativeRotation ) )
+			relativeRotationSequence.push_back( relativeRotation );
+		else
+			return false;
+	}
+
+	return true;
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::TranslateRelativeRotation( const std::string& relativeRotationString, RelativeRotation& relativeRotation )
+{
+	// TODO: Parse the plane index somehow.
+	relativeRotation.planeIndex = 0;
+
+	if( relativeRotationString == "L" )
+		relativeRotation.type = RubiksCube::RelativeRotation::L;
+	else if( relativeRotationString == "R" )
+		relativeRotation.type = RubiksCube::RelativeRotation::R;
+	else if( relativeRotationString == "D" )
+		relativeRotation.type = RubiksCube::RelativeRotation::D;
+	else if( relativeRotationString == "U" )
+		relativeRotation.type = RubiksCube::RelativeRotation::U;
+	else if( relativeRotationString == "B" )
+		relativeRotation.type = RubiksCube::RelativeRotation::B;
+	else if( relativeRotationString == "F" )
+		relativeRotation.type = RubiksCube::RelativeRotation::F;
+	else if( relativeRotationString == "Li" )
+		relativeRotation.type = RubiksCube::RelativeRotation::Li;
+	else if( relativeRotationString == "Ri" )
+		relativeRotation.type = RubiksCube::RelativeRotation::Ri;
+	else if( relativeRotationString == "Di" )
+		relativeRotation.type = RubiksCube::RelativeRotation::Di;
+	else if( relativeRotationString == "Ui" )
+		relativeRotation.type = RubiksCube::RelativeRotation::Ui;
+	else if( relativeRotationString == "Bi" )
+		relativeRotation.type = RubiksCube::RelativeRotation::Bi;
+	else if( relativeRotationString == "Fi" )
+		relativeRotation.type = RubiksCube::RelativeRotation::Fi;
+	else
+		return false;
+
+	return true;
+}
+
+//==================================================================================================
 const RubiksCube::SubCube* RubiksCube::Matrix( int x, int y, int z ) const
 {
 	if( !ValidMatrixCoordinates( x, y, z ) )

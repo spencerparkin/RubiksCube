@@ -349,10 +349,7 @@ void SolverForCase3::PerformRedCrossOrientingStage( const RubiksCube* rubiksCube
 
 		RubiksCube::Perspective* perspective = &standardPerspectives[ edge ];
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Fi ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
+		RubiksCube::ParseRelativeRotationSequenceString( "Ri, U, Fi, Ui", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
 		break;
 	}
@@ -427,21 +424,11 @@ void SolverForCase3::PerformRedCornersPositioningStage( const RubiksCube* rubiks
 		RubiksCube::Face rightFace = RubiksCube::TranslateNormal( perspective->rAxis );
 		RubiksCube::Face downFace = RubiksCube::TranslateNormal( -perspective->uAxis );
 		if( subCube->faceColor[ rightFace ] == RubiksCube::RED || subCube->faceColor[ downFace ] == RubiksCube::RED )
-		{
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::D ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::F ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Di ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Fi ) );
-		}
+			RubiksCube::ParseRelativeRotationSequenceString( "D, F, Di, Fi", relativeRotationSequence );
 		else
-		{
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Di ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::D ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-		}
-
+			RubiksCube::ParseRelativeRotationSequenceString( "Di, Ri, D, R", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
+
 		break;
 	}
 }
@@ -459,13 +446,7 @@ void SolverForCase3::PerformRedCornersOrientingStage( const RubiksCube* rubiksCu
 
 		RubiksCube::Perspective* perspective = &standardPerspectives[ corner ];
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Di ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::D ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Di ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
+		RubiksCube::ParseRelativeRotationSequenceString( "Ri, Di, R, D, Ri, Di, R", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
 		break;
 	}
@@ -519,28 +500,9 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 		// Move the edge piece into the correct position and orientation.  :)
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
 		if( subCube->faceColor[ RubiksCube::NEG_Z ] == middleEdgeColors[ edge ][0] )
-		{
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Fi ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::F ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-		}
+			RubiksCube::ParseRelativeRotationSequenceString( "Ui, Fi, U, F, U, R, Ui, Ri", relativeRotationSequence );
 		else
-		{
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Fi ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::F ) );
-		}
-
+			RubiksCube::ParseRelativeRotationSequenceString( "U, R, Ui, Ri, Ui, Fi, U, F", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
 
 		break;
@@ -568,13 +530,7 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 
 		// Get the edge sub-cube up into the Z=0 plane.
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Fi ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-		relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::F ) );
+		RubiksCube::ParseRelativeRotationSequenceString( "R, Ui, Ri, Ui, Fi, U, F", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
 
 		break;
@@ -688,22 +644,12 @@ void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksC
 	{
 		case SEQUENCE_NORMAL:
 		{
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::F ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Fi ) );
+			RubiksCube::ParseRelativeRotationSequenceString( "F, R, U, Ri, Ui, Fi", relativeRotationSequence );
 			break;
 		}
 		case SEQUENCE_INVERSE:
 		{
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::F ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-			relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Fi ) );
+			RubiksCube::ParseRelativeRotationSequenceString( "F, U, R, Ui, Ri, Fi", relativeRotationSequence );
 			break;
 		}
 	}
@@ -751,29 +697,13 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 			{
 				case TriCycleSolver::TriCycle::FORWARD:
 				{
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-					
+					RubiksCube::ParseRelativeRotationSequenceString( "R, Ui, Ui, Ri, Ui, R, Ui, R", relativeRotationSequence );
 					perspective = standardPerspectivesNegated[ ( triCycle.invariantIndex + 3 ) % 4 ];
 					break;
 				}
 				case TriCycleSolver::TriCycle::BACKWARD:
 				{
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-
+					RubiksCube::ParseRelativeRotationSequenceString( "R, U, Ri, U, R, U, U, Ri", relativeRotationSequence );
 					perspective = standardPerspectivesNegated[ ( triCycle.invariantIndex + 3 ) % 4 ];
 					break;
 				}
@@ -824,29 +754,13 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 			{
 				case TriCycleSolver::TriCycle::FORWARD:
 				{
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Li ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::L ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-					
+					RubiksCube::ParseRelativeRotationSequenceString( "Li, U, R, Ui, L, U, Ri, Ui", relativeRotationSequence );
 					perspective = standardPerspectivesNegated[ triCycle.invariantIndex ];
 					break;
 				}
 				case TriCycleSolver::TriCycle::BACKWARD:
 				{
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Li ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::U ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ui ) );
-					relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::L ) );
-
+					RubiksCube::ParseRelativeRotationSequenceString( "U, R, Ui, Li, U, Ri, Ui, L", relativeRotationSequence );
 					perspective = standardPerspectivesNegated[ triCycle.invariantIndex ];
 					break;
 				}
@@ -883,24 +797,10 @@ void SolverForCase3::PerformOrangeCornerOrientingStage( const RubiksCube* rubiks
 	perspectiveCornerVec = c3ga::unit( perspectiveCornerVec );
 
 	RubiksCube::RelativeRotationSequence relativeRotationSequence;
-	relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-	relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Di ) );
-	relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-	relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::D ) );
-	relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-	relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Di ) );
-	relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-	relativeRotationSequence.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::D ) );
+	RubiksCube::ParseRelativeRotationSequenceString( "Ri, Di, R, D, Ri, Di, R, D", relativeRotationSequence );
 
 	RubiksCube::RelativeRotationSequence relativeRotationSequenceInverse;
-	relativeRotationSequenceInverse.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Di ) );
-	relativeRotationSequenceInverse.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-	relativeRotationSequenceInverse.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::D ) );
-	relativeRotationSequenceInverse.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
-	relativeRotationSequenceInverse.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Di ) );
-	relativeRotationSequenceInverse.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::Ri ) );
-	relativeRotationSequenceInverse.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::D ) );
-	relativeRotationSequenceInverse.push_back( RubiksCube::RelativeRotation( RubiksCube::RelativeRotation::R ) );
+	RubiksCube::ParseRelativeRotationSequenceString( "Di, Ri, D, R, Di, Ri, D, R", relativeRotationSequenceInverse );
 
 	while( improperlyOrientedCornerList.size() > 0 )
 	{
