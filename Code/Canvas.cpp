@@ -258,6 +258,8 @@ void Canvas::OnPaint( wxPaintEvent& event )
 //==================================================================================================
 void Canvas::RenderPerspectiveLabels( void )
 {
+	glDisable( GL_TEXTURE_2D );
+
 	bool lighting = glIsEnabled( GL_LIGHTING ) ? true : false;
 	glDisable( GL_LIGHTING );
 
