@@ -754,8 +754,6 @@ bool RubiksCube::IsInSolvedState( void ) const
 				}
 				while( rotation0.angle > M_PI );
 				*iter0 = rotation0;
-				optimizationFound = true;
-				break;
 			}
 
 			if( rotation0.angle < -M_PI )
@@ -766,8 +764,6 @@ bool RubiksCube::IsInSolvedState( void ) const
 				}
 				while( rotation0.angle < -M_PI );
 				*iter0 = rotation0;
-				optimizationFound = true;
-				break;
 			}
 
 			RotationSequence::iterator iter1 = iter0;
