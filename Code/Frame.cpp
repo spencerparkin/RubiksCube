@@ -211,7 +211,7 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 /*static*/ bool Frame::ParseRelativeRotationSequenceString( const wxString& relativeRotationSequenceString, RubiksCube::RelativeRotationSequence& relativeRotationSequence )
 {
 	std::string string = ( const char* )relativeRotationSequenceString.c_str();
-	if( !RubiksCube::ParseRelativeRotationSequenceString( string, relativeRotationSequence ) )
+	if( !wxGetApp().rubiksCube->ParseRelativeRotationSequenceString( string, relativeRotationSequence ) )
 	{
 		wxMessageBox( "Failed to parse string \"" + relativeRotationSequenceString + "\".", "Parse Error" );
 		return false;

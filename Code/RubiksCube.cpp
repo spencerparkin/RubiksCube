@@ -890,7 +890,7 @@ bool RubiksCube::TranslateRotation( const Perspective& perspective, const Relati
 }
 
 //==================================================================================================
-/*static*/ bool RubiksCube::ParseRelativeRotationSequenceString( const std::string& relativeRotationSequenceString, RelativeRotationSequence& relativeRotationSequence )
+bool RubiksCube::ParseRelativeRotationSequenceString( const std::string& relativeRotationSequenceString, RelativeRotationSequence& relativeRotationSequence ) const
 {
 	boost::char_separator< char > separator( " ", "," );
 	typedef boost::tokenizer< boost::char_separator< char > > Tokenizer;
@@ -913,36 +913,57 @@ bool RubiksCube::TranslateRotation( const Perspective& perspective, const Relati
 }
 
 //==================================================================================================
-/*static*/ bool RubiksCube::TranslateRelativeRotation( const std::string& relativeRotationString, RelativeRotation& relativeRotation )
+bool RubiksCube::TranslateRelativeRotation( const std::string& relativeRotationString, RelativeRotation& relativeRotation ) const
 {
-	// TODO: Parse the plane index somehow.
 	relativeRotation.planeIndex = 0;
 
-	if( relativeRotationString == "L" )
+	boost::char_separator< char > separator( " ", ":" );
+	typedef boost::tokenizer< boost::char_separator< char > > Tokenizer;
+	Tokenizer tokenizer( relativeRotationString, separator );
+
+	// The first token should be the relative face.
+	Tokenizer::iterator iter = tokenizer.begin();
+	std::string token = *iter;
+	if( token == "L" )
 		relativeRotation.type = RubiksCube::RelativeRotation::L;
-	else if( relativeRotationString == "R" )
+	else if( token == "R" )
 		relativeRotation.type = RubiksCube::RelativeRotation::R;
-	else if( relativeRotationString == "D" )
+	else if( token == "D" )
 		relativeRotation.type = RubiksCube::RelativeRotation::D;
-	else if( relativeRotationString == "U" )
+	else if( token == "U" )
 		relativeRotation.type = RubiksCube::RelativeRotation::U;
-	else if( relativeRotationString == "B" )
+	else if( token == "B" )
 		relativeRotation.type = RubiksCube::RelativeRotation::B;
-	else if( relativeRotationString == "F" )
+	else if( token == "F" )
 		relativeRotation.type = RubiksCube::RelativeRotation::F;
-	else if( relativeRotationString == "Li" )
+	else if( token == "Li" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Li;
-	else if( relativeRotationString == "Ri" )
+	else if( token == "Ri" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Ri;
-	else if( relativeRotationString == "Di" )
+	else if( token == "Di" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Di;
-	else if( relativeRotationString == "Ui" )
+	else if( token == "Ui" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Ui;
-	else if( relativeRotationString == "Bi" )
+	else if( token == "Bi" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Bi;
-	else if( relativeRotationString == "Fi" )
+	else if( token == "Fi" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Fi;
 	else
+		return false;
+
+	// The next token, if any, should be a colon.
+	if( ++iter == tokenizer.end() )
+		return true;
+	token = *iter;
+	if( token != ":" )
+		return false;
+
+	// The last token should be the plane index.
+	if( ++iter == tokenizer.end() )
+		return false;
+	token = *iter;
+	relativeRotation.planeIndex = atoi( token.c_str() );
+	if( relativeRotation.planeIndex < 0 || relativeRotation.planeIndex > subCubeMatrixSize - 1 )
 		return false;
 
 	return true;

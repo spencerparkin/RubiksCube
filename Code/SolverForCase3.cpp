@@ -349,7 +349,7 @@ void SolverForCase3::PerformRedCrossOrientingStage( const RubiksCube* rubiksCube
 
 		RubiksCube::Perspective* perspective = &standardPerspectives[ edge ];
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
-		RubiksCube::ParseRelativeRotationSequenceString( "Ri, U, Fi, Ui", relativeRotationSequence );
+		rubiksCube->ParseRelativeRotationSequenceString( "Ri, U, Fi, Ui", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
 		break;
 	}
@@ -424,9 +424,9 @@ void SolverForCase3::PerformRedCornersPositioningStage( const RubiksCube* rubiks
 		RubiksCube::Face rightFace = RubiksCube::TranslateNormal( perspective->rAxis );
 		RubiksCube::Face downFace = RubiksCube::TranslateNormal( -perspective->uAxis );
 		if( subCube->faceColor[ rightFace ] == RubiksCube::RED || subCube->faceColor[ downFace ] == RubiksCube::RED )
-			RubiksCube::ParseRelativeRotationSequenceString( "D, F, Di, Fi", relativeRotationSequence );
+			rubiksCube->ParseRelativeRotationSequenceString( "D, F, Di, Fi", relativeRotationSequence );
 		else
-			RubiksCube::ParseRelativeRotationSequenceString( "Di, Ri, D, R", relativeRotationSequence );
+			rubiksCube->ParseRelativeRotationSequenceString( "Di, Ri, D, R", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
 
 		break;
@@ -446,7 +446,7 @@ void SolverForCase3::PerformRedCornersOrientingStage( const RubiksCube* rubiksCu
 
 		RubiksCube::Perspective* perspective = &standardPerspectives[ corner ];
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
-		RubiksCube::ParseRelativeRotationSequenceString( "Ri, Di, R, D, Ri, Di, R", relativeRotationSequence );
+		rubiksCube->ParseRelativeRotationSequenceString( "Ri, Di, R, D, Ri, Di, R", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
 		break;
 	}
@@ -500,9 +500,9 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 		// Move the edge piece into the correct position and orientation.  :)
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
 		if( subCube->faceColor[ RubiksCube::NEG_Z ] == middleEdgeColors[ edge ][0] )
-			RubiksCube::ParseRelativeRotationSequenceString( "Ui, Fi, U, F, U, R, Ui, Ri", relativeRotationSequence );
+			rubiksCube->ParseRelativeRotationSequenceString( "Ui, Fi, U, F, U, R, Ui, Ri", relativeRotationSequence );
 		else
-			RubiksCube::ParseRelativeRotationSequenceString( "U, R, Ui, Ri, Ui, Fi, U, F", relativeRotationSequence );
+			rubiksCube->ParseRelativeRotationSequenceString( "U, R, Ui, Ri, Ui, Fi, U, F", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
 
 		break;
@@ -530,7 +530,7 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 
 		// Get the edge sub-cube up into the Z=0 plane.
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
-		RubiksCube::ParseRelativeRotationSequenceString( "R, Ui, Ri, Ui, Fi, U, F", relativeRotationSequence );
+		rubiksCube->ParseRelativeRotationSequenceString( "R, Ui, Ri, Ui, Fi, U, F", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *perspective, relativeRotationSequence, rotationSequence );
 
 		break;
@@ -644,12 +644,12 @@ void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksC
 	{
 		case SEQUENCE_NORMAL:
 		{
-			RubiksCube::ParseRelativeRotationSequenceString( "F, R, U, Ri, Ui, Fi", relativeRotationSequence );
+			rubiksCube->ParseRelativeRotationSequenceString( "F, R, U, Ri, Ui, Fi", relativeRotationSequence );
 			break;
 		}
 		case SEQUENCE_INVERSE:
 		{
-			RubiksCube::ParseRelativeRotationSequenceString( "F, U, R, Ui, Ri, Fi", relativeRotationSequence );
+			rubiksCube->ParseRelativeRotationSequenceString( "F, U, R, Ui, Ri, Fi", relativeRotationSequence );
 			break;
 		}
 	}
@@ -697,13 +697,13 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 			{
 				case TriCycleSolver::TriCycle::FORWARD:
 				{
-					RubiksCube::ParseRelativeRotationSequenceString( "R, Ui, Ui, Ri, Ui, R, Ui, R", relativeRotationSequence );
+					rubiksCube->ParseRelativeRotationSequenceString( "R, Ui, Ui, Ri, Ui, R, Ui, R", relativeRotationSequence );
 					perspective = standardPerspectivesNegated[ ( triCycle.invariantIndex + 3 ) % 4 ];
 					break;
 				}
 				case TriCycleSolver::TriCycle::BACKWARD:
 				{
-					RubiksCube::ParseRelativeRotationSequenceString( "R, U, Ri, U, R, U, U, Ri", relativeRotationSequence );
+					rubiksCube->ParseRelativeRotationSequenceString( "R, U, Ri, U, R, U, U, Ri", relativeRotationSequence );
 					perspective = standardPerspectivesNegated[ ( triCycle.invariantIndex + 3 ) % 4 ];
 					break;
 				}
@@ -754,13 +754,13 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 			{
 				case TriCycleSolver::TriCycle::FORWARD:
 				{
-					RubiksCube::ParseRelativeRotationSequenceString( "Li, U, R, Ui, L, U, Ri, Ui", relativeRotationSequence );
+					rubiksCube->ParseRelativeRotationSequenceString( "Li, U, R, Ui, L, U, Ri, Ui", relativeRotationSequence );
 					perspective = standardPerspectivesNegated[ triCycle.invariantIndex ];
 					break;
 				}
 				case TriCycleSolver::TriCycle::BACKWARD:
 				{
-					RubiksCube::ParseRelativeRotationSequenceString( "U, R, Ui, Li, U, Ri, Ui, L", relativeRotationSequence );
+					rubiksCube->ParseRelativeRotationSequenceString( "U, R, Ui, Li, U, Ri, Ui, L", relativeRotationSequence );
 					perspective = standardPerspectivesNegated[ triCycle.invariantIndex ];
 					break;
 				}
@@ -797,10 +797,10 @@ void SolverForCase3::PerformOrangeCornerOrientingStage( const RubiksCube* rubiks
 	perspectiveCornerVec = c3ga::unit( perspectiveCornerVec );
 
 	RubiksCube::RelativeRotationSequence relativeRotationSequence;
-	RubiksCube::ParseRelativeRotationSequenceString( "Ri, Di, R, D, Ri, Di, R, D", relativeRotationSequence );
+	rubiksCube->ParseRelativeRotationSequenceString( "Ri, Di, R, D, Ri, Di, R, D", relativeRotationSequence );
 
 	RubiksCube::RelativeRotationSequence relativeRotationSequenceInverse;
-	RubiksCube::ParseRelativeRotationSequenceString( "Di, Ri, D, R, Di, Ri, D, R", relativeRotationSequenceInverse );
+	rubiksCube->ParseRelativeRotationSequenceString( "Di, Ri, D, R, Di, Ri, D, R", relativeRotationSequenceInverse );
 
 	while( improperlyOrientedCornerList.size() > 0 )
 	{
