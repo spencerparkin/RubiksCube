@@ -721,10 +721,15 @@ bool RubiksCube::IsInSolvedState( void ) const
 //==================================================================================================
 // This routine won't catch all possible ways that a given sequence can be compressed,
 // but we may be able to catch a few cases here.  For now, there are only a few cases
-// we can catch.
+// that we catch.
 /*static*/ void RubiksCube::CompressRotationSequence( RotationSequence& rotationSequence )
 {
-	return;		// I'm not ready to debug this routine, so just let it have no effect for now.
+	double epsilon = 1e-7;
+
+	// One case we don't catch here is, for example, to turn the sequence {U:0,U:2} into
+	// {Ui:1}, but to do this, you would have to then adjust all rotations after this in
+	// the sequence, and this only applies to the 3x3x3, but the idea has its equivilants
+	// with the NxNxN cube.
 
 	bool optimizationFound = false;
 	do
@@ -741,6 +746,30 @@ bool RubiksCube::IsInSolvedState( void ) const
 				break;
 			}
 
+			if( rotation0.angle > M_PI )
+			{
+				do
+				{
+					rotation0.angle -= 2.0 * M_PI;
+				}
+				while( rotation0.angle > M_PI );
+				*iter0 = rotation0;
+				optimizationFound = true;
+				break;
+			}
+
+			if( rotation0.angle < -M_PI )
+			{
+				do
+				{
+					rotation0.angle += 2.0 * M_PI;
+				}
+				while( rotation0.angle < -M_PI );
+				*iter0 = rotation0;
+				optimizationFound = true;
+				break;
+			}
+
 			RotationSequence::iterator iter1 = iter0;
 			iter1++;
 
@@ -751,7 +780,7 @@ bool RubiksCube::IsInSolvedState( void ) const
 				if( rotation0.plane.axis == rotation1.plane.axis && rotation0.plane.index == rotation1.plane.index )
 				{
 					// Adjacent rotations of opposite angles cancel one another out.
-					if( rotation0.angle == -rotation1.angle )
+					if( fabs( rotation0.angle + rotation1.angle ) < epsilon )
 					{
 						rotationSequence.erase( iter0 );
 						rotationSequence.erase( iter1 );
