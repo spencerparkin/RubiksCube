@@ -216,6 +216,7 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 	typedef boost::tokenizer< boost::char_separator< char > > Tokenizer;
 	Tokenizer tokenizer( string, separator );
 
+	// TODO: This kind of work should be done in a sub-routine of the rubiks cube object.  Also, support the plane index in the language.
 	for( Tokenizer::iterator iter = tokenizer.begin(); iter != tokenizer.end(); iter++ )
 	{
 		std::string token = *iter;
@@ -223,30 +224,32 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 			continue;
 
 		RubiksCube::RelativeRotation relativeRotation;
+		relativeRotation.planeIndex = 0;
+
 		if( token == "L" )
-			relativeRotation = RubiksCube::L;
+			relativeRotation.type = RubiksCube::RelativeRotation::L;
 		else if( token == "R" )
-			relativeRotation = RubiksCube::R;
+			relativeRotation.type = RubiksCube::RelativeRotation::R;
 		else if( token == "D" )
-			relativeRotation = RubiksCube::D;
+			relativeRotation.type = RubiksCube::RelativeRotation::D;
 		else if( token == "U" )
-			relativeRotation = RubiksCube::U;
+			relativeRotation.type = RubiksCube::RelativeRotation::U;
 		else if( token == "B" )
-			relativeRotation = RubiksCube::B;
+			relativeRotation.type = RubiksCube::RelativeRotation::B;
 		else if( token == "F" )
-			relativeRotation = RubiksCube::F;
+			relativeRotation.type = RubiksCube::RelativeRotation::F;
 		else if( token == "Li" )
-			relativeRotation = RubiksCube::Li;
+			relativeRotation.type = RubiksCube::RelativeRotation::Li;
 		else if( token == "Ri" )
-			relativeRotation = RubiksCube::Ri;
+			relativeRotation.type = RubiksCube::RelativeRotation::Ri;
 		else if( token == "Di" )
-			relativeRotation = RubiksCube::Di;
+			relativeRotation.type = RubiksCube::RelativeRotation::Di;
 		else if( token == "Ui" )
-			relativeRotation = RubiksCube::Ui;
+			relativeRotation.type = RubiksCube::RelativeRotation::Ui;
 		else if( token == "Bi" )
-			relativeRotation = RubiksCube::Bi;
+			relativeRotation.type = RubiksCube::RelativeRotation::Bi;
 		else if( token == "Fi" )
-			relativeRotation = RubiksCube::Fi;
+			relativeRotation.type = RubiksCube::RelativeRotation::Fi;
 		else
 			return false;
 

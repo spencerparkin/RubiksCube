@@ -793,44 +793,48 @@ bool RubiksCube::TranslateRotationSequence( const Perspective& perspective, cons
 // I imagine that this routine would be used by the UI as well as the AI.
 // The UI would formulate the given system based on how the cube is oriented.
 // The AI, however, would have to formulate it as a function of the desired perspective.
-bool RubiksCube::TranslateRotation( const Perspective& perspective, RelativeRotation relativeRotation, Rotation& rotation ) const
+bool RubiksCube::TranslateRotation( const Perspective& perspective, const RelativeRotation& relativeRotation, Rotation& rotation ) const
 {
 	c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
 	c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
 	c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
 
+	wxASSERT( 0 <= relativeRotation.planeIndex && relativeRotation.planeIndex < subCubeMatrixSize );
+	if( !( 0 <= relativeRotation.planeIndex && relativeRotation.planeIndex < subCubeMatrixSize ) )
+		return false;
+
 	c3ga::vectorE3GA axis;
-	switch( relativeRotation )
+	switch( relativeRotation.type )
 	{
-		case L:
-		case Li:	axis = -xAxis;	break;
-		case R:
-		case Ri:	axis = xAxis;	break;
-		case D:
-		case Di:	axis = -yAxis;	break;
-		case U:
-		case Ui:	axis = yAxis;	break;
-		case B:
-		case Bi:	axis = -zAxis;	break;
-		case F:
-		case Fi:	axis = zAxis;	break;
+		case RelativeRotation::L:
+		case RelativeRotation::Li:	axis = -xAxis;	break;
+		case RelativeRotation::R:
+		case RelativeRotation::Ri:	axis = xAxis;	break;
+		case RelativeRotation::D:
+		case RelativeRotation::Di:	axis = -yAxis;	break;
+		case RelativeRotation::U:
+		case RelativeRotation::Ui:	axis = yAxis;	break;
+		case RelativeRotation::B:
+		case RelativeRotation::Bi:	axis = -zAxis;	break;
+		case RelativeRotation::F:
+		case RelativeRotation::Fi:	axis = zAxis;	break;
 	}
 
 	double angle;
-	switch( relativeRotation )
+	switch( relativeRotation.type )
 	{
-		case Li:
-		case Ri:
-		case Di:
-		case Ui:
-		case Bi:
-		case Fi:	angle = M_PI / 2.0;		break;
-		case L:
-		case R:
-		case D:
-		case U:
-		case B:
-		case F:		angle = -M_PI / 2.0;	break;
+		case RelativeRotation::Li:
+		case RelativeRotation::Ri:
+		case RelativeRotation::Di:
+		case RelativeRotation::Ui:
+		case RelativeRotation::Bi:
+		case RelativeRotation::Fi:	angle = M_PI / 2.0;		break;
+		case RelativeRotation::L:
+		case RelativeRotation::R:
+		case RelativeRotation::D:
+		case RelativeRotation::U:
+		case RelativeRotation::B:
+		case RelativeRotation::F:	angle = -M_PI / 2.0;	break;
 	}
 
 	axis =
@@ -842,42 +846,42 @@ bool RubiksCube::TranslateRotation( const Perspective& perspective, RelativeRota
 	if( c3ga::norm( axis - xAxis ) < epsilon )
 	{
 		rotation.plane.axis = X_AXIS;
-		rotation.plane.index = subCubeMatrixSize - 1;
+		rotation.plane.index = subCubeMatrixSize - 1 - relativeRotation.planeIndex;
 		rotation.angle = angle;
 		return true;
 	}
 	else if( c3ga::norm( axis + xAxis ) < epsilon )
 	{
 		rotation.plane.axis = X_AXIS;
-		rotation.plane.index = 0;
+		rotation.plane.index = relativeRotation.planeIndex;
 		rotation.angle = -angle;
 		return true;
 	}
 	else if( c3ga::norm( axis - yAxis ) < epsilon )
 	{
 		rotation.plane.axis = Y_AXIS;
-		rotation.plane.index = subCubeMatrixSize - 1;
+		rotation.plane.index = subCubeMatrixSize - 1 - relativeRotation.planeIndex;
 		rotation.angle = angle;
 		return true;
 	}
 	else if( c3ga::norm( axis + yAxis ) < epsilon )
 	{
 		rotation.plane.axis = Y_AXIS;
-		rotation.plane.index = 0;
+		rotation.plane.index = relativeRotation.planeIndex;
 		rotation.angle = -angle;
 		return true;
 	}
 	else if( c3ga::norm( axis - zAxis ) < epsilon )
 	{
 		rotation.plane.axis = Z_AXIS;
-		rotation.plane.index = subCubeMatrixSize - 1;
+		rotation.plane.index = subCubeMatrixSize - 1 - relativeRotation.planeIndex;
 		rotation.angle = angle;
 		return true;
 	}
 	else if( c3ga::norm( axis + zAxis ) < epsilon )
 	{
 		rotation.plane.axis = Z_AXIS;
-		rotation.plane.index = 0;
+		rotation.plane.index = relativeRotation.planeIndex;
 		rotation.angle = -angle;
 		return true;
 	}
@@ -1139,6 +1143,13 @@ Solver* RubiksCube::MakeSolver( void ) const
 	}
 
 	return solver;
+}
+
+//==================================================================================================
+RubiksCube::RelativeRotation::RelativeRotation( Type type /*= U*/, int planeIndex /*= 0*/ )
+{
+	this->type = type;
+	this->planeIndex = planeIndex;
 }
 
 // RubiksCube.cpp
