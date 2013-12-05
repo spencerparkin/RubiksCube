@@ -29,10 +29,13 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	programMenu->Append( exitMenuItem );
 
 	wxMenu* rotationHistoryMenu = new wxMenu();
+	wxMenuItem* rotationHistoryClearMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryClear, "Clear History", "Delete all rotation history." );
 	wxMenuItem* rotationHistoryGoForwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoForward, "Go Forward\tF9", "Apply the rotation that takes us forward in the rotation history." );
 	wxMenuItem* rotationHisotryGoBackwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoBackward, "Go Backward\tF10", "Apply the rotation that takes us backward in the rotation history." );
 	rotationHistoryMenu->Append( rotationHistoryGoForwardMenuItem );
 	rotationHistoryMenu->Append( rotationHisotryGoBackwardMenuItem );
+	rotationHistoryMenu->AppendSeparator();
+	rotationHistoryMenu->Append( rotationHistoryClearMenuItem );
 
 	wxMenu* viewMenu = new wxMenu();
 	wxMenuItem* showPerspectiveLabelsMenuItem = new wxMenuItem( viewMenu, ID_ShowPerspectiveLabels, "Show Perspective Labels", "Along with the cube, render labels of the cube faces that indicate the current perspective.", wxITEM_CHECK );
@@ -90,6 +93,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnRenderWithOrthographicProjection, this, ID_RenderWithOrthographicProjection );
 	Bind( wxEVT_MENU, &Frame::OnRotationHistoryGoForward, this, ID_RotationHistoryGoForward );
 	Bind( wxEVT_MENU, &Frame::OnRotationHistoryGoBackward, this, ID_RotationHistoryGoBackward );
+	Bind( wxEVT_MENU, &Frame::OnRotationHistoryClear, this, ID_RotationHistoryClear );
 	Bind( wxEVT_MENU, &Frame::OnExit, this, ID_Exit );
 	Bind( wxEVT_MENU, &Frame::OnDebugMode, this, ID_DebugMode );
 	Bind( wxEVT_MENU, &Frame::OnAbout, this, ID_About );
@@ -104,6 +108,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithOrthographicProjection );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryGoForward );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryGoBackward );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryClear );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DebugMode );
 	Bind( wxEVT_TIMER, &Frame::OnTimer, this, ID_Timer );
 	Bind( wxEVT_COMMAND_TEXT_ENTER, &Frame::OnTextCtrlEnter, this );
@@ -331,6 +336,12 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 }
 
 //==================================================================================================
+void Frame::OnRotationHistoryClear( wxCommandEvent& event )
+{
+	wxGetApp().RotationHistoryClear();
+}
+
+//==================================================================================================
 void Frame::OnRotationHistoryGoForward( wxCommandEvent& event )
 {
 	RubiksCube::Rotation rotation;
@@ -413,6 +424,11 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		case ID_RotationHistoryGoBackward:
 		{
 			event.Enable( wxGetApp().RotationHistoryCanGoBackward() );
+			break;
+		}
+		case ID_RotationHistoryClear:
+		{
+			event.Enable( wxGetApp().RotationHistoryCanGoForward() || wxGetApp().RotationHistoryCanGoBackward() );
 			break;
 		}
 		case ID_DebugMode:

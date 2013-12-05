@@ -21,6 +21,7 @@ private:
 		ID_RenderWithPerspectiveProjection,
 		ID_RenderWithOrthographicProjection,
 		ID_ShowPerspectiveLabels,
+		ID_RotationHistoryClear,
 		ID_RotationHistoryGoForward,
 		ID_RotationHistoryGoBackward,
 		ID_Exit,
@@ -38,6 +39,7 @@ private:
 	void OnRenderWithPerspectiveProjection( wxCommandEvent& event );
 	void OnRenderWithOrthographicProjection( wxCommandEvent& event );
 	void OnShowPerspectiveLabels( wxCommandEvent& event );
+	void OnRotationHistoryClear( wxCommandEvent& event );
 	void OnRotationHistoryGoForward( wxCommandEvent& event );
 	void OnRotationHistoryGoBackward( wxCommandEvent& event );
 	void OnExit( wxCommandEvent& event );
