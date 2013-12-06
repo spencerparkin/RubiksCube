@@ -135,10 +135,14 @@ public:
 	typedef std::list< Rotation > RotationSequence;
 	typedef std::list< RelativeRotation > RelativeRotationSequence;
 
-	void Render( GLenum mode, const Rotation& rotation, const Size& size ) const;
+	void Render( GLenum mode, const Rotation& rotation, const Size& size,
+										int* selectedFaceId = 0,
+										const RubiksCube* comparativeRubiksCube = 0,
+										bool highlightInvariants = false ) const;
+
 	bool Apply( const Rotation& rotation, Rotation* invariantRotation = 0, Rotation* reverseRotation = 0 );
 	bool ApplySequence( const RotationSequence& rotationSequence );
-	bool Select( unsigned int* hitBuffer, int hitBufferSize, int hitCount, Grip& grip ) const;
+	bool Select( unsigned int* hitBuffer, int hitBufferSize, int hitCount, Grip* grip = 0, int* faceId = 0 ) const;
 	bool IsInSolvedState( void ) const;
 
 	int SubCubeMatrixSize( void ) const;
@@ -174,7 +178,12 @@ private:
 	void RotatePlane( Plane plane, RotationDirection rotationDirection, int rotationCount );
 	void RotatePlaneCCW( Plane plane );
 
-	void RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga::evenVersor& vertexVersor, const c3ga::evenVersor& normalVersor ) const;
+	void RenderSubCube( GLenum mode, const SubCube* subCube,
+								const c3ga::evenVersor& vertexVersor,
+								const c3ga::evenVersor& normalVersor,
+								int* selectedFaceId,
+								const SubCube* comparativeSubCube,
+								bool highlightInvariants ) const;
 
 	SubCube* SubCubeIndexPlane( Plane plane, int i, int j );
 	static void SwapFaces( SubCube* subCube, int i, int j );

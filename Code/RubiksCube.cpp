@@ -213,7 +213,10 @@ int RubiksCube::SubCubeMatrixSize( void ) const
 }
 
 //==================================================================================================
-void RubiksCube::Render( GLenum mode, const Rotation& rotation, const Size& size ) const
+void RubiksCube::Render( GLenum mode, const Rotation& rotation, const Size& size,
+										int* selectedFaceId /*= 0*/,
+										const RubiksCube* comparativeRubiksCube /*= 0*/,
+										bool highlightInvariants /*= false*/ ) const
 {
 	double t;
 	c3ga::vectorE3GA subCubeCenter;
@@ -268,7 +271,10 @@ void RubiksCube::Render( GLenum mode, const Rotation& rotation, const Size& size
 				normalVersor.set( rotor );
 
 				SubCube* subCube = &subCubeMatrix[x][y][z];
-				RenderSubCube( mode, subCube, vertexVersor, normalVersor );
+				const SubCube* comparativeSubCube = 0;
+				if( mode == GL_RENDER && comparativeRubiksCube && comparativeRubiksCube->ValidMatrixCoordinates( subCube->x, subCube->y, subCube->z ) )
+					comparativeSubCube = comparativeRubiksCube->Matrix( subCube->x, subCube->y, subCube->z );
+				RenderSubCube( mode, subCube, vertexVersor, normalVersor, selectedFaceId, comparativeSubCube, highlightInvariants );
 
 				if( mode == GL_SELECT )
 					glPopName();
@@ -318,7 +324,12 @@ double RubiksCube::subCubeTextureCoordinates[4][2] =
 };
 
 //==================================================================================================
-void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga::evenVersor& vertexVersor, const c3ga::evenVersor& normalVersor ) const
+void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
+												const c3ga::evenVersor& vertexVersor,
+												const c3ga::evenVersor& normalVersor,
+												int* selectedFaceId,
+												const SubCube* comparativeSubCube,
+												bool highlightInvariants ) const
 {
 	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
 	{
@@ -338,20 +349,18 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga:
 			glBindTexture( GL_TEXTURE_2D, texName );
 		}
 		
+		c3ga::vectorE3GA faceNormal = TranslateNormal( Face( face ) );
+		faceNormal = c3ga::applyUnitVersor( normalVersor, faceNormal );
 		if( GL_FALSE == glIsEnabled( GL_LIGHTING ) )
 			glColor3d( faceColor.get_e1(), faceColor.get_e2(), faceColor.get_e3() );
 		else
-		{
-			c3ga::vectorE3GA faceNormal = TranslateNormal( Face( face ) );
-			faceNormal = c3ga::applyUnitVersor( normalVersor, faceNormal );
+		{	
 			glNormal3f( faceNormal.get_e1(), faceNormal.get_e2(), faceNormal.get_e3() );
-
 			GLfloat ambientDiffuse[] = { faceColor.get_e1(), faceColor.get_e2(), faceColor.get_e3(), 1.f };
 			glMaterialfv( GL_FRONT, GL_AMBIENT_AND_DIFFUSE, ambientDiffuse );
 		}
 
-		glBegin( GL_QUADS );
-
+		c3ga::vectorE3GA quadVertices[4];
 		for( int index = 0; index < 4; index++ )
 		{
 			double* vertex = subCubeVertex[ subCubeFace[ face ][ index ] ];
@@ -359,11 +368,55 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga:
 			c3ga::dualSphere dualPoint;
 			dualPoint.set( c3ga::no + point + 0.5 * c3ga::norm2( point ) * c3ga::ni );
 			dualPoint = c3ga::applyUnitVersor( vertexVersor, dualPoint );		// This should always be homogenized.
-			glTexCoord2dv( subCubeTextureCoordinates[ index ] );
-			glVertex3d( dualPoint.get_e1(), dualPoint.get_e2(), dualPoint.get_e3() );
+			quadVertices[ index ] = dualPoint;
 		}
 
+		glBegin( GL_QUADS );
+		for( int index = 0; index < 4; index++ )
+		{
+			glTexCoord2dv( subCubeTextureCoordinates[ index ] );
+			c3ga::vectorE3GA* vertex = &quadVertices[ index ];
+			glVertex3d( vertex->get_e1(), vertex->get_e2(), vertex->get_e3() );
+		}
 		glEnd();
+
+		if( mode == GL_RENDER )
+		{
+			bool highlightFace = false;
+			if( comparativeSubCube )
+			{
+				if( highlightInvariants && comparativeSubCube->faceData[ face ].id == subCube->faceData[ face ].id )
+				{
+					highlightFace = true;
+					glColor3f( 0.5f, 0.5f, 0.5f );
+				}
+				
+				if( selectedFaceId && *selectedFaceId >= 0 && comparativeSubCube->faceData[ face ].id == *selectedFaceId )
+				{
+					highlightFace = true;
+					glColor3f( 0.f, 1.f, 0.f );
+				}
+			}
+			else if( selectedFaceId && *selectedFaceId >= 0 && subCube->faceData[ face ].id == *selectedFaceId )
+			{
+				highlightFace = true;
+				glColor3f( 1.f, 0.f, 0.f );
+			}
+
+			if( highlightFace )
+			{
+				glDisable( GL_TEXTURE_2D );
+				glDisable( GL_LIGHTING );
+				glBegin( GL_LINE_LOOP );
+				c3ga::vectorE3GA delta = c3ga::gp( faceNormal, 0.1 );
+				for( int index = 0; index < 4; index++ )
+				{
+					c3ga::vectorE3GA vertex = quadVertices[ index ] + delta;
+					glVertex3d( vertex.get_e1(), vertex.get_e2(), vertex.get_e3() );
+				}
+				glEnd();
+			}
+		}
 
 		if( mode == GL_SELECT )
 			glPopName();
@@ -651,9 +704,11 @@ RubiksCube::SubCube* RubiksCube::SubCubeIndexPlane( Plane plane, int i, int j )
 }
 
 //==================================================================================================
-bool RubiksCube::Select( unsigned int* hitBuffer, int hitBufferSize, int hitCount, Grip& grip ) const
+bool RubiksCube::Select( unsigned int* hitBuffer, int hitBufferSize, int hitCount, Grip* grip /*= 0*/, int* faceId /*= 0*/ ) const
 {
 	bool grippingCube = false;
+	if( faceId )
+		*faceId = -1;
 
 	// Notice that if "hitCount" is -1, which indicates an
 	// over-flow of the buffer, we don't process anything.
@@ -677,7 +732,10 @@ bool RubiksCube::Select( unsigned int* hitBuffer, int hitBufferSize, int hitCoun
 				if( minZ < smallestZ )
 				{
 					smallestZ = minZ;
-					grippingCube = TranslateGrip( grip, x, y, z, face );
+					if( grip )
+						grippingCube = TranslateGrip( *grip, x, y, z, face );
+					if( faceId )
+						*faceId = subCube->faceData[ face ].id;
 				}
 			}
 		}

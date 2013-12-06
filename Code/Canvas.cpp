@@ -40,10 +40,9 @@ Canvas::Canvas( wxWindow* parent ) : wxGLCanvas( parent, wxID_ANY, attributeList
 	grip.plane[1].index = 0;
 
 	grippingCube = false;
-
 	projection = PERSPECTIVE;
-
 	showPerspectiveLabels = false;
+	selectedFaceId = -1;
 }
 
 //==================================================================================================
@@ -200,7 +199,7 @@ void Canvas::PreRender( GLenum mode )
 }
 
 //==================================================================================================
-void Canvas::PostRender( GLenum mode )
+void Canvas::PostRender( GLenum mode, bool selectFace )
 {
 	glFlush();
 
@@ -212,7 +211,7 @@ void Canvas::PostRender( GLenum mode )
 
 		RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 		if( rubiksCube )
-			grippingCube = rubiksCube->Select( hitBuffer, hitBufferSize, hitCount, grip );
+			grippingCube = rubiksCube->Select( hitBuffer, hitBufferSize, hitCount, ( selectFace ? 0 : &grip ), ( selectFace ? &selectedFaceId : 0 ) );
 
 		delete[] hitBuffer;
 		hitBuffer = 0;
@@ -221,21 +220,31 @@ void Canvas::PostRender( GLenum mode )
 		wxFrame* frame = wxDynamicCast( GetParent(), wxFrame );
 		if( frame )
 		{
-			wxString gripString;
-			if( !grippingCube )
-				gripString = "No grip on cube.";
+			wxString statusString;
+			if( !selectFace )
+			{
+				if( !grippingCube )
+					statusString = "No grip on cube.";
+				else
+				{
+					wxString axisString[2];
+					RubiksCube::TranslateAxis( axisString[0], grip.plane[0].axis );
+					RubiksCube::TranslateAxis( axisString[1], grip.plane[1].axis );
+					statusString = wxString::Format( "Grip plane 0: { %s, %d }; Grip plane 1: { %s, %d }.",
+														axisString[0], grip.plane[0].index,
+														axisString[1], grip.plane[1].index );
+				}
+			}
 			else
 			{
-				wxString axisString[2];
-				RubiksCube::TranslateAxis( axisString[0], grip.plane[0].axis );
-				RubiksCube::TranslateAxis( axisString[1], grip.plane[1].axis );
-				gripString = wxString::Format( "Grip plane 0: { %s, %d }; Grip plane 1: { %s, %d }.",
-													axisString[0], grip.plane[0].index,
-													axisString[1], grip.plane[1].index );
+				if( selectedFaceId < 0 )
+					statusString = "No face selected.";
+				else
+					statusString = wxString::Format( "Selected face with ID: %d", selectedFaceId );
 			}
 
 			wxStatusBar* statusBar = frame->GetStatusBar();
-			statusBar->SetStatusText( gripString );
+			statusBar->SetStatusText( statusString );
 		}
 	}
 }
@@ -247,12 +256,12 @@ void Canvas::OnPaint( wxPaintEvent& event )
 
 	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 	if( rubiksCube )
-		rubiksCube->Render( GL_RENDER, rotation, size );
+		rubiksCube->Render( GL_RENDER, rotation, size, &selectedFaceId );
 
 	if( showPerspectiveLabels )
 		RenderPerspectiveLabels();
 
-	PostRender( GL_RENDER );
+	PostRender( GL_RENDER, false );
 }
 
 //==================================================================================================
@@ -381,6 +390,15 @@ void Canvas::OnSize( wxSizeEvent& event )
 void Canvas::OnMouseLeftDown( wxMouseEvent& event )
 {
 	mousePos = event.GetPosition();
+
+	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	if( rubiksCube && event.ControlDown() )
+	{
+		PreRender( GL_SELECT );
+		rubiksCube->Render( GL_SELECT, rotation, size );
+		PostRender( GL_SELECT, true );
+		Refresh();
+	}
 }
 
 //==================================================================================================
@@ -394,7 +412,7 @@ void Canvas::OnMouseRightDown( wxMouseEvent& event )
 	{
 		PreRender( GL_SELECT );
 		rubiksCube->Render( GL_SELECT, rotation, size );
-		PostRender( GL_SELECT );
+		PostRender( GL_SELECT, false );
 
 		if( grippingCube )
 			CaptureMouse();

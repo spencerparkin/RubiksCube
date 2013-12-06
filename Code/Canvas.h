@@ -31,7 +31,7 @@ private:
 	void BindContext( void );
 
 	void PreRender( GLenum mode );
-	void PostRender( GLenum mode );
+	void PostRender( GLenum mode, bool selectFace );
 
 	void OnPaint( wxPaintEvent& event );
 	void OnSize( wxSizeEvent& event );
@@ -72,6 +72,7 @@ private:
 	int hitBufferSize;
 	Projection projection;
 	bool showPerspectiveLabels;
+	int selectedFaceId;
 };
 
 // Canvas.h
