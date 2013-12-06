@@ -391,11 +391,11 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		}
 		case ID_DestroyCube:
 		case ID_SaveCube:
-		case ID_SolveCube:
 		{
 			event.Enable( wxGetApp().rubiksCube != 0 ? true : false );
 			break;
 		}
+		case ID_SolveCube:
 		case ID_ScrambleCube:
 		{
 			event.Enable( ( wxGetApp().rubiksCube != 0 && executionSequence.size() == 0 ) ? true : false );
