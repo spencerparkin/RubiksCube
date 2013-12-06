@@ -383,24 +383,29 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 		if( mode == GL_RENDER )
 		{
 			bool highlightFace = false;
-			if( comparativeSubCube )
+			if( highlightInvariants )
 			{
-				if( highlightInvariants && comparativeSubCube->faceData[ face ].id == subCube->faceData[ face ].id )
+				if( comparativeSubCube && comparativeSubCube->faceData[ face ].id == subCube->faceData[ face ].id )
 				{
 					highlightFace = true;
 					glColor3f( 0.5f, 0.5f, 0.5f );
 				}
-				
-				if( selectedFaceId && *selectedFaceId >= 0 && comparativeSubCube->faceData[ face ].id == *selectedFaceId )
+			}
+			else if( selectedFaceId && *selectedFaceId >= 0 )
+			{
+				if( comparativeSubCube && comparativeSubCube->faceData[ face ].id == *selectedFaceId )
 				{
 					highlightFace = true;
-					glColor3f( 0.f, 1.f, 0.f );
+					if( subCube->faceData[ face ].id == *selectedFaceId )
+						glColor3f( 0.f, 0.f, 1.f );
+					else
+						glColor3f( 0.f, 1.f, 0.f );
 				}
-			}
-			else if( selectedFaceId && *selectedFaceId >= 0 && subCube->faceData[ face ].id == *selectedFaceId )
-			{
-				highlightFace = true;
-				glColor3f( 1.f, 0.f, 0.f );
+				else if( subCube->faceData[ face ].id == *selectedFaceId )
+				{
+					highlightFace = true;
+					glColor3f( 1.f, 0.f, 0.f );
+				}
 			}
 
 			if( highlightFace )
