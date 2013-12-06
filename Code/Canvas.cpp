@@ -42,13 +42,16 @@ Canvas::Canvas( wxWindow* parent ) : wxGLCanvas( parent, wxID_ANY, attributeList
 	grippingCube = false;
 	projection = PERSPECTIVE;
 	showPerspectiveLabels = false;
+	showInvariantFaces = false;
 	selectedFaceId = -1;
+	comparativeRubiksCube = 0;
 }
 
 //==================================================================================================
 /*virtual*/ Canvas::~Canvas( void )
 {
 	delete context;
+	delete comparativeRubiksCube;
 }
 
 //==================================================================================================
@@ -73,6 +76,18 @@ void Canvas::ShowPerspectiveLabels( bool showPerspectiveLabels )
 bool Canvas::ShowPerspectiveLabels( void ) const
 {
 	return showPerspectiveLabels;
+}
+
+//==================================================================================================
+void Canvas::ShowInvariantFaces( bool showInvariantFaces )
+{
+	this->showInvariantFaces = showInvariantFaces;
+}
+
+//==================================================================================================
+bool Canvas::ShowInvariantFaces( void ) const
+{
+	return showInvariantFaces;
 }
 
 //==================================================================================================
@@ -121,6 +136,19 @@ bool Canvas::ApplyRotation( const RubiksCube::Rotation& rotation, bool appendToR
 	if( appendToRotationHistory )
 		wxGetApp().RotationHistoryAppend( reverseRotation );
 
+	return true;
+}
+
+//==================================================================================================
+bool Canvas::TakeSnapShot( void )
+{
+	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	if( !rubiksCube )
+		return false;
+
+	delete comparativeRubiksCube;
+	comparativeRubiksCube = new RubiksCube( rubiksCube->SubCubeMatrixSize(), false );
+	comparativeRubiksCube->Copy( *rubiksCube, RubiksCube::CopyMap );
 	return true;
 }
 
@@ -256,7 +284,7 @@ void Canvas::OnPaint( wxPaintEvent& event )
 
 	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 	if( rubiksCube )
-		rubiksCube->Render( GL_RENDER, rotation, size, &selectedFaceId );
+		rubiksCube->Render( GL_RENDER, rotation, size, &selectedFaceId, comparativeRubiksCube, showInvariantFaces );
 
 	if( showPerspectiveLabels )
 		RenderPerspectiveLabels();

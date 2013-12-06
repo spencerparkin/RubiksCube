@@ -6,7 +6,7 @@
 Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFrame( parent, wxID_ANY, "Rubik's Cube", pos, size ), timer( this, ID_Timer )
 {
 	debugMode = DEBUG_MODE_NONE;
-
+	
 	animationTolerance = 0.01;
 
 	wxMenu* programMenu = new wxMenu();
@@ -38,9 +38,14 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	rotationHistoryMenu->Append( rotationHistoryClearMenuItem );
 
 	wxMenu* viewMenu = new wxMenu();
+	wxMenuItem* takeSnapShotMenuItem = new wxMenuItem( viewMenu, ID_TakeSnapShot, "Take Snap Shot", "Remember the Rubik's Cube as it is in its current state for comparison against a later state of the cube." );
+	wxMenuItem* showInvariantFacesMenuItem = new wxMenuItem( viewMenu, ID_ShowInvariantFaces, "Show Invariant Faces", "Highlight all faces in common between the current Rubik's cube and a snap-shot, if any, taken earlier.", wxITEM_CHECK );
 	wxMenuItem* showPerspectiveLabelsMenuItem = new wxMenuItem( viewMenu, ID_ShowPerspectiveLabels, "Show Perspective Labels", "Along with the cube, render labels of the cube faces that indicate the current perspective.", wxITEM_CHECK );
 	wxMenuItem* renderWithPerspectiveProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithPerspectiveProjection, "Render With Perspective Projection", "Render the cube using an perspective projection.", wxITEM_CHECK );
 	wxMenuItem* renderWithOrthographicProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithOrthographicProjection, "Render With Orthographic Projection", "Render the cube using an orthographic projection.", wxITEM_CHECK );
+	viewMenu->Append( takeSnapShotMenuItem );
+	viewMenu->AppendSeparator();
+	viewMenu->Append( showInvariantFacesMenuItem );
 	viewMenu->Append( showPerspectiveLabelsMenuItem );
 	viewMenu->AppendSeparator();
 	viewMenu->Append( renderWithPerspectiveProjectionMenuItem );
@@ -89,6 +94,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnSaveCube, this, ID_SaveCube );
 	Bind( wxEVT_MENU, &Frame::OnLoadCube, this, ID_LoadCube );
 	Bind( wxEVT_MENU, &Frame::OnShowPerspectiveLabels, this, ID_ShowPerspectiveLabels );
+	Bind( wxEVT_MENU, &Frame::OnShowInvariantFaces, this, ID_ShowInvariantFaces );
+	Bind( wxEVT_MENU, &Frame::OnTakeSnapShot, this, ID_TakeSnapShot );
 	Bind( wxEVT_MENU, &Frame::OnRenderWithPerspectiveProjection, this, ID_RenderWithPerspectiveProjection );
 	Bind( wxEVT_MENU, &Frame::OnRenderWithOrthographicProjection, this, ID_RenderWithOrthographicProjection );
 	Bind( wxEVT_MENU, &Frame::OnRotationHistoryGoForward, this, ID_RotationHistoryGoForward );
@@ -104,6 +111,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SaveCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_LoadCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowPerspectiveLabels );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowInvariantFaces );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_TakeSnapShot );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithPerspectiveProjection );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithOrthographicProjection );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryGoForward );
@@ -186,6 +195,24 @@ void Frame::OnShowPerspectiveLabels( wxCommandEvent& event )
 {
 	canvas->ShowPerspectiveLabels( !canvas->ShowPerspectiveLabels() );
 	canvas->Refresh();
+}
+
+//==================================================================================================
+void Frame::OnShowInvariantFaces( wxCommandEvent& event )
+{
+	canvas->ShowInvariantFaces( !canvas->ShowInvariantFaces() );
+	canvas->Refresh();
+}
+
+//==================================================================================================
+void Frame::OnTakeSnapShot( wxCommandEvent& event )
+{
+	if( canvas->TakeSnapShot() )
+	{
+		wxStatusBar* statusBar = GetStatusBar();
+		statusBar->SetStatusText( "Snap-shot taken!" );
+		canvas->Refresh();
+	}
 }
 
 //==================================================================================================
@@ -391,6 +418,7 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		}
 		case ID_DestroyCube:
 		case ID_SaveCube:
+		case ID_TakeSnapShot:
 		{
 			event.Enable( wxGetApp().rubiksCube != 0 ? true : false );
 			break;
@@ -414,6 +442,11 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		case ID_ShowPerspectiveLabels:
 		{
 			event.Check( canvas->ShowPerspectiveLabels() );
+			break;
+		}
+		case ID_ShowInvariantFaces:
+		{
+			event.Check( canvas->ShowInvariantFaces() );
 			break;
 		}
 		case ID_RotationHistoryGoForward:

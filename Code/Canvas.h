@@ -16,6 +16,8 @@ public:
 
 	void ShowPerspectiveLabels( bool showPerspectiveLabels );
 	bool ShowPerspectiveLabels( void ) const;
+	void ShowInvariantFaces( bool showInvariantFaces );
+	bool ShowInvariantFaces( void ) const;
 
 	void SetProjection( Projection projection );
 	Projection GetProjection( void ) const;
@@ -25,6 +27,7 @@ public:
 	bool IsAnimating( double tolerance = 1e-7 ) const;
 	bool ApplyRotation( const RubiksCube::Rotation& rotation, bool appendToRotationHistory = true );
 	void DeterminePerspective( RubiksCube::Perspective& perspective ) const;
+	bool TakeSnapShot( void );
 
 private:
 
@@ -72,7 +75,9 @@ private:
 	int hitBufferSize;
 	Projection projection;
 	bool showPerspectiveLabels;
+	bool showInvariantFaces;
 	int selectedFaceId;
+	RubiksCube* comparativeRubiksCube;
 };
 
 // Canvas.h

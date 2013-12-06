@@ -21,6 +21,8 @@ private:
 		ID_RenderWithPerspectiveProjection,
 		ID_RenderWithOrthographicProjection,
 		ID_ShowPerspectiveLabels,
+		ID_ShowInvariantFaces,
+		ID_TakeSnapShot,
 		ID_RotationHistoryClear,
 		ID_RotationHistoryGoForward,
 		ID_RotationHistoryGoBackward,
@@ -39,6 +41,8 @@ private:
 	void OnRenderWithPerspectiveProjection( wxCommandEvent& event );
 	void OnRenderWithOrthographicProjection( wxCommandEvent& event );
 	void OnShowPerspectiveLabels( wxCommandEvent& event );
+	void OnShowInvariantFaces( wxCommandEvent& event );
+	void OnTakeSnapShot( wxCommandEvent& event );
 	void OnRotationHistoryClear( wxCommandEvent& event );
 	void OnRotationHistoryGoForward( wxCommandEvent& event );
 	void OnRotationHistoryGoBackward( wxCommandEvent& event );

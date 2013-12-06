@@ -387,8 +387,11 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 			{
 				if( comparativeSubCube && comparativeSubCube->faceData[ face ].id == subCube->faceData[ face ].id )
 				{
-					highlightFace = true;
-					glColor3f( 0.5f, 0.5f, 0.5f );
+					if( subCube->faceData[ face ].id != -1 )
+					{
+						highlightFace = true;
+						glColor3f( 0.5f, 0.5f, 0.5f );
+					}
 				}
 			}
 			else if( selectedFaceId && *selectedFaceId >= 0 )
@@ -412,6 +415,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 			{
 				glDisable( GL_TEXTURE_2D );
 				glDisable( GL_LIGHTING );
+				glLineWidth( 2.f );
 				glBegin( GL_LINE_LOOP );
 				c3ga::vectorE3GA delta = c3ga::gp( faceNormal, 0.1 );
 				for( int index = 0; index < 4; index++ )
