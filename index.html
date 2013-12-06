@@ -18,13 +18,16 @@
 git clone https://github.com/spencerparkin/RubiksCube.git
 	</code>
     
-	<p>Once up, use the "program" menu to create a new cube.
+	<h2>Basic Usage</h2>
+	
+	<p>Once running, use the "Program" menu to create a new cube.
 	The requested cube size determines the width, height and
 	depth of the cube.  After creating a cube, click and drag
 	the left mouse button in the window to orient the cube.
 	Click and drag the right mouse button over faces of the cube
-	to manipulate it.  Also in the "program" menu, you'll find
-	a scramble option which you can use to randomize the cube.</p>
+	to manipulate it.  Also in the "Program" menu, you'll find
+	a "Scramble Cube" option which you can use to randomize the cube
+	by applying a randomly generated sequence of rotations.</p>
 	
 	<p>
 	An alternative mode of cube manipulation is to use the command
@@ -41,9 +44,19 @@ git clone https://github.com/spencerparkin/RubiksCube.git
 	"Show Perspective Labels" option from the "View" menu.
 	</p>
 	
+	<p>Of course, these commands are only applicable to the 2x2x2 and 3x3x3 cubes.
+	For cubes having a larger number of cut-planes, (i.e., cubes of dimension
+	NxNxN with N>3), the command language above is extended to accomodate such
+	cubes with an added syntax that provides a way to describe any desired rotation
+	from a given perspective.  This is done by simply adding a colon, then a
+	plane index to any command.  For example, "L:0, L:1" is equivalent to the
+	sequence "L, Ri" for the 2x2x2 cube.  Notice that the indices are zero-based.
+	</p>
+	
 	<p>Please let me know if you have any comments or questions
 	about the program.  My e-mail address can be found in the
-	about-box of the program.</p>
+	about-box of the program.  Note that as of this writing,
+	the "Solve Cube" feature works only for the 3x3x3 case.</p>
 	
   </body>
 </html>
