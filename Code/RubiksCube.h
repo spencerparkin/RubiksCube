@@ -107,7 +107,13 @@ public:
 
 	struct SubCube
 	{
-		Color faceColor[ CUBE_FACE_COUNT ];
+		struct FaceData
+		{
+			Color color;
+			int id;
+		};
+
+		FaceData faceData[ CUBE_FACE_COUNT ];
 		int x, y, z;
 	};
 
@@ -162,8 +168,8 @@ private:
 	bool SaveToXml( wxXmlNode* xmlNode ) const;
 	bool LoadFromXml( const wxXmlNode* xmlNode );
 
-	bool SaveColorToXml( wxXmlNode* xmlSubCube, const wxString& name, Color color ) const;
-	bool LoadColorFromXml( const wxXmlNode* xmlSubCube, const wxString& name, Color& color );
+	static bool SaveIntegerToXml( wxXmlNode* xmlNode, const wxString& name, int integer );
+	static bool LoadIntegerFromXml( const wxXmlNode* xmlNode, const wxString& name, int& integer );
 
 	void RotatePlane( Plane plane, RotationDirection rotationDirection, int rotationCount );
 	void RotatePlaneCCW( Plane plane );
@@ -171,7 +177,8 @@ private:
 	void RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga::evenVersor& vertexVersor, const c3ga::evenVersor& normalVersor ) const;
 
 	SubCube* SubCubeIndexPlane( Plane plane, int i, int j );
-	static void SwapColors( SubCube* subCube, int i, int j );
+	static void SwapFaces( SubCube* subCube, int i, int j );
+	static void SwapFaces( SubCube::FaceData& faceData0, SubCube::FaceData& faceData1 );
 	static void SwapSubCubes( SubCube* subCube0, SubCube* subCube1 );
 
 	SubCube*** subCubeMatrix;

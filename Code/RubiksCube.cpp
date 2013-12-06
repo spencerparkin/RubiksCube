@@ -17,6 +17,8 @@ const char* RubiksCube::textureFiles[ MAX_COLORS ] =
 //==================================================================================================
 RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= true*/ )
 {
+	int id = 0;
+
 	this->subCubeMatrixSize = subCubeMatrixSize;
 	subCubeMatrix = new SubCube**[ subCubeMatrixSize ];
 	for( int x = 0; x < subCubeMatrixSize; x++ )
@@ -29,12 +31,19 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= tru
 			{
 				SubCube* subCube = &subCubeMatrix[x][y][z];
 
-				subCube->faceColor[ NEG_X ] = ( x == 0 ) ? WHITE : GREY;
-				subCube->faceColor[ POS_X ] = ( x == subCubeMatrixSize - 1 ) ? YELLOW : GREY;
-				subCube->faceColor[ NEG_Y ] = ( y == 0 ) ? GREEN : GREY;
-				subCube->faceColor[ POS_Y ] = ( y == subCubeMatrixSize - 1 ) ? BLUE : GREY;
-				subCube->faceColor[ NEG_Z ] = ( z == 0 ) ? ORANGE : GREY;
-				subCube->faceColor[ POS_Z ] = ( z == subCubeMatrixSize - 1 ) ? RED : GREY;
+				subCube->faceData[ NEG_X ].color = ( x == 0 ) ? WHITE : GREY;
+				subCube->faceData[ POS_X ].color = ( x == subCubeMatrixSize - 1 ) ? YELLOW : GREY;
+				subCube->faceData[ NEG_Y ].color = ( y == 0 ) ? GREEN : GREY;
+				subCube->faceData[ POS_Y ].color = ( y == subCubeMatrixSize - 1 ) ? BLUE : GREY;
+				subCube->faceData[ NEG_Z ].color = ( z == 0 ) ? ORANGE : GREY;
+				subCube->faceData[ POS_Z ].color = ( z == subCubeMatrixSize - 1 ) ? RED : GREY;
+
+				subCube->faceData[ NEG_X ].id = ( x == 0 ) ? id++ : -1;
+				subCube->faceData[ POS_X ].id = ( x == subCubeMatrixSize - 1 ) ? id++ : -1;
+				subCube->faceData[ NEG_Y ].id = ( y == 0 ) ? id++ : -1;
+				subCube->faceData[ POS_Y ].id = ( y == subCubeMatrixSize - 1 ) ? id++ : -1;
+				subCube->faceData[ NEG_Z ].id = ( z == 0 ) ? id++ : -1;
+				subCube->faceData[ POS_Z ].id = ( z == subCubeMatrixSize - 1 ) ? id++ : -1;
 
 				subCube->x = x;
 				subCube->y = y;
@@ -129,7 +138,7 @@ bool RubiksCube::Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc )
 				const SubCube* srcSubCube = &rubiksCube.subCubeMatrix[ src_x ][ src_y ][ src_z ];
 
 				for( int face = 0; face < CUBE_FACE_COUNT; face++ )
-					dstSubCube->faceColor[ face ] = srcSubCube->faceColor[ face ];
+					dstSubCube->faceData[ face ] = srcSubCube->faceData[ face ];
 			}
 		}
 	}
@@ -181,7 +190,7 @@ const RubiksCube::SubCube* RubiksCube::CollectSubCube( Color* colorArray, int co
 /*static*/ bool RubiksCube::CubeHasColor( const SubCube* subCube, Color color )
 {
 	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
-		if( subCube->faceColor[ face ] == color )
+		if( subCube->faceData[ face ].color == color )
 			return true;
 	return false;
 }
@@ -316,7 +325,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube, const c3ga:
 		if( mode == GL_SELECT )
 			glPushName( face );
 
-		Color color = subCube->faceColor[ face ];
+		Color color = subCube->faceData[ face ].color;
 		c3ga::vectorE3GA faceColor = TranslateColor( color );
 
 		GLuint texName = textures[ color ];
@@ -579,9 +588,9 @@ void RubiksCube::RotatePlaneCCW( Plane plane )
 			SubCube* subCube = SubCubeIndexPlane( plane, i, j );
 			switch( plane.axis )
 			{
-				case X_AXIS: SwapColors( subCube, NEG_Z, POS_Z ); break;
-				case Y_AXIS: SwapColors( subCube, NEG_X, POS_X ); break;
-				case Z_AXIS: SwapColors( subCube, NEG_Y, POS_Y ); break;
+				case X_AXIS: SwapFaces( subCube, NEG_Z, POS_Z ); break;
+				case Y_AXIS: SwapFaces( subCube, NEG_X, POS_X ); break;
+				case Z_AXIS: SwapFaces( subCube, NEG_Y, POS_Y ); break;
 			}
 		}
 	}
@@ -599,9 +608,9 @@ void RubiksCube::RotatePlaneCCW( Plane plane )
 			SubCube* subCube = SubCubeIndexPlane( plane, i, j );
 			switch( plane.axis )
 			{
-				case X_AXIS: SwapColors( subCube, NEG_Y, NEG_Z ); SwapColors( subCube, POS_Y, POS_Z ); break;
-				case Y_AXIS: SwapColors( subCube, NEG_Z, NEG_X ); SwapColors( subCube, POS_Z, POS_X ); break;
-				case Z_AXIS: SwapColors( subCube, NEG_X, NEG_Y ); SwapColors( subCube, POS_X, POS_Y ); break;
+				case X_AXIS: SwapFaces( subCube, NEG_Y, NEG_Z ); SwapFaces( subCube, POS_Y, POS_Z ); break;
+				case Y_AXIS: SwapFaces( subCube, NEG_Z, NEG_X ); SwapFaces( subCube, POS_Z, POS_X ); break;
+				case Z_AXIS: SwapFaces( subCube, NEG_X, NEG_Y ); SwapFaces( subCube, POS_X, POS_Y ); break;
 			}
 		}
 	}
@@ -621,22 +630,24 @@ RubiksCube::SubCube* RubiksCube::SubCubeIndexPlane( Plane plane, int i, int j )
 }
 
 //==================================================================================================
-/*static*/ void RubiksCube::SwapColors( SubCube* subCube, int i, int j )
+/*static*/ void RubiksCube::SwapFaces( SubCube* subCube, int i, int j )
 {
-	Color tempColor = subCube->faceColor[i];
-	subCube->faceColor[i] = subCube->faceColor[j];
-	subCube->faceColor[j] = tempColor;
+	SwapFaces( subCube->faceData[i], subCube->faceData[j] );
+}
+
+//==================================================================================================
+/*static*/ void RubiksCube::SwapFaces( SubCube::FaceData& faceData0, SubCube::FaceData& faceData1 )
+{
+	SubCube::FaceData tempFaceData = faceData0;
+	faceData0 = faceData1;
+	faceData1 = tempFaceData;
 }
 
 //==================================================================================================
 /*static*/ void RubiksCube::SwapSubCubes( SubCube* subCube0, SubCube* subCube1 )
 {
 	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
-	{
-		Color tempColor = subCube0->faceColor[ face ];
-		subCube0->faceColor[ face ] = subCube1->faceColor[ face ];
-		subCube1->faceColor[ face ] = tempColor;
-	}
+		SwapFaces( subCube0->faceData[ face ], subCube1->faceData[ face ] );
 }
 
 //==================================================================================================
@@ -660,7 +671,7 @@ bool RubiksCube::Select( unsigned int* hitBuffer, int hitBufferSize, int hitCoun
 			Face face = ( Face )hitRecord[6];
 
 			const SubCube* subCube = &subCubeMatrix[x][y][z];
-			if( subCube->faceColor[ face ] != GREY )
+			if( subCube->faceData[ face ].color != GREY )
 			{
 				float minZ = float( hitRecord[1] ) / float( 0x7FFFFFFF );
 				if( minZ < smallestZ )
@@ -684,12 +695,12 @@ bool RubiksCube::Select( unsigned int* hitBuffer, int hitBufferSize, int hitCoun
 // in all such cases.
 bool RubiksCube::IsInSolvedState( void ) const
 {
-	Color posXColor = subCubeMatrix[ subCubeMatrixSize - 1 ][0][0].faceColor[ POS_X ];
-	Color posYColor = subCubeMatrix[0][ subCubeMatrixSize - 1 ][0].faceColor[ POS_Y ];
-	Color posZColor = subCubeMatrix[0][0][ subCubeMatrixSize - 1 ].faceColor[ POS_Z ];
-	Color negXColor = subCubeMatrix[0][0][0].faceColor[ NEG_X ];
-	Color negYColor = subCubeMatrix[0][0][0].faceColor[ NEG_Y ];
-	Color negZColor = subCubeMatrix[0][0][0].faceColor[ NEG_Z ];
+	Color posXColor = subCubeMatrix[ subCubeMatrixSize - 1 ][0][0].faceData[ POS_X ].color;
+	Color posYColor = subCubeMatrix[0][ subCubeMatrixSize - 1 ][0].faceData[ POS_Y ].color;
+	Color posZColor = subCubeMatrix[0][0][ subCubeMatrixSize - 1 ].faceData[ POS_Z ].color;
+	Color negXColor = subCubeMatrix[0][0][0].faceData[ NEG_X ].color;
+	Color negYColor = subCubeMatrix[0][0][0].faceData[ NEG_Y ].color;
+	Color negZColor = subCubeMatrix[0][0][0].faceData[ NEG_Z ].color;
 
 	for( int x = 0; x < subCubeMatrixSize; x++ )
 	{
@@ -699,17 +710,17 @@ bool RubiksCube::IsInSolvedState( void ) const
 			{
 				SubCube* subCube = &subCubeMatrix[x][y][z];
 
-				if( x == subCubeMatrixSize - 1 && subCube->faceColor[ POS_X ] != posXColor )
+				if( x == subCubeMatrixSize - 1 && subCube->faceData[ POS_X ].color != posXColor )
 					return false;
-				if( y == subCubeMatrixSize - 1 && subCube->faceColor[ POS_Y ] != posYColor )
+				if( y == subCubeMatrixSize - 1 && subCube->faceData[ POS_Y ].color != posYColor )
 					return false;
-				if( z == subCubeMatrixSize - 1 && subCube->faceColor[ POS_Z ] != posZColor )
+				if( z == subCubeMatrixSize - 1 && subCube->faceData[ POS_Z ].color != posZColor )
 					return false;
-				if( x == 0 && subCube->faceColor[ NEG_X ] != negXColor )
+				if( x == 0 && subCube->faceData[ NEG_X ].color != negXColor )
 					return false;
-				if( y == 0 && subCube->faceColor[ NEG_Y ] != negYColor )
+				if( y == 0 && subCube->faceData[ NEG_Y ].color != negYColor )
 					return false;
-				if( z == 0 && subCube->faceColor[ NEG_Z ] != negZColor )
+				if( z == 0 && subCube->faceData[ NEG_Z ].color != negZColor )
 					return false;
 			}
 		}
@@ -1109,17 +1120,30 @@ bool RubiksCube::SaveToXml( wxXmlNode* xmlNode ) const
 				xmlSubCube->AddAttribute( "y", wxString::Format( "%d", y ) );
 				xmlSubCube->AddAttribute( "z", wxString::Format( "%d", z ) );
 				
-				if( !SaveColorToXml( xmlSubCube, "neg_x", subCube->faceColor[ NEG_X ] ) )
+				if( !SaveIntegerToXml( xmlSubCube, "neg_x_color", subCube->faceData[ NEG_X ].color ) )
 					return false;
-				if( !SaveColorToXml( xmlSubCube, "pos_x", subCube->faceColor[ POS_X ] ) )
+				if( !SaveIntegerToXml( xmlSubCube, "pos_x_color", subCube->faceData[ POS_X ].color ) )
 					return false;
-				if( !SaveColorToXml( xmlSubCube, "neg_y", subCube->faceColor[ NEG_Y ] ) )
+				if( !SaveIntegerToXml( xmlSubCube, "neg_y_color", subCube->faceData[ NEG_Y ].color ) )
 					return false;
-				if( !SaveColorToXml( xmlSubCube, "pos_y", subCube->faceColor[ POS_Y ] ) )
+				if( !SaveIntegerToXml( xmlSubCube, "pos_y_color", subCube->faceData[ POS_Y ].color ) )
 					return false;
-				if( !SaveColorToXml( xmlSubCube, "neg_z", subCube->faceColor[ NEG_Z ] ) )
+				if( !SaveIntegerToXml( xmlSubCube, "neg_z_color", subCube->faceData[ NEG_Z ].color ) )
 					return false;
-				if( !SaveColorToXml( xmlSubCube, "pos_z", subCube->faceColor[ POS_Z ] ) )
+				if( !SaveIntegerToXml( xmlSubCube, "pos_z_color", subCube->faceData[ POS_Z ].color ) )
+					return false;
+
+				if( !SaveIntegerToXml( xmlSubCube, "neg_x_id", subCube->faceData[ NEG_X ].id ) )
+					return false;
+				if( !SaveIntegerToXml( xmlSubCube, "pos_x_id", subCube->faceData[ POS_X ].id ) )
+					return false;
+				if( !SaveIntegerToXml( xmlSubCube, "neg_y_id", subCube->faceData[ NEG_Y ].id ) )
+					return false;
+				if( !SaveIntegerToXml( xmlSubCube, "pos_y_id", subCube->faceData[ POS_Y ].id ) )
+					return false;
+				if( !SaveIntegerToXml( xmlSubCube, "neg_z_id", subCube->faceData[ NEG_Z ].id ) )
+					return false;
+				if( !SaveIntegerToXml( xmlSubCube, "pos_z_id", subCube->faceData[ POS_Z ].id ) )
 					return false;
 			}
 		}
@@ -1152,17 +1176,43 @@ bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 
 		SubCube* subCube = &subCubeMatrix[x][y][z];
 
-		if( !LoadColorFromXml( xmlSubCube, "neg_x", subCube->faceColor[ NEG_X ] ) )
+		int color;
+		
+		if( !LoadIntegerFromXml( xmlSubCube, "neg_x_color", color ) )
 			return false;
-		if( !LoadColorFromXml( xmlSubCube, "pos_x", subCube->faceColor[ POS_X ] ) )
+		subCube->faceData[ NEG_X ].color = Color( color );
+
+		if( !LoadIntegerFromXml( xmlSubCube, "pos_x_color", color ) )
 			return false;
-		if( !LoadColorFromXml( xmlSubCube, "neg_y", subCube->faceColor[ NEG_Y ] ) )
+		subCube->faceData[ POS_X ].color = Color( color );
+
+		if( !LoadIntegerFromXml( xmlSubCube, "neg_y_color", color ) )
 			return false;
-		if( !LoadColorFromXml( xmlSubCube, "pos_y", subCube->faceColor[ POS_Y ] ) )
+		subCube->faceData[ NEG_Y ].color = Color( color );
+
+		if( !LoadIntegerFromXml( xmlSubCube, "pos_y_color", color ) )
 			return false;
-		if( !LoadColorFromXml( xmlSubCube, "neg_z", subCube->faceColor[ NEG_Z ] ) )
+		subCube->faceData[ POS_Y ].color = Color( color );
+
+		if( !LoadIntegerFromXml( xmlSubCube, "neg_z_color", color ) )
 			return false;
-		if( !LoadColorFromXml( xmlSubCube, "pos_z", subCube->faceColor[ POS_Z ] ) )
+		subCube->faceData[ NEG_Z ].color = Color( color );
+
+		if( !LoadIntegerFromXml( xmlSubCube, "pos_z_color", color ) )
+			return false;
+		subCube->faceData[ POS_Z ].color = Color( color );
+
+		if( !LoadIntegerFromXml( xmlSubCube, "neg_x_id", subCube->faceData[ NEG_X ].id ) )
+			return false;
+		if( !LoadIntegerFromXml( xmlSubCube, "pos_x_id", subCube->faceData[ POS_X ].id ) )
+			return false;
+		if( !LoadIntegerFromXml( xmlSubCube, "neg_y_id", subCube->faceData[ NEG_Y ].id ) )
+			return false;
+		if( !LoadIntegerFromXml( xmlSubCube, "pos_y_id", subCube->faceData[ POS_Y ].id ) )
+			return false;
+		if( !LoadIntegerFromXml( xmlSubCube, "neg_z_id", subCube->faceData[ NEG_Z ].id ) )
+			return false;
+		if( !LoadIntegerFromXml( xmlSubCube, "pos_z_id", subCube->faceData[ POS_Z ].id ) )
 			return false;
 	}
 
@@ -1170,29 +1220,25 @@ bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 }
 
 //==================================================================================================
-bool RubiksCube::SaveColorToXml( wxXmlNode* xmlSubCube, const wxString& name, Color color ) const
+/*static*/ bool RubiksCube::SaveIntegerToXml( wxXmlNode* xmlNode, const wxString& name, int integer )
 {
-	int colorInt = color;
-	wxString colorString = wxString::Format( "%d", colorInt );
-	xmlSubCube->AddAttribute( name, colorString );
+	wxString integerString = wxString::Format( "%d", integer );
+	xmlNode->AddAttribute( name, integerString );
 	return true;
 }
 
 //==================================================================================================
-bool RubiksCube::LoadColorFromXml( const wxXmlNode* xmlSubCube, const wxString& name, Color& color )
+/*static*/ bool RubiksCube::LoadIntegerFromXml( const wxXmlNode* xmlNode, const wxString& name, int& integer )
 {
-	wxString colorString;
-	if( !xmlSubCube->GetAttribute( name, &colorString ) )
+	wxString integerString;
+	if( !xmlNode->GetAttribute( name, &integerString ) )
 		return false;
 
-	long colorLong;
-	if( !colorString.ToLong( &colorLong ) )
+	long integerLong;
+	if( !integerString.ToLong( &integerLong ) )
 		return false;
 
-	if( colorLong < 0 || colorLong >= MAX_COLORS )
-		return false;
-
-	color = Color( colorLong );
+	integer = int( integerLong );
 	return true;
 }
 

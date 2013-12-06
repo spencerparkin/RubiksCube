@@ -344,7 +344,7 @@ void SolverForCase3::PerformRedCrossOrientingStage( const RubiksCube* rubiksCube
 	for( int edge = 0; edge < 4; edge++ )
 	{
 		const RubiksCube::SubCube* subCube = rubiksCube->CollectSubCube( redEdgeColors[ edge ], 2 );
-		if( subCube->faceColor[ RubiksCube::POS_Z ] == RubiksCube::RED )
+		if( subCube->faceData[ RubiksCube::POS_Z ].color == RubiksCube::RED )
 			continue;
 
 		RubiksCube::Perspective* perspective = &standardPerspectives[ edge ];
@@ -423,7 +423,7 @@ void SolverForCase3::PerformRedCornersPositioningStage( const RubiksCube* rubiks
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
 		RubiksCube::Face rightFace = RubiksCube::TranslateNormal( perspective->rAxis );
 		RubiksCube::Face downFace = RubiksCube::TranslateNormal( -perspective->uAxis );
-		if( subCube->faceColor[ rightFace ] == RubiksCube::RED || subCube->faceColor[ downFace ] == RubiksCube::RED )
+		if( subCube->faceData[ rightFace ].color == RubiksCube::RED || subCube->faceData[ downFace ].color == RubiksCube::RED )
 			rubiksCube->ParseRelativeRotationSequenceString( "D, F, Di, Fi", relativeRotationSequence );
 		else
 			rubiksCube->ParseRelativeRotationSequenceString( "Di, Ri, D, R", relativeRotationSequence );
@@ -441,7 +441,7 @@ void SolverForCase3::PerformRedCornersOrientingStage( const RubiksCube* rubiksCu
 		const RubiksCube::SubCube* subCube = rubiksCube->CollectSubCube( redCornerColors[ corner ], 3 );
 		wxASSERT( subCube != 0 );
 
-		if( subCube->faceColor[ RubiksCube::POS_Z ] == RubiksCube::RED )
+		if( subCube->faceData[ RubiksCube::POS_Z ].color == RubiksCube::RED )
 			continue;
 
 		RubiksCube::Perspective* perspective = &standardPerspectives[ corner ];
@@ -475,9 +475,9 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 		rotation.angle = 0.0;
 
 		c3ga::vectorE3GA targetAxis;
-		if( subCube->faceColor[ RubiksCube::NEG_Z ] == middleEdgeColors[ edge ][0] )
+		if( subCube->faceData[ RubiksCube::NEG_Z ].color == middleEdgeColors[ edge ][0] )
 			targetAxis = perspective->rAxis;
-		else if( subCube->faceColor[ RubiksCube::NEG_Z ] == middleEdgeColors[ edge ][1] )
+		else if( subCube->faceData[ RubiksCube::NEG_Z ].color == middleEdgeColors[ edge ][1] )
 			targetAxis = perspective->fAxis;
 		else
 			wxASSERT( false );
@@ -499,7 +499,7 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 
 		// Move the edge piece into the correct position and orientation.  :)
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
-		if( subCube->faceColor[ RubiksCube::NEG_Z ] == middleEdgeColors[ edge ][0] )
+		if( subCube->faceData[ RubiksCube::NEG_Z ].color == middleEdgeColors[ edge ][0] )
 			rubiksCube->ParseRelativeRotationSequenceString( "Ui, Fi, U, F, U, R, Ui, Ri", relativeRotationSequence );
 		else
 			rubiksCube->ParseRelativeRotationSequenceString( "U, R, Ui, Ri, Ui, Fi, U, F", relativeRotationSequence );
@@ -524,7 +524,7 @@ void SolverForCase3::PerformMiddleEdgePositioningAndOrientingStage( const Rubiks
 			RubiksCube::Face forwardFace = RubiksCube::TranslateNormal( perspective->fAxis );
 			RubiksCube::Face rightFace = RubiksCube::TranslateNormal( perspective->rAxis );
 			
-			if( subCube->faceColor[ forwardFace ] == middleEdgeColors[ edge ][0] && subCube->faceColor[ rightFace ] == middleEdgeColors[ edge ][1] )
+			if( subCube->faceData[ forwardFace ].color == middleEdgeColors[ edge ][0] && subCube->faceData[ rightFace ].color == middleEdgeColors[ edge ][1] )
 				continue;
 		}
 
@@ -550,7 +550,7 @@ void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksC
 		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( location[0], location[1], 0 );
 
 		orientedProperly[ edge ] = false;
-		if( subCube->faceColor[ RubiksCube::NEG_Z ] == RubiksCube::ORANGE )
+		if( subCube->faceData[ RubiksCube::NEG_Z ].color == RubiksCube::ORANGE )
 		{
 			orientedProperly[ edge ] = true;
 			properOrientationCount++;
@@ -669,7 +669,7 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 
 		c3ga::vectorE3GA normal( c3ga::vectorE3GA::coord_e1_e2_e3, double( location[0] - 1 ), double( location[1] - 1 ), 0.0 );
 		RubiksCube::Face face = RubiksCube::TranslateNormal( normal );
-		RubiksCube::Color color = subCube->faceColor[ face ];
+		RubiksCube::Color color = subCube->faceData[ face ].color;
 
 		int index;
 		for( index = 0; index < 4; index++ )
@@ -782,7 +782,7 @@ void SolverForCase3::PerformOrangeCornerOrientingStage( const RubiksCube* rubiks
 	{
 		int* location = orangeCornerTargetLocations[ corner ];
 		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( location[0], location[1], 0 );
-		if( subCube->faceColor[ RubiksCube::NEG_Z ] != RubiksCube::ORANGE )
+		if( subCube->faceData[ RubiksCube::NEG_Z ].color != RubiksCube::ORANGE )
 			improperlyOrientedCornerList.push_back( corner );
 	}
 
@@ -827,9 +827,9 @@ void SolverForCase3::PerformOrangeCornerOrientingStage( const RubiksCube* rubiks
 		RubiksCube::Face rightFace = RubiksCube::TranslateNormal( standardPerspectivesNegated[ corner ].rAxis );
 		RubiksCube::Face forwardFace = RubiksCube::TranslateNormal( standardPerspectivesNegated[ corner ].fAxis );
 
-		if( subCube->faceColor[ rightFace ] == RubiksCube::ORANGE )
+		if( subCube->faceData[ rightFace ].color == RubiksCube::ORANGE )
 			rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, rotationSequence );
-		else if( subCube->faceColor[ forwardFace ] == RubiksCube::ORANGE )
+		else if( subCube->faceData[ forwardFace ].color == RubiksCube::ORANGE )
 			rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequenceInverse, rotationSequence );
 		else
 			wxASSERT( false );
