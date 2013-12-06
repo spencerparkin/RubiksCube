@@ -265,26 +265,30 @@ void Frame::OnTimer( wxTimerEvent& event )
 		}
 		else if( debugMode != DEBUG_MODE_NONE && wxGetApp().rubiksCube )
 		{
+			RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 			switch( debugMode )
 			{
 				case DEBUG_MODE_SCRAMBLE:
 				{
 					// This assert doesn't mean anything if we entered debug mode with an unsolved cube.
-					wxASSERT( wxGetApp().rubiksCube->IsInSolvedState() );
-					wxGetApp().rubiksCube->Scramble( time(0), 100, &executionSequence, false );
+					rubiksCube->IsInSolvedState();
+					rubiksCube->Scramble( time(0), 100, &executionSequence, false );
 					debugMode = DEBUG_MODE_SOLVE;
 					animationTolerance = 1.0;
 					break;
 				}
 				case DEBUG_MODE_SOLVE:
 				{
-					Solver* solver = wxGetApp().rubiksCube->MakeSolver();
+					Solver* solver = rubiksCube->MakeSolver();
 					if( solver )
 					{
-						bool success = solver->MakeEntireSolutionSequence( wxGetApp().rubiksCube, executionSequence );
+						bool success = rubiksCube->SaveToFile( "debugCube.xml" );
+						wxASSERT( success );
+						success = solver->MakeEntireSolutionSequence( wxGetApp().rubiksCube, executionSequence );
 						wxASSERT( success );
 						debugMode = DEBUG_MODE_SCRAMBLE;
 						animationTolerance = 0.1;
+						delete solver;
 					}
 					break;
 				}
