@@ -1005,11 +1005,22 @@ bool RubiksCube::ParseRelativeRotationSequenceString( const std::string& relativ
 		if( token == "," )
 			continue;
 
-		RubiksCube::RelativeRotation relativeRotation;
-		if( TranslateRelativeRotation( token, relativeRotation ) )
-			relativeRotationSequence.push_back( relativeRotation );
-		else
-			return false;
+		int processCount = 1;
+		if( token.c_str()[0] == '2' )
+		{
+			processCount = 2;
+			const char* newToken = &token.c_str()[1];
+			token = newToken;
+		}
+
+		for( int count = 0; count < processCount; count++ )
+		{
+			RubiksCube::RelativeRotation relativeRotation;
+			if( TranslateRelativeRotation( token, relativeRotation ) )
+				relativeRotationSequence.push_back( relativeRotation );
+			else
+				return false;
+		}
 	}
 
 	return true;
@@ -1027,32 +1038,36 @@ bool RubiksCube::TranslateRelativeRotation( const std::string& relativeRotationS
 	// The first token should be the relative face.
 	Tokenizer::iterator iter = tokenizer.begin();
 	std::string token = *iter;
-	if( token == "L" )
+	if( token == "L" || token == "l" )
 		relativeRotation.type = RubiksCube::RelativeRotation::L;
-	else if( token == "R" )
+	else if( token == "R" || token == "r" )
 		relativeRotation.type = RubiksCube::RelativeRotation::R;
-	else if( token == "D" )
+	else if( token == "D" || token == "d" )
 		relativeRotation.type = RubiksCube::RelativeRotation::D;
-	else if( token == "U" )
+	else if( token == "U" || token == "u" )
 		relativeRotation.type = RubiksCube::RelativeRotation::U;
-	else if( token == "B" )
+	else if( token == "B" || token == "b" )
 		relativeRotation.type = RubiksCube::RelativeRotation::B;
-	else if( token == "F" )
+	else if( token == "F" || token == "f" )
 		relativeRotation.type = RubiksCube::RelativeRotation::F;
-	else if( token == "Li" )
+	else if( token == "Li" || token == "li" || token == "L'" || token == "l'" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Li;
-	else if( token == "Ri" )
+	else if( token == "Ri" || token == "ri" || token == "R'" || token == "r'" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Ri;
-	else if( token == "Di" )
+	else if( token == "Di" || token == "di" || token == "D'" || token == "d'" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Di;
-	else if( token == "Ui" )
+	else if( token == "Ui" || token == "ui" || token == "U'" || token == "u'" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Ui;
-	else if( token == "Bi" )
+	else if( token == "Bi" || token == "bi" || token == "B'" || token == "b'" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Bi;
-	else if( token == "Fi" )
+	else if( token == "Fi" || token == "fi" || token == "F'" || token == "f'" )
 		relativeRotation.type = RubiksCube::RelativeRotation::Fi;
 	else
 		return false;
+
+	// Let the lower-case versions move the nearest inner later to the outer layer.
+	if( ::islower( token.c_str()[0] ) )
+		relativeRotation.planeIndex = 1;
 
 	// The next token, if any, should be a colon.
 	if( ++iter == tokenizer.end() )

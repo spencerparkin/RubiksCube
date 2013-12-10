@@ -235,7 +235,10 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 		if( !wxGetApp().rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, executionSequence ) )
 			executionSequence.clear();
 		else
+		{
+			wxGetApp().rubiksCube->CompressRotationSequence( executionSequence );
 			animationTolerance = 0.01;
+		}
 	}
 }
 
