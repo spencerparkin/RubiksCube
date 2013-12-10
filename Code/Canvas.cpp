@@ -45,6 +45,7 @@ Canvas::Canvas( wxWindow* parent ) : wxGLCanvas( parent, wxID_ANY, attributeList
 	showInvariantFaces = false;
 	selectedFaceId = -1;
 	comparativeRubiksCube = 0;
+	favoredPerspective = FAVOR_RIGHT_PERSPECTIVE;
 }
 
 //==================================================================================================
@@ -88,6 +89,18 @@ void Canvas::ShowInvariantFaces( bool showInvariantFaces )
 bool Canvas::ShowInvariantFaces( void ) const
 {
 	return showInvariantFaces;
+}
+
+//==================================================================================================
+void Canvas::SetFavoredPerspective( FavoredPerspective favoredPerspective )
+{
+	this->favoredPerspective = favoredPerspective;
+}
+
+//==================================================================================================
+Canvas::FavoredPerspective Canvas::GetFavoredPerspective( void ) const
+{
+	return favoredPerspective;
 }
 
 //==================================================================================================
@@ -557,6 +570,7 @@ void Canvas::OnMouseCaptureLost( wxMouseCaptureLostEvent& event )
 }
 
 //==================================================================================================
+// TODO: This logic is pretty dumb.  I think there's a better way to do this.
 void Canvas::DeterminePerspective( RubiksCube::Perspective& perspective ) const
 {
 	perspective.rAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 0.0 );
@@ -585,15 +599,29 @@ void Canvas::DeterminePerspective( RubiksCube::Perspective& perspective ) const
 
 	if( visibleAxisList.size() == 3 )
 	{
-		AxisList rightAxisList, forwardAxisList, neitherAxisList;
-		SortAxesByBlade( visibleAxisList, verticalViewBlade, &forwardAxisList, &rightAxisList, &neitherAxisList );
-		wxASSERT( rightAxisList.size() > 0 );
-		wxASSERT( forwardAxisList.size() > 0 );
-		wxASSERT( neitherAxisList.size() != 2 );
-
-		if( rightAxisList.size() == 1 && forwardAxisList.size() == 1 && neitherAxisList.size() == 1 )
+		AxisList leftAxisList, rightAxisList, forwardAxisList, neitherAxisList;
+		if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
 		{
-			perspective.rAxis = rightAxisList.front();
+			SortAxesByBlade( visibleAxisList, verticalViewBlade, &forwardAxisList, &rightAxisList, &neitherAxisList );
+			wxASSERT( rightAxisList.size() > 0 );
+			wxASSERT( forwardAxisList.size() > 0 );
+			wxASSERT( neitherAxisList.size() != 2 );
+		}
+		else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
+		{
+			SortAxesByBlade( visibleAxisList, verticalViewBlade, &leftAxisList, &forwardAxisList, &neitherAxisList );
+			wxASSERT( leftAxisList.size() > 0 );
+			wxASSERT( forwardAxisList.size() > 0 );
+			wxASSERT( neitherAxisList.size() != 2 );
+		}
+
+		if( ( leftAxisList.size() == 1 || rightAxisList.size() == 1 ) && forwardAxisList.size() == 1 && neitherAxisList.size() == 1 )
+		{
+			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
+				perspective.rAxis = rightAxisList.front();
+			else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
+				perspective.rAxis = -leftAxisList.front();
+
 			perspective.fAxis = forwardAxisList.front();
 
 			perspective.uAxis = neitherAxisList.front();
@@ -601,9 +629,12 @@ void Canvas::DeterminePerspective( RubiksCube::Perspective& perspective ) const
 			if( trivector.get_e1_e2_e3() > 0.0 )
 				perspective.uAxis = -perspective.uAxis;
 		}
-		else if( rightAxisList.size() == 1 && forwardAxisList.size() == 2 )
+		else if( ( leftAxisList.size() == 1 || rightAxisList.size() == 1 ) && forwardAxisList.size() == 2 )
 		{
-			perspective.rAxis = rightAxisList.front();
+			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
+				perspective.rAxis = rightAxisList.front();
+			else
+				perspective.rAxis = -leftAxisList.front();
 
 			AxisList aboveAxisList, belowAxisList;
 			SortAxesByBlade( forwardAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
@@ -613,27 +644,39 @@ void Canvas::DeterminePerspective( RubiksCube::Perspective& perspective ) const
 			perspective.uAxis = aboveAxisList.front();
 			perspective.fAxis = belowAxisList.front();
 		}
-		else if( rightAxisList.size() == 2 && forwardAxisList.size() == 1 )
+		else if( ( leftAxisList.size() == 2 || rightAxisList.size() == 2 ) && forwardAxisList.size() == 1 )
 		{
 			perspective.fAxis = forwardAxisList.front();
 
 			AxisList aboveAxisList, belowAxisList;
-			SortAxesByBlade( rightAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
+			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
+				SortAxesByBlade( rightAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
+			else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
+				SortAxesByBlade( leftAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
 			wxASSERT( aboveAxisList.size() == 1 );
 			wxASSERT( belowAxisList.size() == 1 );
 
 			perspective.uAxis = aboveAxisList.front();
-			perspective.rAxis = belowAxisList.front();
+			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
+				perspective.rAxis = belowAxisList.front();
+			else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
+				perspective.rAxis = -belowAxisList.front();
 		}
 	}
 	else if( visibleAxisList.size() == 2 )
 	{
-		AxisList rightAxisList, forwardAxisList, neitherAxisList;
-		SortAxesByBlade( visibleAxisList, verticalViewBlade, &forwardAxisList, &rightAxisList, &neitherAxisList );
+		AxisList leftAxisList, rightAxisList, forwardAxisList, neitherAxisList;
+		if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
+			SortAxesByBlade( visibleAxisList, verticalViewBlade, &forwardAxisList, &rightAxisList, &neitherAxisList );
+		else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
+			SortAxesByBlade( visibleAxisList, verticalViewBlade, &leftAxisList, &forwardAxisList, &neitherAxisList );
 		wxASSERT( neitherAxisList.size() == 0 || neitherAxisList.size() == 2 );
 		if( neitherAxisList.size() == 0 )
 		{
-			perspective.rAxis = rightAxisList.front();
+			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
+				perspective.rAxis = rightAxisList.front();
+			else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
+				perspective.rAxis = -leftAxisList.front();
 			perspective.fAxis = forwardAxisList.front();
 			perspective.uAxis = c3ga::gp( perspective.fAxis ^ perspective.rAxis, -I );
 		}
@@ -648,6 +691,8 @@ void Canvas::DeterminePerspective( RubiksCube::Perspective& perspective ) const
 			perspective.uAxis = aboveAxisList.front();
 			perspective.fAxis = belowAxisList.front();
 			perspective.rAxis = c3ga::gp( perspective.uAxis ^ perspective.fAxis, -I );
+			if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
+				perspective.rAxis = -perspective.rAxis;
 		}
 	}
 	else if( visibleAxisList.size() == 1 )

@@ -14,6 +14,12 @@ public:
 		ORTHOGRAPHIC,
 	};
 
+	enum FavoredPerspective
+	{
+		FAVOR_LEFT_PERSPECTIVE,
+		FAVOR_RIGHT_PERSPECTIVE,
+	};
+
 	void ShowPerspectiveLabels( bool showPerspectiveLabels );
 	bool ShowPerspectiveLabels( void ) const;
 	void ShowInvariantFaces( bool showInvariantFaces );
@@ -21,6 +27,9 @@ public:
 
 	void SetProjection( Projection projection );
 	Projection GetProjection( void ) const;
+
+	void SetFavoredPerspective( FavoredPerspective favoredPerspective );
+	FavoredPerspective GetFavoredPerspective( void ) const;
 
 	void AdjustSizeFor( const RubiksCube* rubiksCube );
 	bool Animate( void );
@@ -78,6 +87,7 @@ private:
 	bool showInvariantFaces;
 	int selectedFaceId;
 	RubiksCube* comparativeRubiksCube;
+	FavoredPerspective favoredPerspective;
 };
 
 // Canvas.h
