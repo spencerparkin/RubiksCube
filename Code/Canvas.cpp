@@ -45,7 +45,6 @@ Canvas::Canvas( wxWindow* parent ) : wxGLCanvas( parent, wxID_ANY, attributeList
 	showInvariantFaces = false;
 	selectedFaceId = -1;
 	comparativeRubiksCube = 0;
-	favoredPerspective = FAVOR_RIGHT_PERSPECTIVE;
 }
 
 //==================================================================================================
@@ -89,18 +88,6 @@ void Canvas::ShowInvariantFaces( bool showInvariantFaces )
 bool Canvas::ShowInvariantFaces( void ) const
 {
 	return showInvariantFaces;
-}
-
-//==================================================================================================
-void Canvas::SetFavoredPerspective( FavoredPerspective favoredPerspective )
-{
-	this->favoredPerspective = favoredPerspective;
-}
-
-//==================================================================================================
-Canvas::FavoredPerspective Canvas::GetFavoredPerspective( void ) const
-{
-	return favoredPerspective;
 }
 
 //==================================================================================================
@@ -570,16 +557,13 @@ void Canvas::OnMouseCaptureLost( wxMouseCaptureLostEvent& event )
 }
 
 //==================================================================================================
-// TODO: This logic is pretty dumb.  I think there's a better way to do this.
 void Canvas::DeterminePerspective( RubiksCube::Perspective& perspective ) const
 {
 	perspective.rAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 0.0 );
 	perspective.uAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 0.0 );
 	perspective.fAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 0.0 );
 
-	typedef std::list< c3ga::vectorE3GA > AxisList;
 	AxisList axisList;
-
 	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 ) );
 	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 ) );
 	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 ) );
@@ -587,124 +571,55 @@ void Canvas::DeterminePerspective( RubiksCube::Perspective& perspective ) const
 	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, -1.0, 0.0 ) );
 	axisList.push_back( c3ga::vectorE3GA( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, -1.0 ) );
 
-	c3ga::vectorE3GA zAxis;
 	c3ga::trivectorE3GA I( c3ga::trivectorE3GA::coord_e1e2e3, 1.0 );
-	c3ga::bivectorE3GA viewBlade = camera.xAxis ^ camera.yAxis;
-	zAxis = c3ga::gp( viewBlade, -I );
-	c3ga::bivectorE3GA verticalViewBlade = camera.yAxis ^ zAxis;
-	c3ga::bivectorE3GA horizontalViewBlade = zAxis ^ camera.xAxis;
+	c3ga::vectorE3GA zAxis;
+	zAxis = c3ga::gp( camera.xAxis ^ camera.yAxis, -I );
 
-	AxisList visibleAxisList, almostVisibleAxisList;
-	SortAxesByBlade( axisList, viewBlade, 0, &visibleAxisList, &almostVisibleAxisList );
-
-	if( visibleAxisList.size() == 3 )
+	// Find the forward axis.  This is the axis pointing most in the direction of the camera.
+	double maximumDot = -2.0;
+	for( AxisList::iterator iter = axisList.begin(); iter != axisList.end(); iter++ )
 	{
-		AxisList leftAxisList, rightAxisList, forwardAxisList, neitherAxisList;
-		if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
+		c3ga::vectorE3GA axis = *iter;
+		double dot = c3ga::lc( axis, zAxis );
+		if( dot > maximumDot )
 		{
-			SortAxesByBlade( visibleAxisList, verticalViewBlade, &forwardAxisList, &rightAxisList, &neitherAxisList );
-			wxASSERT( rightAxisList.size() > 0 );
-			wxASSERT( forwardAxisList.size() > 0 );
-			wxASSERT( neitherAxisList.size() != 2 );
-		}
-		else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
-		{
-			SortAxesByBlade( visibleAxisList, verticalViewBlade, &leftAxisList, &forwardAxisList, &neitherAxisList );
-			wxASSERT( leftAxisList.size() > 0 );
-			wxASSERT( forwardAxisList.size() > 0 );
-			wxASSERT( neitherAxisList.size() != 2 );
-		}
-
-		if( ( leftAxisList.size() == 1 || rightAxisList.size() == 1 ) && forwardAxisList.size() == 1 && neitherAxisList.size() == 1 )
-		{
-			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
-				perspective.rAxis = rightAxisList.front();
-			else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
-				perspective.rAxis = -leftAxisList.front();
-
-			perspective.fAxis = forwardAxisList.front();
-
-			perspective.uAxis = neitherAxisList.front();
-			c3ga::trivectorE3GA trivector = perspective.rAxis ^ perspective.fAxis ^ perspective.uAxis;
-			if( trivector.get_e1_e2_e3() > 0.0 )
-				perspective.uAxis = -perspective.uAxis;
-		}
-		else if( ( leftAxisList.size() == 1 || rightAxisList.size() == 1 ) && forwardAxisList.size() == 2 )
-		{
-			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
-				perspective.rAxis = rightAxisList.front();
-			else
-				perspective.rAxis = -leftAxisList.front();
-
-			AxisList aboveAxisList, belowAxisList;
-			SortAxesByBlade( forwardAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
-			wxASSERT( aboveAxisList.size() == 1 );
-			wxASSERT( belowAxisList.size() == 1 );
-
-			perspective.uAxis = aboveAxisList.front();
-			perspective.fAxis = belowAxisList.front();
-		}
-		else if( ( leftAxisList.size() == 2 || rightAxisList.size() == 2 ) && forwardAxisList.size() == 1 )
-		{
-			perspective.fAxis = forwardAxisList.front();
-
-			AxisList aboveAxisList, belowAxisList;
-			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
-				SortAxesByBlade( rightAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
-			else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
-				SortAxesByBlade( leftAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, 0 );
-			wxASSERT( aboveAxisList.size() == 1 );
-			wxASSERT( belowAxisList.size() == 1 );
-
-			perspective.uAxis = aboveAxisList.front();
-			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
-				perspective.rAxis = belowAxisList.front();
-			else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
-				perspective.rAxis = -belowAxisList.front();
+			maximumDot = dot;
+			perspective.fAxis = axis;
 		}
 	}
-	else if( visibleAxisList.size() == 2 )
+
+	// Cull from our axis-list all axes that are not orthogonal to the forward axis.
+	double epsilon = 1e-7;
+	AxisList::iterator nextIter;
+	for( AxisList::iterator iter = axisList.begin(); iter != axisList.end(); iter = nextIter )
 	{
-		AxisList leftAxisList, rightAxisList, forwardAxisList, neitherAxisList;
-		if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
-			SortAxesByBlade( visibleAxisList, verticalViewBlade, &forwardAxisList, &rightAxisList, &neitherAxisList );
-		else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
-			SortAxesByBlade( visibleAxisList, verticalViewBlade, &leftAxisList, &forwardAxisList, &neitherAxisList );
-		wxASSERT( neitherAxisList.size() == 0 || neitherAxisList.size() == 2 );
-		if( neitherAxisList.size() == 0 )
-		{
-			if( favoredPerspective == FAVOR_RIGHT_PERSPECTIVE )
-				perspective.rAxis = rightAxisList.front();
-			else if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
-				perspective.rAxis = -leftAxisList.front();
-			perspective.fAxis = forwardAxisList.front();
-			perspective.uAxis = c3ga::gp( perspective.fAxis ^ perspective.rAxis, -I );
-		}
-		else
-		{
-			neitherAxisList.clear();
-			AxisList aboveAxisList, belowAxisList;
-			SortAxesByBlade( visibleAxisList, horizontalViewBlade, &belowAxisList, &aboveAxisList, &neitherAxisList );
-			wxASSERT( neitherAxisList.size() == 0 );
-			wxASSERT( aboveAxisList.size() == 1 );
-			wxASSERT( belowAxisList.size() == 1 );
-			perspective.uAxis = aboveAxisList.front();
-			perspective.fAxis = belowAxisList.front();
-			perspective.rAxis = c3ga::gp( perspective.uAxis ^ perspective.fAxis, -I );
-			if( favoredPerspective == FAVOR_LEFT_PERSPECTIVE )
-				perspective.rAxis = -perspective.rAxis;
-		}
-	}
-	else if( visibleAxisList.size() == 1 )
-	{
-		wxASSERT( almostVisibleAxisList.size() == 4 );
-		//...
-		return;
+		nextIter = iter;
+		nextIter++;
+		c3ga::vectorE3GA axis = *iter;
+		double dot = c3ga::lc( axis, perspective.fAxis );
+		if( !( fabs( dot ) < epsilon ) )
+			axisList.erase( iter );
 	}
 
-	// We should always be returning a right-handed system.
-	c3ga::trivectorE3GA trivector = perspective.rAxis ^ perspective.uAxis ^ perspective.fAxis;
-	wxASSERT( trivector.get_e1_e2_e3() > 0.0 );
+	// Determine the right-axis.
+	c3ga::vectorE3GA vec0 = camera.xAxis + camera.yAxis;
+	c3ga::vectorE3GA vec1 = camera.xAxis - camera.yAxis;
+	c3ga::bivectorE3GA blade0, blade1;
+	blade0 = c3ga::gp( c3ga::unit( vec0 ), I );
+	blade1 = c3ga::gp( c3ga::unit( vec1 ), I );
+	AxisList rightOrDownAxisList, rightAxisList;
+	SortAxesByBlade( axisList, blade0, 0, &rightOrDownAxisList, &rightOrDownAxisList );
+	SortAxesByBlade( rightOrDownAxisList, blade1, 0, &rightAxisList, &rightAxisList );
+	//wxASSERT( rightAxisList.size() == 1 );
+	if( rightAxisList.size() > 0 )
+		perspective.rAxis = rightAxisList.front();
+	else if( rightOrDownAxisList.size() > 0 )
+		perspective.rAxis = rightOrDownAxisList.front();
+	else
+		perspective.rAxis = axisList.front();
+
+	// Lastly, form a right-handed system.
+	perspective.uAxis = c3ga::gp( perspective.fAxis ^ perspective.rAxis, -I );
 }
 
 //==================================================================================================
