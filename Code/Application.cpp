@@ -26,6 +26,17 @@ Application::Application( void )
 
 	wxInitAllImageHandlers();
 
+	// There is never a solution to the following scenerio.  Can this happen in the 3x3x3 case?
+	// I was able to get it to happen in the 4x4x4 case.  Using tri-cycles, one can shift the
+	// entire set of four forward or backward, as a whole, with wrapping, by multiples of 2 only.
+	// It follows that if the two quads are mis-aligned by an odd number of rotations, they cannot
+	// come into alignment using just tri-cycles.  If there was a way to swap two possite edges or
+	// corners, then it may be possible to finish with tri-cycles.
+	TriCycleSolver::TriCycleSequence triCycleSequence;
+	int quadCorners[4] = { 1, 2, 3, 0 };	// Corners
+	int quadEdges[4] = { 0, 1, 2, 3 };		// Edges
+	bool result = TriCycleSolver::FindSmallestTriCycleSequenceThatOrdersQuadTheSame( quadCorners, quadEdges, triCycleSequence );
+
 	Frame* frame = new Frame( 0, wxDefaultPosition, wxSize( 500, 500 ) );
 	frame->Show();
 
