@@ -275,9 +275,9 @@ void Frame::OnTimer( wxTimerEvent& event )
 				{
 					// This assert doesn't mean anything if we entered debug mode with an unsolved cube.
 					rubiksCube->IsInSolvedState();
-					rubiksCube->Scramble( time(0), 100, &executionSequence, false );
+					rubiksCube->Scramble( time(0), 500, &executionSequence, false );
 					debugMode = DEBUG_MODE_SOLVE;
-					animationTolerance = 1.0;
+					animationTolerance = 2.0;
 					break;
 				}
 				case DEBUG_MODE_SOLVE:

@@ -167,6 +167,8 @@ public:
 	void Scramble( int seed, int rotationCount, RotationSequence* rotationSequence = 0, bool apply = true );
 	Solver* MakeSolver( void ) const;
 
+	static int RandomNumber( int min, int max );
+
 private:
 
 	bool SaveToXml( wxXmlNode* xmlNode ) const;

@@ -34,6 +34,7 @@ class Canvas;
 class Solver;
 class SolverForCase2;
 class SolverForCase3;
+class SolverForCase4;
 class SolverForCaseGreaterThan3;
 class TriCycleSolver;
 
@@ -44,6 +45,7 @@ class TriCycleSolver;
 #include "Solver.h"
 #include "SolverForCase2.h"
 #include "SolverForCase3.h"
+#include "SolverForCase4.h"
 #include "SolverForCaseGreaterThan3.h"
 #include "TriCycleSolver.h"
 

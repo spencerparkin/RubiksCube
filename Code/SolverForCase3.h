@@ -2,6 +2,9 @@
 
 //==================================================================================================
 // Here we implement the layer-solve strategy.
+// TODO: Can we make this code smart-enough to handle a 3x3x3 that was assembled incorrectly?
+//       If we can, then we can use this code in the 4x4x4 case.  When we detect impossible
+//       orientation, we might ask the calling code to fix it, which can be done in the 4x4x4 case.
 class SolverForCase3 : public Solver
 {
 public:

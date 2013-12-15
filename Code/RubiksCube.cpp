@@ -1336,14 +1336,25 @@ void RubiksCube::Scramble( int seed, int rotationCount, RotationSequence* rotati
 	for( int count = 0; count < rotationCount; count++ )
 	{
 		Rotation rotation;
-		rotation.plane.index = rand() % subCubeMatrixSize;
-		rotation.plane.axis = Axis( rand() % 3 );
-		rotation.angle = double( 1 + rand() % 3 ) * M_PI / 2.0;
+		rotation.plane.index = RandomNumber( 0, subCubeMatrixSize - 1 );
+		rotation.plane.axis = Axis( RandomNumber( 0, 2 ) );
+		rotation.angle = double( RandomNumber( 1, 3 ) ) * M_PI / 2.0;
 		rotationSequence->push_back( rotation );
 	}
 
 	if( apply )
 		ApplySequence( *rotationSequence );
+}
+
+//==================================================================================================
+/*static*/ int RubiksCube::RandomNumber( int min, int max )
+{
+	int randomNumber = int( double( min ) + rand() / double( RAND_MAX ) * double( max - min ) );
+	if( randomNumber < min )
+		randomNumber = min;
+	else if( randomNumber > max )
+		randomNumber = max;
+	return randomNumber;
 }
 
 //==================================================================================================
