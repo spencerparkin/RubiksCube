@@ -1065,7 +1065,7 @@ bool RubiksCube::TranslateRelativeRotation( const std::string& relativeRotationS
 	else
 		return false;
 
-	// Let the lower-case versions move the nearest inner later to the outer layer.
+	// Let the lower-case versions move the nearest inner layer to the outer layer.
 	if( ::islower( token.c_str()[0] ) )
 		relativeRotation.planeIndex = 1;
 
