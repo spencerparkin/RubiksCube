@@ -1349,12 +1349,16 @@ void RubiksCube::Scramble( int seed, int rotationCount, RotationSequence* rotati
 //==================================================================================================
 /*static*/ int RubiksCube::RandomNumber( int min, int max )
 {
-	int randomNumber = int( double( min ) + rand() / double( RAND_MAX ) * double( max - min ) );
+#if 0
+	int randomNumber = int( double( min ) + double( rand() ) / double( RAND_MAX ) * double( max - min ) );
 	if( randomNumber < min )
 		randomNumber = min;
 	else if( randomNumber > max )
 		randomNumber = max;
 	return randomNumber;
+#else
+	return min + rand() % ( max - min + 1 );
+#endif
 }
 
 //==================================================================================================
