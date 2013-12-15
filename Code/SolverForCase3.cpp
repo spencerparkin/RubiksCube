@@ -90,8 +90,10 @@ int SolverForCase3::orangeCornerTargetLocations[4][3] =
 };
 
 //==================================================================================================
-SolverForCase3::SolverForCase3( void )
+SolverForCase3::SolverForCase3( InvalidCubeResolver* invalidCubeResolver /*= 0*/ )
 {
+	this->invalidCubeResolver = invalidCubeResolver;
+
 	standardPerspectives[0].rAxis = xAxis;
 	standardPerspectives[0].uAxis = zAxis;
 	standardPerspectives[0].fAxis = -yAxis;
@@ -346,6 +348,9 @@ void SolverForCase3::PerformRedCrossOrientingStage( const RubiksCube* rubiksCube
 		const RubiksCube::SubCube* subCube = rubiksCube->CollectSubCube( redEdgeColors[ edge ], 2 );
 		if( subCube->faceData[ RubiksCube::POS_Z ].color == RubiksCube::RED )
 			continue;
+
+		// TODO: Detect impossible orientations here so that we can call the resolver.
+		//       The are other places were the resolver may need to be called.
 
 		RubiksCube::Perspective* perspective = &standardPerspectives[ edge ];
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
@@ -741,7 +746,25 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 		// I must admit that I have no proof that such a sequence will always be found.
 		TriCycleSolver::TriCycleSequence triCycleSequence;
 		bool found = TriCycleSolver::FindSmallestTriCycleSequenceThatOrdersQuadTheSame( cornerQuad, edgeQuad, triCycleSequence );
-		wxASSERT( found );
+
+		// If the 3x3x3 is built improperly, such as can be the case when solving the 4x4x4 as a 3x3x3,
+		// it is possible that we won't find a tri-cycle solution.  In that case, we simply call the
+		// resolver to perform a sequence of rotations that fixes the problem.
+		if( !found )
+		{
+			if( !invalidCubeResolver )
+				wxASSERT( false );
+			else
+			{
+				int* location = orangeEdgeTargetLocations[0];
+				const RubiksCube::SubCube* edgeSubCube0 = rubiksCube->Matrix( location[0], location[1], 0 );
+				location = orangeEdgeTargetLocations[2];
+				const RubiksCube::SubCube* edgeSubCube1 = rubiksCube->Matrix( location[0], location[1], 0 );
+				invalidCubeResolver->SwapEdges( const_cast< RubiksCube* >( rubiksCube ), edgeSubCube0, edgeSubCube1 );
+				AppendZeroRotation( rotationSequence );		// This will just get optimized out, but we need it to tell our caller to exit.
+			}
+			return;
+		}
 
 		for( TriCycleSolver::TriCycleSequence::iterator iter = triCycleSequence.begin(); iter != triCycleSequence.end(); iter++ )
 		{
@@ -884,6 +907,16 @@ void SolverForCase3::PerformOrangeCrossAndCornersPositioningStage( const RubiksC
 			angle = -angle;
 	}
 	return angle;
+}
+
+//==================================================================================================
+/*static*/ void SolverForCase3::AppendZeroRotation( RubiksCube::RotationSequence& rotationSequence )
+{
+	RubiksCube::Rotation rotation;
+	rotation.plane.axis = RubiksCube::X_AXIS;
+	rotation.plane.index = 0;
+	rotation.angle = 0.0;
+	rotationSequence.push_back( rotation );
 }
 
 // SolverForCase3.cpp

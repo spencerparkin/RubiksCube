@@ -2,14 +2,26 @@
 
 //==================================================================================================
 // Here we implement the layer-solve strategy.
-// TODO: Can we make this code smart-enough to handle a 3x3x3 that was assembled incorrectly?
-//       If we can, then we can use this code in the 4x4x4 case.  When we detect impossible
-//       orientation, we might ask the calling code to fix it, which can be done in the 4x4x4 case.
 class SolverForCase3 : public Solver
 {
 public:
 
-	SolverForCase3( void );
+	//==================================================================================================
+	// If the solver is given an invalid 3x3x3, (a 3x3x3 cube that was assembled incorrectly),
+	// here we can call upon a resolver to fix the problem.  This can happen if the calling code
+	// is trying to solve a 4x4x4 as a 3x3x3 in the case that the 4x4x4 case does or almosts reduces
+	// to the case of the 3x3x3.  The caller into our code may be solving a 4x4x4 as we go along
+	// solving our 3x3x3, and so when we call the resolver, it can fix our 3x3x3, but then do sequences
+	// on the 4x4x4 that do the equivilant fix.  Such fixes that I know of, are highly surgical in that
+	// they fix only the parity problem while leaving everything else invariant.
+	class InvalidCubeResolver
+	{
+	public:
+		virtual void SwapEdgeOrientation( RubiksCube* rubiksCube, const RubiksCube::SubCube* edgeSubCube ) = 0;
+		virtual void SwapEdges( RubiksCube* rubiksCube, const RubiksCube::SubCube* edgeSubCube0, const RubiksCube::SubCube* edgeSubCube1 ) = 0;
+	};
+
+	SolverForCase3( InvalidCubeResolver* invalidCubeResolver = 0 );
 	virtual ~SolverForCase3( void );
 
 	virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
@@ -45,6 +57,10 @@ private:
 	static c3ga::vectorE3GA xAxis, yAxis, zAxis;
 
 	static double CalculateRotationAngle( const c3ga::vectorE3GA& unitVec0, const c3ga::vectorE3GA& unitVec1, const c3ga::vectorE3GA& axis, double epsilon = 1e-7 );
+
+	static void AppendZeroRotation( RubiksCube::RotationSequence& rotationSequence );
+
+	InvalidCubeResolver* invalidCubeResolver;
 };
 
 // SolverForCase3.h
