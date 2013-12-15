@@ -30,8 +30,12 @@ Application::Application( void )
 	// I was able to get it to happen in the 4x4x4 case.  Using tri-cycles, one can shift the
 	// entire set of four forward or backward, as a whole, with wrapping, by multiples of 2 only.
 	// It follows that if the two quads are mis-aligned by an odd number of rotations, they cannot
-	// come into alignment using just tri-cycles.  If there was a way to swap two possite edges or
+	// come into alignment using just tri-cycles.  If there was a way to swap two opposite edges or
 	// corners, then it may be possible to finish with tri-cycles.
+	//
+	// To answer this question, yes, there is a way.  Chris Hardwick gives the sequence
+	// {2r, 2U, 2r, 2U, 2u, 2r, 2u}, which will swap to opposite edge peices.  Tri-cycles
+	// can then be used to solve the final layer.
 	TriCycleSolver::TriCycleSequence triCycleSequence;
 	int quadCorners[4] = { 1, 2, 3, 0 };	// Corners
 	int quadEdges[4] = { 0, 1, 2, 3 };		// Edges
