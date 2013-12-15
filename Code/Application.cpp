@@ -35,7 +35,8 @@ Application::Application( void )
 	//
 	// To answer this question, yes, there is a way.  Chris Hardwick gives the sequence
 	// {2r, 2U, 2r, 2U, 2u, 2r, 2u}, which will swap to opposite edge peices.  Tri-cycles
-	// can then be used to solve the final layer.
+	// can then be used to solve the final layer.  Also, I don't believe this misalignment
+	// can happen in the 3x3x3 case.  It can, however, in the 4x4x4 case.
 	TriCycleSolver::TriCycleSequence triCycleSequence;
 	int quadCorners[4] = { 1, 2, 3, 0 };	// Corners
 	int quadEdges[4] = { 0, 1, 2, 3 };		// Edges
