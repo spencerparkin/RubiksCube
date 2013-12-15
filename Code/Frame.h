@@ -28,6 +28,7 @@ private:
 		ID_RotationHistoryGoBackward,
 		ID_Exit,
 		ID_DebugMode,
+		ID_SilentDebugMode,
 		ID_About,
 		ID_Timer,
 	};
@@ -48,6 +49,7 @@ private:
 	void OnRotationHistoryGoBackward( wxCommandEvent& event );
 	void OnExit( wxCommandEvent& event );
 	void OnDebugMode( wxCommandEvent& event );
+	void OnSilentDebugMode( wxCommandEvent& event );
 	void OnAbout( wxCommandEvent& event );
 	void OnUpdateMenuItemUI( wxUpdateUIEvent& event );
 	void OnTimer( wxTimerEvent& event );

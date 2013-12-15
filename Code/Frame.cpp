@@ -53,8 +53,10 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 
 	wxMenu* helpMenu = new wxMenu();
 	wxMenuItem* debugModeMenuItem = new wxMenuItem( helpMenu, ID_DebugMode, "Debug Mode", "Continually scramble and solve the Rubik's Cube.", wxITEM_CHECK );
+	wxMenuItem* silentDebugModeMenuItem = new wxMenuItem( helpMenu, ID_SilentDebugMode, "Silent Debug Mode", "Scramble and solve many Rubik's Cubes internally." );
 	wxMenuItem* aboutMenuItem = new wxMenuItem( helpMenu, ID_About, "About\tF1", "Show the about-box." );
 	helpMenu->Append( debugModeMenuItem );
+	helpMenu->Append( silentDebugModeMenuItem );
 	helpMenu->AppendSeparator();
 	helpMenu->Append( aboutMenuItem );
 
@@ -103,6 +105,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnRotationHistoryClear, this, ID_RotationHistoryClear );
 	Bind( wxEVT_MENU, &Frame::OnExit, this, ID_Exit );
 	Bind( wxEVT_MENU, &Frame::OnDebugMode, this, ID_DebugMode );
+	Bind( wxEVT_MENU, &Frame::OnSilentDebugMode, this, ID_SilentDebugMode );
 	Bind( wxEVT_MENU, &Frame::OnAbout, this, ID_About );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_CreateCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DestroyCube );
@@ -119,6 +122,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryGoBackward );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RotationHistoryClear );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DebugMode );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SilentDebugMode );
 	Bind( wxEVT_TIMER, &Frame::OnTimer, this, ID_Timer );
 	Bind( wxEVT_COMMAND_TEXT_ENTER, &Frame::OnTextCtrlEnter, this );
 
@@ -137,6 +141,40 @@ void Frame::OnDebugMode( wxCommandEvent& event )
 		debugMode = DEBUG_MODE_SCRAMBLE;
 	else
 		debugMode = DEBUG_MODE_NONE;
+}
+
+//==================================================================================================
+void Frame::OnSilentDebugMode( wxCommandEvent& event )
+{
+	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	if( !rubiksCube )
+		return;
+
+	int solveCount = ( int )wxGetNumberFromUser( "How many Rubik's Cubes should the program solve?", "How many:", "Number of cubes to solve", 100, 1, 1000000 );
+	for( int count = 0; count < solveCount; count++ )
+	{
+		rubiksCube->Scramble( time(0), 100, 0, true );
+		
+		bool success = rubiksCube->SaveToFile( "debugCube.xml" );
+		wxASSERT( success );
+
+		Solver* solver = rubiksCube->MakeSolver();
+		wxASSERT( solver );
+		if( !solver )
+			break;
+
+		RubiksCube::RotationSequence rotationSequence;
+		success = solver->MakeEntireSolutionSequence( rubiksCube, rotationSequence );
+		wxASSERT( success );
+
+		delete solver;
+
+		success = rubiksCube->ApplySequence( rotationSequence );
+		wxASSERT( success );
+
+		success = rubiksCube->IsInSolvedState();
+		wxASSERT( success );
+	}
 }
 
 //==================================================================================================
@@ -274,8 +312,8 @@ void Frame::OnTimer( wxTimerEvent& event )
 				case DEBUG_MODE_SCRAMBLE:
 				{
 					// This assert doesn't mean anything if we entered debug mode with an unsolved cube.
-					rubiksCube->IsInSolvedState();
-					rubiksCube->Scramble( time(0), 500, &executionSequence, false );
+					wxASSERT( rubiksCube->IsInSolvedState() );
+					rubiksCube->Scramble( time(0), 100, &executionSequence, false );
 					debugMode = DEBUG_MODE_SOLVE;
 					animationTolerance = 2.0;
 					break;
@@ -426,6 +464,7 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		case ID_DestroyCube:
 		case ID_SaveCube:
 		case ID_TakeSnapShot:
+		case ID_SilentDebugMode:
 		{
 			event.Enable( wxGetApp().rubiksCube != 0 ? true : false );
 			break;
