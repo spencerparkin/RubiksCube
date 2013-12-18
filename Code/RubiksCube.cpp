@@ -153,8 +153,8 @@ bool RubiksCube::Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc )
 }
 
 //==================================================================================================
-// Notice here that we don't clear the given list.  We just append to it.
-void RubiksCube::CollectSubCubes( Color* colorArray, int colorCount, SubCubeList& subCubeList ) const
+// Notice here that we don't clear the given vector.  We just append to it.
+void RubiksCube::CollectSubCubes( Color* colorArray, int colorCount, SubCubeVector& subCubeVector ) const
 {
 	for( int x = 0; x < subCubeMatrixSize; x++ )
 	{
@@ -170,7 +170,7 @@ void RubiksCube::CollectSubCubes( Color* colorArray, int colorCount, SubCubeList
 					( ( z == 0 || z == subCubeMatrixSize - 1 ) ? 1 : 0 );
 
 				if( expositionCount == colorCount && CubeHasAllColors( subCube, colorArray, colorCount ) )
-					subCubeList.push_back( subCube );
+					subCubeVector.push_back( subCube );
 			}
 		}
 	}
@@ -179,11 +179,11 @@ void RubiksCube::CollectSubCubes( Color* colorArray, int colorCount, SubCubeList
 //==================================================================================================
 const RubiksCube::SubCube* RubiksCube::CollectSubCube( Color* colorArray, int colorCount ) const
 {
-	SubCubeList subCubeList;
-	CollectSubCubes( colorArray, colorCount, subCubeList );
-	if( subCubeList.size() != 1 )
+	SubCubeVector subCubeVector;
+	CollectSubCubes( colorArray, colorCount, subCubeVector );
+	if( subCubeVector.size() != 1 )
 		return 0;
-	return subCubeList.front();
+	return subCubeVector[0];
 }
 
 //==================================================================================================
@@ -204,6 +204,34 @@ const RubiksCube::SubCube* RubiksCube::CollectSubCube( Color* colorArray, int co
 			break;
 
 	return colorIndex == colorCount ? true : false;
+}
+
+//==================================================================================================
+// We expect the given color array to have room for at least 3 colors.
+/*static*/ int RubiksCube::ExposedColors( const SubCube* subCube, Color* colorArray )
+{
+	int colorCount = 0;
+	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
+	{
+		Color color = subCube->faceData[ face ].color;
+		if( color != GREY )
+			colorArray[ colorCount++ ] = color;
+	}
+	return colorCount;
+}
+
+//==================================================================================================
+// We expect the given face array to have room for at least 3 faces.
+/*static*/ int RubiksCube::ExposedFaces( const SubCube* subCube, Face* faceArray )
+{
+	int faceCount = 0;
+	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
+	{
+		Color color = subCube->faceData[ face ].color;
+		if( color != GREY )
+			faceArray[ faceCount++ ] = ( RubiksCube::Face )face;
+	}
+	return faceCount;
 }
 
 //==================================================================================================
@@ -1446,6 +1474,28 @@ RubiksCube::RelativeRotation::RelativeRotation( Type type /*= U*/, int planeInde
 {
 	this->type = type;
 	this->planeIndex = planeIndex;
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::AreOppositeFaces( Face face0, Face face1 )
+{
+	if( ( face0 == NEG_X && face1 == POS_X ) || ( face0 == POS_X && face1 == NEG_X ) )
+		return true;
+	if( ( face0 == NEG_Y && face1 == POS_Y ) || ( face0 == POS_Y && face1 == NEG_Y ) )
+		return true;
+	if( ( face0 == NEG_Z && face1 == POS_Z ) || ( face0 == POS_Z && face1 == NEG_Z ) )
+		return true;
+	return false;
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::AreAdjacentFaces( Face face0, Face face1 )
+{
+	if( AreOppositeFaces( face0, face1 ) )
+		return false;
+	if( face0 == face1 )
+		return false;
+	return true;
 }
 
 // RubiksCube.cpp

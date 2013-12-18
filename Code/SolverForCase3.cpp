@@ -172,7 +172,7 @@ SolverForCase3::SolverForCase3( InvalidCubeResolver* invalidCubeResolver /*= 0*/
 // for the cube in all cases.
 void SolverForCase3::PerformCubeOrientingStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
-	RubiksCube::SubCubeList redSubCube;
+	RubiksCube::SubCubeVector redSubCube;
 	RubiksCube::Color red = RubiksCube::RED;
 	rubiksCube->CollectSubCubes( &red, 1, redSubCube );
 	wxASSERT( redSubCube.size() == 1 );
@@ -204,7 +204,7 @@ void SolverForCase3::PerformCubeOrientingStage( const RubiksCube* rubiksCube, Ru
 	else
 	{
 		// If the red center sub-cube is in position, we can locate the other center sub-cubes.
-		RubiksCube::SubCubeList yellowSubCube;
+		RubiksCube::SubCubeVector yellowSubCube;
 		RubiksCube::Color yellow = RubiksCube::YELLOW;
 		rubiksCube->CollectSubCubes( &yellow, 1, yellowSubCube );
 		wxASSERT( yellowSubCube.front()->z == 1 );

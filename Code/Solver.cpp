@@ -52,4 +52,69 @@ bool Solver::MakeEntireSolutionSequence( const RubiksCube* rubiksCube, RubiksCub
 	return true;
 }
 
+//==================================================================================================
+Solver::SituationStack::SituationStack( const RubiksCube* rubiksCube )
+{
+	this->rubiksCube = rubiksCube;
+}
+
+//==================================================================================================
+Solver::SituationStack::~SituationStack( void )
+{
+	while( situationList.size() > 0 )
+		Pop();
+}
+
+//==================================================================================================
+const Solver::SituationStack::Situation* Solver::SituationStack::Top( void )
+{
+	if( situationList.size() == 0 )
+		return 0;
+
+	return &situationList.back();
+}
+
+//==================================================================================================
+void Solver::SituationStack::Push( const RubiksCube::Rotation& rotation )
+{
+	RubiksCube::RotationSequence rotationSequence;
+	rotationSequence.push_back( rotation );
+	Push( rotationSequence );
+}
+
+//==================================================================================================
+void Solver::SituationStack::Push( const RubiksCube::RotationSequence& rotationSequence )
+{
+	wxASSERT( !rotationSequence.empty() );
+
+	Situation situation;
+
+	const RubiksCube* copyCube = rubiksCube;
+	const Situation* top = Top();
+	if( top )
+	{
+		copyCube = top->rubiksCube;
+		situation.rotationSequence = top->rotationSequence;
+	}
+
+	situation.rotationSequence.insert( situation.rotationSequence.end(), rotationSequence.begin(), rotationSequence.end() );
+
+	situation.rubiksCube = new RubiksCube( copyCube->SubCubeMatrixSize(), false );
+	situation.rubiksCube->Copy( *copyCube, RubiksCube::CopyMap );
+	situation.rubiksCube->ApplySequence( rotationSequence );
+
+	situationList.push_back( situation );
+}
+
+//==================================================================================================
+void Solver::SituationStack::Pop( void )
+{
+	if( situationList.size() == 0 )
+		return;
+
+	Situation* top = &situationList.back();
+	delete top->rubiksCube;
+	situationList.pop_back();
+}
+
 // Solver.cpp

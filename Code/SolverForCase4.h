@@ -21,21 +21,48 @@ private:
 
 	typedef std::list< FacePair > FacePairList;
 
+	// The perspective here will always have subCube[0] on the right-axis face,
+	// and subCube[1] on the up-axis face.
+	struct PotentialFacePair
+	{
+		const RubiksCube::SubCube* subCube[2];
+		RubiksCube::Face face[2];
+		RubiksCube::Perspective perspective;
+	};
+
+	typedef std::list< PotentialFacePair > PotentialFacePairList;
+
 	static bool AreFacesSolved( const RubiksCube& rubiksCube, const FacePairList& facePairList );
 	static bool AreFacePairsSolved( const RubiksCube& rubiksCube, const FacePairList& facePairList );
-	static bool AreEdgesSolved( const RubiksCube& rubiksCube );
+	static bool AreEdgePairsSolved( const RubiksCube& rubiksCube );
 
 	static bool SolveFaces( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence );
 	static bool SolveFacePairs( const RubiksCube& rubiksCube, const FacePairList& facePairList, RubiksCube::RotationSequence& rotationSequence );
-	static bool SolveEdges( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	static void SolveFacePairing( const RubiksCube& rubiksCube, const FacePairList& facePairList, const PotentialFacePair& potentialFacePair, RubiksCube::RotationSequence& rotationSequence );
+	static bool SolveEdgePairs( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	//static void SolveEdgePairing(...);
 	static bool SolveAs3x3x3( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+
+	static void PrepareFacePairing( const RubiksCube& rubiksCube, const FacePairList& facePairList, const PotentialFacePair& potentialFacePair, RubiksCube::RotationSequence& rotationSequence );
+	//static void PrepareEdgePairing( const RubiksCube& rubiksCube, const FacePairList& facePairList, const PotentialFacePairing& potentialFacePairing, RubiksCube::RotationSequence& rotationSequence );
 
 	static void MakeFacePairList( const RubiksCube& rubiksCube, FacePairList& facePairList );
 	static bool FacePairsOverlap( const FacePair& facePair0, const FacePair& facePair1 );
 	static void RotationThatPreservesFacePairs( const RubiksCube& rubiksCube, RubiksCube::Face face, const FacePairList& facePairList, const RubiksCube::Rotation& anticipatedRotation, RubiksCube::Rotation& rotation );
 	static void CollectFacePairsForFace( RubiksCube::Face face, const FacePairList& facePairList, FacePairList& facePairListForFace );
+	static void CollectFacePairsForFaceAndPlane( RubiksCube::Face face, const RubiksCube::Plane& plane, const FacePairList& facePairList, FacePairList& facePairListForFaceAndPlane );
+	static void CollectFacePairsForSubCube( const RubiksCube& rubiksCube, const RubiksCube::SubCube* subCube, const FacePairList& facePairList, FacePairList& facePairListForSubCube );
 	static bool FacePairColors( const RubiksCube& rubiksCube, const FacePair& facePair, RubiksCube::Color* colors );
+	static bool FacePairSubCubes( const RubiksCube& rubiksCube, const FacePair& facePair, const RubiksCube::SubCube** subCubes );
 	static bool AnticipatedRotationSplitsPair( const RubiksCube::Rotation& anticipatedRotation, const FacePair& facePair );
+
+	static void FindAllPotentialFacePairings( const RubiksCube& rubiksCube, const FacePairList& facePairList, PotentialFacePairList& potentialFacePairList );
+	//static void FindAllPotentialEdgeParings(...);
+
+	static bool IsSolitaryFaceCube( const RubiksCube& rubiksCube, const RubiksCube::SubCube* subCube, const FacePairList& facePairList );
+	//static bool IsSolitaryEdgeCube( const RubiksCube::SubCube* subCube, ... );
+
+	static bool FindFacePairPreservationSequence( SituationStack& situationStack, const RubiksCube::Plane& potentialSplitPlane, const RubiksCube::Rotation& anticipatedRotation, RubiksCube::RotationSequence& preservationSequence );
 
 	// struct EdgePair { ... };
 };

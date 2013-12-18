@@ -28,8 +28,8 @@ SolverForCase4::SolverForCase4( void )
 		else
 			return SolveFaces( *rubiksCube, rotationSequence );
 	}
-	else if( !AreEdgesSolved( *rubiksCube ) )
-		return SolveEdges( *rubiksCube, rotationSequence );
+	else if( !AreEdgePairsSolved( *rubiksCube ) )
+		return SolveEdgePairs( *rubiksCube, rotationSequence );
 	else
 		return SolveAs3x3x3( *rubiksCube, rotationSequence );
 
@@ -71,54 +71,229 @@ SolverForCase4::SolverForCase4( void )
 }
 
 //==================================================================================================
-/*static*/ bool SolverForCase4::AreEdgesSolved( const RubiksCube& rubiksCube )
-{
-	return false;
-}
-
-//==================================================================================================
 /*static*/ bool SolverForCase4::SolveFaces( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
 	return false;
 }
 
 //==================================================================================================
-// Find a move that will create a new face-pair without destroying an old one.
+// Find a rotation sequence that will create a new face-pair without destroying an old one.
 /*static*/ bool SolverForCase4::SolveFacePairs( const RubiksCube& rubiksCube, const FacePairList& facePairList, RubiksCube::RotationSequence& rotationSequence )
 {
-	/*const RubiksCube::SubCube* subCube0 = 0;
-	const RubiksCube::SubCube* subCube1 = 0;
+	PotentialFacePairList potentialFacePairList;
+	FindAllPotentialFacePairings( rubiksCube, facePairList, potentialFacePairList );
+	if( potentialFacePairList.size() == 0 )
+		return false;
 
-	// might as well return entire list of potential pairing and then try them all.  try only those that are adjacent first.  if none, make moves that make'em adjacent.
-	// an algo that makes this list should be smart enough to recognize loner faces that are part of face-pairs when that face-pair overlaps another.
-	bool found = FindSingleFaceSubCubesForPairing( subCube0, subCube1 );
-	wxASSERT( found );
+	for( PotentialFacePairList::iterator iter = potentialFacePairList.begin(); iter != potentialFacePairList.end(); iter++ )
+	{
+		PotentialFacePair potentialFacePair = *iter;
+		SolveFacePairing( rubiksCube, facePairList, potentialFacePair, rotationSequence );
+		if( rotationSequence.size() > 0 )
+			return true;
+	}
 
-	RubiksCube::ExposedFaces( subCube0, &face0 );
-	RubiksCube::ExposedFaces( subCube1, &face1 );
-
-	if the faces are the same or opposite, do a move that gets the faces adjacent.
-
-	RubiksCube::Perspective perspective;
-	//...
-
-	RubiksCube::Rotation setupRotation, pairingRotation;*/
-	//...
-
-	// if subCube0 is in right face and subCube1 is in up face...
-	// Try moving subCube0 to pair it with subCube1.  (If that doesn't work, try moving subCube1 to pair with subCube0.)
-	// apply setup rotation to a copy of the cube.
-	// does pairingRotation split the face-pair paired with subCube0?  (note that you need to ignore a face-pair if it contains the loner face.)
-	// If so, can a rotation be performed in that face-pair's plane that puts an unsolved face-pair location where the split will happen?  If so, do that rotation with preparation to preserve pairs.
-	// does pairingRotation split the face-pair paired with subCube1?  (note that you need to ignore a face-pair if it contains the loner face.)
-	// If so, can a rotation be performed in that face-pair's plane that puts an unsolved face-pair location where the split will happen?  If so, do that rotation with preparation to preserve pairs.
-	// Finally, prepare other faces for pairingRotation so that no existing face-pair is split, then apply the pairing rotation.
+	// If we were unable to solve any potential face-pairings, go try to prepare a potential face-pairing for success on a subsequent attempt.
+	for( PotentialFacePairList::iterator iter = potentialFacePairList.begin(); iter != potentialFacePairList.end(); iter++ )
+	{
+		PotentialFacePair potentialFacePair = *iter;
+		PrepareFacePairing( rubiksCube, facePairList, potentialFacePair, rotationSequence );
+		if( rotationSequence.size() > 0 )
+			return true;
+	}
 
 	return false;
 }
 
 //==================================================================================================
-/*static*/ bool SolverForCase4::SolveEdges( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+// Here we are always trying to move subCube0 from the right-face into the up-face to be paired with the subCube1.
+// Again, it's apparent from this code that if we were trying to solve a higher-order cube, this would just be too slow.
+/*static*/ void SolverForCase4::SolveFacePairing( const RubiksCube& rubiksCube, const FacePairList& facePairList,
+													const PotentialFacePair& potentialFacePair, RubiksCube::RotationSequence& rotationSequence )
+{
+	if( !RubiksCube::AreAdjacentFaces( potentialFacePair.face[0], potentialFacePair.face[1] ) )
+		return;
+
+	// TODO: A more sophisticated version of this algorithm would consider multiple setup and pairing rotations.
+	RubiksCube::Rotation setupRotation, pairingRotation;
+	
+	// TODO: Determine setup rotation and pairingRotation here...
+
+	SituationStack situationStack( &rubiksCube );
+	situationStack.Push( setupRotation );
+
+	RubiksCube::Plane potentialSplitPlaneFor[2];
+	
+	// TODO: Determine the potential split planes here for situationStack.Top().
+	
+	for( int plane = 0; plane < 2 && rotationSequence.size() == 0; plane++ )
+	{
+		int otherPlane = ( plane + 1 ) % 2;
+
+		RubiksCube::RotationSequence firstFacePairPreservationSequence;
+		if( !FindFacePairPreservationSequence( situationStack, potentialSplitPlaneFor[ plane ], pairingRotation, firstFacePairPreservationSequence ) )
+			continue;
+		
+		if( firstFacePairPreservationSequence.size() > 0 )
+		{
+			situationStack.Push( firstFacePairPreservationSequence );
+			
+			// It's important to note that the second preservation sequence should never undo the preservation of the first such sequence.
+			RubiksCube::RotationSequence secondFacePairPreservationSequence;
+			if( !FindFacePairPreservationSequence( situationStack, potentialSplitPlaneFor[ otherPlane ], pairingRotation, secondFacePairPreservationSequence ) )
+			{
+				situationStack.Pop();
+				continue;
+			}
+
+			if( secondFacePairPreservationSequence.size() > 0 )
+				situationStack.Push( secondFacePairPreservationSequence );
+		}
+		else
+		{
+			if( !FindFacePairPreservationSequence( situationStack, potentialSplitPlaneFor[ otherPlane ], pairingRotation, firstFacePairPreservationSequence ) )
+				continue;
+
+			if( firstFacePairPreservationSequence.size() > 0 )
+				situationStack.Push( firstFacePairPreservationSequence );
+		}
+		
+		// If we get here, the pairing is solved!  Formulate the solution.
+		rotationSequence.push_back( setupRotation );
+		rotationSequence.insert( rotationSequence.end(), situationStack.Top()->rotationSequence.begin(), situationStack.Top()->rotationSequence.end() );
+		FacePairList facePairList;
+		MakeFacePairList( *situationStack.Top()->rubiksCube, facePairList );
+		RubiksCube::Rotation rotation;
+		RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -potentialFacePair.perspective.uAxis ), facePairList, pairingRotation, rotation );
+		rotationSequence.push_back( rotation );
+		RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -potentialFacePair.perspective.rAxis ), facePairList, pairingRotation, rotation );
+		rotationSequence.push_back( rotation );
+		rotationSequence.push_back( pairingRotation );
+	}
+}
+
+//==================================================================================================
+// The name of this method is not really specific enough.  There are multiple ways to preserve
+// a face-pair from an impending rotation, but here we're trying to find a specific way of preserving
+// a potentially split face-pair by rotating in the given split plane.
+/*static*/ bool SolverForCase4::FindFacePairPreservationSequence( SituationStack& situationStack, const RubiksCube::Plane& potentialSplitPlane, const RubiksCube::Rotation& anticipatedRotation, RubiksCube::RotationSequence& preservationSequence )
+{
+	return false;
+}
+
+//==================================================================================================
+// Here we take the two cases of the potential face-pairs of being either on opposite sides of
+// the cube or on the same side, and return a sequence of moves that gets them on adjacent sides
+// of the cube.  The potential face-pair solver can then deal with that case.
+/*static*/ void SolverForCase4::PrepareFacePairing( const RubiksCube& rubiksCube, const FacePairList& facePairList, const PotentialFacePair& potentialFacePair, RubiksCube::RotationSequence& rotationSequence )
+{
+	if( RubiksCube::AreOppositeFaces( potentialFacePair.face[0], potentialFacePair.face[1] ) )
+	{
+	}
+	else if( potentialFacePair.face[0] == potentialFacePair.face[1] )
+	{
+	}
+}
+
+//==================================================================================================
+// If we were trying to solve a higher-order cube, a routine like this would be a major bottle-neck,
+// and we would need to cache our book-keeping and use more efficient data-structures and algorithms.
+/*static*/ void SolverForCase4::FindAllPotentialFacePairings( const RubiksCube& rubiksCube, const FacePairList& facePairList, PotentialFacePairList& potentialFacePairList )
+{
+	RubiksCube::SubCubeVector subCubeVector;
+	
+	for( int color = RubiksCube::YELLOW; color <= RubiksCube::ORANGE; color++ )
+	{
+		// Go collect all face cubes of a certain color.
+		subCubeVector.clear();
+		rubiksCube.CollectSubCubes( ( RubiksCube::Color* )&color, 1, subCubeVector );
+		wxASSERT( subCubeVector.size() == 4 );
+
+		// Now go see which pairs of these face cubes are potentially pairable.
+		// It's important to realize here that we are creating redundant pairings.
+		// (i.e., if we list pair (a,b), we also list pair (b,a).)  What this does
+		// is simplify the solving code, because it allows the solving code to consider
+		// the problem from just one perspective.  If we only listed (a,b) and not (b,a),
+		// we would have to consider (a,b) from potentially two different perspectives
+		// before being able to solve it.
+		for( int i = 0; i < 4; i++ )
+		{
+			const RubiksCube::SubCube* subCube0 = subCubeVector[i];
+			if( !IsSolitaryFaceCube( rubiksCube, subCube0, facePairList ) )
+				continue;
+
+			for( int j = 0; j < 4; j++ )
+			{
+				if( i == j )
+					continue;
+
+				const RubiksCube::SubCube* subCube1 = subCubeVector[j];
+				if( !IsSolitaryFaceCube( rubiksCube, subCube1, facePairList ) )
+					continue;
+
+				PotentialFacePair potentialFacePair;
+				potentialFacePair.subCube[0] = subCube0;
+				potentialFacePair.subCube[1] = subCube1;
+				RubiksCube::ExposedFaces( subCube0, &potentialFacePair.face[0] );
+				RubiksCube::ExposedFaces( subCube1, &potentialFacePair.face[1] );
+
+				c3ga::trivectorE3GA I( c3ga::trivectorE3GA::coord_e1e2e3, 1.0 );
+
+				if( RubiksCube::AreAdjacentFaces( potentialFacePair.face[0], potentialFacePair.face[1] ) )
+				{
+					potentialFacePair.perspective.rAxis = RubiksCube::TranslateNormal( potentialFacePair.face[0] );
+					potentialFacePair.perspective.uAxis = RubiksCube::TranslateNormal( potentialFacePair.face[1] );
+				}
+				else
+				{
+					potentialFacePair.perspective.uAxis = RubiksCube::TranslateNormal( potentialFacePair.face[1] );
+					potentialFacePair.perspective.rAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3,
+																potentialFacePair.perspective.uAxis.get_e2(),
+																potentialFacePair.perspective.uAxis.get_e3(),
+																potentialFacePair.perspective.uAxis.get_e1() );	// Arbitrarily choose an axis orthogonal to the up-axis.
+				}
+
+				// Make a right-handed system for the perspective.  (It must always be so.)
+				potentialFacePair.perspective.fAxis = c3ga::gp( potentialFacePair.perspective.rAxis ^ potentialFacePair.perspective.uAxis, -I );
+
+				potentialFacePairList.push_back( potentialFacePair );
+			}
+		}
+	}
+}
+
+//==================================================================================================
+/*static*/ bool SolverForCase4::IsSolitaryFaceCube( const RubiksCube& rubiksCube, const RubiksCube::SubCube* subCube, const FacePairList& facePairList )
+{
+	FacePairList facePairListForSubCube;
+	CollectFacePairsForSubCube( rubiksCube, subCube, facePairList, facePairListForSubCube );
+	int count = facePairListForSubCube.size();
+	wxASSERT( 0 <= count && count <= 2 );
+	if( count == 0 )
+		return true;
+	if( count == 2 )
+		return false;
+
+	// If the count is 1, then the sub-cube is solitary if the face-pair of which
+	// it is a member overlaps some other face-pair.
+	for( FacePairList::const_iterator iter = facePairList.begin(); iter != facePairList.end(); iter++ )
+	{
+		FacePair facePair = *iter;
+		if( FacePairsOverlap( facePair, facePairList.front() ) )
+			return true;
+	}
+
+	return false;
+}
+
+//==================================================================================================
+/*static*/ bool SolverForCase4::AreEdgePairsSolved( const RubiksCube& rubiksCube )
+{
+	return false;
+}
+
+//==================================================================================================
+/*static*/ bool SolverForCase4::SolveEdgePairs( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
 	return false;
 }
@@ -165,9 +340,18 @@ SolverForCase4::SolverForCase4( void )
 //==================================================================================================
 /*static*/ bool SolverForCase4::FacePairColors( const RubiksCube& rubiksCube, const FacePair& facePair, RubiksCube::Color* colors )
 {
-	const RubiksCube::SubCube* subCube0 = 0;
-	const RubiksCube::SubCube* subCube1 = 0;
+	const RubiksCube::SubCube* subCubes[2];
+	if( !FacePairSubCubes( rubiksCube, facePair, subCubes ) )
+		return false;
 
+	colors[0] = subCubes[0]->faceData[ facePair.face ].color;
+	colors[1] = subCubes[1]->faceData[ facePair.face ].color;
+	return true;
+}
+
+//==================================================================================================
+/*static*/ bool SolverForCase4::FacePairSubCubes( const RubiksCube& rubiksCube, const FacePair& facePair, const RubiksCube::SubCube** subCubes )
+{
 	switch( facePair.face )
 	{
 		case RubiksCube::NEG_X:
@@ -176,13 +360,13 @@ SolverForCase4::SolverForCase4( void )
 			int x = ( facePair.face == RubiksCube::NEG_X ) ? 0 : 3;
 			if( facePair.plane.axis == RubiksCube::Y_AXIS )
 			{
-				subCube0 = rubiksCube.Matrix( x, facePair.plane.index, 1 );
-				subCube1 = rubiksCube.Matrix( x, facePair.plane.index, 2 );
+				subCubes[0] = rubiksCube.Matrix( x, facePair.plane.index, 1 );
+				subCubes[1] = rubiksCube.Matrix( x, facePair.plane.index, 2 );
 			}
 			else if( facePair.plane.axis == RubiksCube::Z_AXIS )
 			{
-				subCube0 = rubiksCube.Matrix( x, 1, facePair.plane.index );
-				subCube1 = rubiksCube.Matrix( x, 2, facePair.plane.index );
+				subCubes[0] = rubiksCube.Matrix( x, 1, facePair.plane.index );
+				subCubes[1] = rubiksCube.Matrix( x, 2, facePair.plane.index );
 			}
 			break;
 		}
@@ -192,13 +376,13 @@ SolverForCase4::SolverForCase4( void )
 			int y = ( facePair.face == RubiksCube::NEG_Y ) ? 0 : 3;
 			if( facePair.plane.axis == RubiksCube::X_AXIS )
 			{
-				subCube0 = rubiksCube.Matrix( facePair.plane.index, y, 1 );
-				subCube1 = rubiksCube.Matrix( facePair.plane.index, y, 2 );
+				subCubes[0] = rubiksCube.Matrix( facePair.plane.index, y, 1 );
+				subCubes[1] = rubiksCube.Matrix( facePair.plane.index, y, 2 );
 			}
 			else if( facePair.plane.axis == RubiksCube::Z_AXIS )
 			{
-				subCube0 = rubiksCube.Matrix( 1, y, facePair.plane.index );
-				subCube1 = rubiksCube.Matrix( 2, y, facePair.plane.index );
+				subCubes[0] = rubiksCube.Matrix( 1, y, facePair.plane.index );
+				subCubes[1] = rubiksCube.Matrix( 2, y, facePair.plane.index );
 			}
 			break;
 		}
@@ -208,24 +392,20 @@ SolverForCase4::SolverForCase4( void )
 			int z = ( facePair.face == RubiksCube::NEG_Z ) ? 0 : 3;
 			if( facePair.plane.axis == RubiksCube::X_AXIS )
 			{
-				subCube0 = rubiksCube.Matrix( facePair.plane.index, 1, z );
-				subCube1 = rubiksCube.Matrix( facePair.plane.index, 2, z );
+				subCubes[0] = rubiksCube.Matrix( facePair.plane.index, 1, z );
+				subCubes[1] = rubiksCube.Matrix( facePair.plane.index, 2, z );
 			}
 			else if( facePair.plane.axis == RubiksCube::Y_AXIS )
 			{
-				subCube0 = rubiksCube.Matrix( 1, facePair.plane.index, z );
-				subCube1 = rubiksCube.Matrix( 2, facePair.plane.index, z );
+				subCubes[0] = rubiksCube.Matrix( 1, facePair.plane.index, z );
+				subCubes[1] = rubiksCube.Matrix( 2, facePair.plane.index, z );
 			}
 			break;
 		}
 	}
 
-	if( subCube0 && subCube1 )
-	{
-		colors[0] = subCube0->faceData[ facePair.face ].color;
-		colors[1] = subCube1->faceData[ facePair.face ].color;
+	if( subCubes[0] && subCubes[1] )
 		return true;
-	}
 
 	return false;
 }
@@ -298,6 +478,36 @@ SolverForCase4::SolverForCase4( void )
 		FacePair facePair = *iter;
 		if( facePair.face == face )
 			facePairListForFace.push_back( facePair );
+	}
+}
+
+//==================================================================================================
+// Though named pluraly, it should only ever be possible to return at most one face-pair from this routine.
+/*static*/ void SolverForCase4::CollectFacePairsForFaceAndPlane( RubiksCube::Face face, const RubiksCube::Plane& plane, const FacePairList& facePairList, FacePairList& facePairListForFaceAndPlane )
+{
+	facePairListForFaceAndPlane.clear();
+	FacePairList facePairListForFace;
+	CollectFacePairsForFace( face, facePairList, facePairListForFace );
+	for( FacePairList::iterator iter = facePairListForFace.begin(); iter != facePairListForFace.end(); iter++ )
+	{
+		FacePair facePair = *iter;
+		if( facePair.plane.axis == plane.axis && facePair.plane.index == plane.index )
+			facePairListForFaceAndPlane.push_back( facePair );
+	}
+	wxASSERT( facePairListForFaceAndPlane.size() == 1 || facePairListForFaceAndPlane.size() == 0 );
+}
+
+//==================================================================================================
+/*static*/ void SolverForCase4::CollectFacePairsForSubCube( const RubiksCube& rubiksCube, const RubiksCube::SubCube* subCube, const FacePairList& facePairList, FacePairList& facePairListForSubCube )
+{
+	facePairListForSubCube.clear();
+	for( FacePairList::const_iterator iter = facePairList.begin(); iter != facePairList.end(); iter++ )
+	{
+		FacePair facePair = *iter;
+		const RubiksCube::SubCube* subCubes[2];
+		FacePairSubCubes( rubiksCube, facePair, subCubes );
+		if( subCubes[0] == subCube || subCubes[1] == subCube )
+			facePairListForSubCube.push_back( facePair );
 	}
 }
 

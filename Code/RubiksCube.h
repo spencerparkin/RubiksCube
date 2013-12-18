@@ -124,13 +124,16 @@ public:
 	const SubCube* Matrix( int x, int y, int z ) const;
 	bool ValidMatrixCoordinates( int x, int y, int z ) const;
 
-	typedef std::list< const SubCube* > SubCubeList;
+	typedef std::vector< const SubCube* > SubCubeVector;
 
-	void CollectSubCubes( Color* colorArray, int colorCount, SubCubeList& subCubeList ) const;
+	void CollectSubCubes( Color* colorArray, int colorCount, SubCubeVector& subCubeVector ) const;
 	const SubCube* CollectSubCube( Color* colorArray, int colorCount ) const;
 
 	static bool CubeHasColor( const SubCube* subCube, Color color );
 	static bool CubeHasAllColors( const SubCube* subCube, Color* colorArray, int colorCount );
+
+	static int ExposedColors( const SubCube* subCube, Color* colorArray );
+	static int ExposedFaces( const SubCube* subCube, Face* faceArray );
 
 	typedef std::list< Rotation > RotationSequence;
 	typedef std::list< RelativeRotation > RelativeRotationSequence;
@@ -169,6 +172,9 @@ public:
 	Solver* MakeSolver( void ) const;
 
 	static int RandomNumber( int min, int max );
+
+	static bool AreOppositeFaces( Face face0, Face face1 );
+	static bool AreAdjacentFaces( Face face0, Face face1 );
 
 private:
 
