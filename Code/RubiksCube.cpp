@@ -520,6 +520,54 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 }
 
 //==================================================================================================
+RubiksCube::Plane RubiksCube::TranslateFace( Face face ) const
+{
+	Plane plane;
+
+	switch( face )
+	{
+		case NEG_X:
+		case POS_X:
+		{
+			plane.axis = X_AXIS;
+			break;
+		}
+		case NEG_Y:
+		case POS_Y:
+		{
+			plane.axis = Y_AXIS;
+			break;
+		}
+		case NEG_Z:
+		case POS_Z:
+		{
+			plane.axis = Z_AXIS;
+			break;
+		}
+	}
+
+	switch( face )
+	{
+		case NEG_X:
+		case NEG_Y:
+		case NEG_Z:
+		{
+			plane.index = 0;
+			break;
+		}
+		case POS_X:
+		case POS_Y:
+		case POS_Z:
+		{
+			plane.index = subCubeMatrixSize - 1;
+			break;
+		}
+	}
+
+	return plane;
+}
+
+//==================================================================================================
 /*static*/ bool RubiksCube::TranslateGrip( Grip& grip, int x, int y, int z, Face face )
 {
 	// If I'm touching the given face of the given sub-cube, what are

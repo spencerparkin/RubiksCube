@@ -153,6 +153,7 @@ public:
 	static Face TranslateNormal( const c3ga::vectorE3GA& unitNormal );
 	static bool TranslateGrip( Grip& grip, int x, int y, int z, Face face );
 	static void TranslateAxis( wxString& axisString, Axis axis );
+	Plane TranslateFace( Face face ) const;
 	bool TranslateRotation( const Perspective& perspective, const RelativeRotation& relativeRotation, Rotation& rotation ) const;
 	bool TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const;
 	bool TranslateRelativeRotation( const std::string& relativeRotationString, RelativeRotation& relativeRotation ) const;

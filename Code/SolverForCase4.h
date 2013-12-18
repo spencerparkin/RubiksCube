@@ -12,55 +12,32 @@ public:
 
 private:
 
-	//==================================================================================================
-	class Phase
+	struct FacePair
 	{
-	public:
-		virtual bool IsComplete( void ) = 0;
-		virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) = 0;
+		RubiksCube::Plane plane;
+		RubiksCube::Face face;
+		RubiksCube::Color color;
 	};
 
-	//==================================================================================================
-	// Phase 1: Get the yellow (-Y) and white (+Y) faces complete.
-	//   Step 1: Get 2 whites paired and 2 yellows paired.
-	//   Step 2: Get 1 white pair in (+Y) face and 1 white pair in (-Y) face.
-	//   Step 3: Get 1 yellow pair in (+Y) face and 1 yellow pair in (-Y) face.
-	//   Step 4: Easy moves to get white face and yellow face complete.
-	class PhaseOne : public Phase
-	{
-	public:
-		virtual bool IsComplete( void ) override;
-		virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
-	};
+	typedef std::list< FacePair > FacePairList;
 
-	//==================================================================================================
-	// Phase 2: Get the (+/-X) and (+/-Z) faces one solid color.
-	//   Step 1: Pair remaining colors in faces.
-	//   Step 2: Make largest chain and combine to complete as many faces as possible.
-	//   Step 3: Examine case to find quickest way to complete all faces.
+	static bool AreFacesSolved( const RubiksCube& rubiksCube, const FacePairList& facePairList );
+	static bool AreFacePairsSolved( const RubiksCube& rubiksCube, const FacePairList& facePairList );
+	static bool AreEdgesSolved( const RubiksCube& rubiksCube );
 
-	//==================================================================================================
-	// Phase 3: Order middle faces correctly.
-	//   Step 1: Is there an easy move sequence that swaps two adjacent faces?  If so, that's the easiest solution.
-	//           If not, tri-cycling faces while keeping one invariant is possible, as well as swapping opposite faces.
+	static bool SolveFaces( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	static bool SolveFacePairs( const RubiksCube& rubiksCube, const FacePairList& facePairList, RubiksCube::RotationSequence& rotationSequence );
+	static bool SolveEdges( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence );
+	static bool SolveAs3x3x3( const RubiksCube& rubiksCube, RubiksCube::RotationSequence& rotationSequence );
 
-	//==================================================================================================
-	// Phase 4: Complete and park 4 edges in the (+Y) face, and 4 edge in the (-Y) face.
+	static void MakeFacePairList( const RubiksCube& rubiksCube, FacePairList& facePairList );
+	static bool FacePairsOverlap( const FacePair& facePair0, const FacePair& facePair1 );
+	static void RotationThatPreservesFacePairs( const RubiksCube& rubiksCube, RubiksCube::Face face, const FacePairList& facePairList, const RubiksCube::Rotation& anticipatedRotation, RubiksCube::Rotation& rotation );
+	static void CollectFacePairsForFace( RubiksCube::Face face, const FacePairList& facePairList, FacePairList& facePairListForFace );
+	static bool FacePairColors( const RubiksCube& rubiksCube, const FacePair& facePair, RubiksCube::Color* colors );
+	static bool AnticipatedRotationSplitsPair( const RubiksCube::Rotation& anticipatedRotation, const FacePair& facePair );
 
-	//==================================================================================================
-	// Phase 5: Complete the middle edges.
-
-	//==================================================================================================
-	// Phase 6: Solve as 3x3x3.
-	//   Can we make the 3x3x3 solver able to handle an improperly built 3x3x3?
-	//   Edges are not the only problem.  The final layer of the 3x3x3 (in the layer solve method),
-	//   may not be solvable unless we perform a 4x4x4 sequence that makes it solvable.  Perhaps the
-	//   3x3x3 solver should be up-graded to take a call-back that can be called to fix oddities in
-	//   the cube as it encounters them.  The 4x4x4 move sequences that fix these oddities can do
-	//   so while leaving the rest of the cube invariant.
-
-	Phase** phase;
-	int phaseCount;
+	// struct EdgePair { ... };
 };
 
 // SolverForCase4.h
