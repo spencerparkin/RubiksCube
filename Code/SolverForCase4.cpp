@@ -102,6 +102,16 @@ SolverForCase4::SolverForCase4( void )
 			return true;
 	}
 
+	// There is a parity problem that arises 50% of the time in solving the last two pairs.
+	// To fix it, what you have to do is find an existing pair by the same color as one of the
+	// last two pairs you're trying to match, and then move that pair into the right face, then
+	// move out the other pair that it makes without destroying the adjacency of the existing
+	// pair-match situation.
+	if( potentialFacePairList.size() == 2 )
+	{
+		//...
+	}
+
 	return false;
 }
 
@@ -122,16 +132,16 @@ SolverForCase4::SolverForCase4( void )
 	SituationStack situationStack( &rubiksCube );
 	situationStack.Push( setupRotation );
 
-	RubiksCube::Plane potentialSplitPlaneFor[2];
+	FacePair potentialSplitPair[2];		// These may not actually be calculated to be actual pairs, so the "color" field is meaningless in this case.
 	
-	// TODO: Determine the potential split planes here for situationStack.Top().
+	// TODO: Determine the potential split pairs here for situationStack.Top().
 	
-	for( int plane = 0; plane < 2 && rotationSequence.size() == 0; plane++ )
+	for( int pair = 0; pair < 2 && rotationSequence.size() == 0; pair++ )
 	{
-		int otherPlane = ( plane + 1 ) % 2;
+		int otherPair = ( pair + 1 ) % 2;
 
 		RubiksCube::RotationSequence firstFacePairPreservationSequence;
-		if( !FindFacePairPreservationSequence( situationStack, potentialSplitPlaneFor[ plane ], pairingRotation, firstFacePairPreservationSequence ) )
+		if( !FindFacePairPreservationSequence( situationStack, potentialSplitPair[ pair ], pairingRotation, potentialFacePair.perspective, firstFacePairPreservationSequence ) )
 			continue;
 		
 		if( firstFacePairPreservationSequence.size() > 0 )
@@ -140,7 +150,7 @@ SolverForCase4::SolverForCase4( void )
 			
 			// It's important to note that the second preservation sequence should never undo the preservation of the first such sequence.
 			RubiksCube::RotationSequence secondFacePairPreservationSequence;
-			if( !FindFacePairPreservationSequence( situationStack, potentialSplitPlaneFor[ otherPlane ], pairingRotation, secondFacePairPreservationSequence ) )
+			if( !FindFacePairPreservationSequence( situationStack, potentialSplitPair[ otherPair ], pairingRotation, potentialFacePair.perspective, secondFacePairPreservationSequence ) )
 			{
 				situationStack.Pop();
 				continue;
@@ -151,7 +161,7 @@ SolverForCase4::SolverForCase4( void )
 		}
 		else
 		{
-			if( !FindFacePairPreservationSequence( situationStack, potentialSplitPlaneFor[ otherPlane ], pairingRotation, firstFacePairPreservationSequence ) )
+			if( !FindFacePairPreservationSequence( situationStack, potentialSplitPair[ otherPair ], pairingRotation, potentialFacePair.perspective, firstFacePairPreservationSequence ) )
 				continue;
 
 			if( firstFacePairPreservationSequence.size() > 0 )
@@ -159,6 +169,7 @@ SolverForCase4::SolverForCase4( void )
 		}
 		
 		// If we get here, the pairing is solved!  Formulate the solution.
+		// Note that any zero-angle rotations we append here will just get optimized out.
 		rotationSequence.push_back( setupRotation );
 		rotationSequence.insert( rotationSequence.end(), situationStack.Top()->rotationSequence.begin(), situationStack.Top()->rotationSequence.end() );
 		FacePairList facePairList;
@@ -176,8 +187,54 @@ SolverForCase4::SolverForCase4( void )
 // The name of this method is not really specific enough.  There are multiple ways to preserve
 // a face-pair from an impending rotation, but here we're trying to find a specific way of preserving
 // a potentially split face-pair by rotating in the given split plane.
-/*static*/ bool SolverForCase4::FindFacePairPreservationSequence( SituationStack& situationStack, const RubiksCube::Plane& potentialSplitPlane, const RubiksCube::Rotation& anticipatedRotation, RubiksCube::RotationSequence& preservationSequence )
+/*static*/ bool SolverForCase4::FindFacePairPreservationSequence( SituationStack& situationStack, const FacePair& potentialSplitPair,
+																	const RubiksCube::Rotation& anticipatedRotation, const RubiksCube::Perspective& perspective,
+																	RubiksCube::RotationSequence& preservationSequence )
 {
+	preservationSequence.clear();
+
+	// If there is no pairing to be split, then the empty sequence is all we need.
+	if( !IsFacePairValid( *situationStack.Top()->rubiksCube, potentialSplitPair ) )
+		return true;
+
+	FacePairList facePairList;
+	MakeFacePairList( *situationStack.Top()->rubiksCube, facePairList );
+
+	for( int quaterTurnCount = 1; quaterTurnCount < 4; quaterTurnCount++ )
+	{
+		RubiksCube::RotationSequence trialSequence;
+		RubiksCube::Rotation avoidanceRotation, rotation;
+		avoidanceRotation.plane = potentialSplitPair.plane;
+		avoidanceRotation.angle = double( quaterTurnCount ) * M_PI / 2.0;
+		
+		// Again, rotations of angle zero will be optimized out, so don't bother to check.
+		RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( perspective.fAxis ), facePairList, avoidanceRotation, rotation );
+		trialSequence.push_back( rotation );
+		RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -perspective.fAxis ), facePairList, avoidanceRotation, rotation );
+		trialSequence.push_back( rotation );
+		if( potentialSplitPair.face == RubiksCube::TranslateNormal( perspective.uAxis ) )
+		{
+			RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -perspective.uAxis ), facePairList, avoidanceRotation, rotation );
+			trialSequence.push_back( rotation );
+		}
+		else if( potentialSplitPair.face == RubiksCube::TranslateNormal( perspective.rAxis ) )
+		{
+			RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -perspective.rAxis ), facePairList, avoidanceRotation, rotation );
+			trialSequence.push_back( rotation );
+		}
+
+		trialSequence.push_back( avoidanceRotation );
+		situationStack.Push( trialSequence );
+
+		if( !IsFacePairValid( *situationStack.Top()->rubiksCube, potentialSplitPair ) )
+			preservationSequence = trialSequence;
+
+		situationStack.Pop();
+
+		if( preservationSequence.size() > 0 )
+			return true;
+	}
+
 	return false;
 }
 
@@ -326,15 +383,21 @@ SolverForCase4::SolverForCase4( void )
 		for( int planeIndex = 0; planeIndex < 6; planeIndex++ )
 		{
 			facePair.plane = facePairPlanes[ planeIndex ];
-			RubiksCube::Color colors[2];
-			FacePairColors( rubiksCube, facePair, colors );
-			if( colors[0] == colors[1] )
-			{
-				facePair.color = colors[0];
+			if( IsFacePairValid( rubiksCube, facePair ) )
 				facePairList.push_back( facePair );
-			}
 		}
 	}
+}
+
+//==================================================================================================
+/*static*/ bool SolverForCase4::IsFacePairValid( const RubiksCube& rubiksCube, const FacePair& facePair )
+{
+	RubiksCube::Color colors[2];
+	if( !FacePairColors( rubiksCube, facePair, colors ) )
+		return false;
+	if( colors[0] != colors[1] )
+		return false;
+	return true;
 }
 
 //==================================================================================================
@@ -482,19 +545,25 @@ SolverForCase4::SolverForCase4( void )
 }
 
 //==================================================================================================
-// Though named pluraly, it should only ever be possible to return at most one face-pair from this routine.
-/*static*/ void SolverForCase4::CollectFacePairsForFaceAndPlane( RubiksCube::Face face, const RubiksCube::Plane& plane, const FacePairList& facePairList, FacePairList& facePairListForFaceAndPlane )
+/*static*/ bool SolverForCase4::CollectFacePairForFaceAndPlane( RubiksCube::Face face, const RubiksCube::Plane& plane, const FacePairList& facePairList, FacePair& facePair )
 {
-	facePairListForFaceAndPlane.clear();
 	FacePairList facePairListForFace;
 	CollectFacePairsForFace( face, facePairList, facePairListForFace );
+
+	FacePairList facePairListForFaceAndPlane;
 	for( FacePairList::iterator iter = facePairListForFace.begin(); iter != facePairListForFace.end(); iter++ )
 	{
-		FacePair facePair = *iter;
+		facePair = *iter;
 		if( facePair.plane.axis == plane.axis && facePair.plane.index == plane.index )
 			facePairListForFaceAndPlane.push_back( facePair );
 	}
-	wxASSERT( facePairListForFaceAndPlane.size() == 1 || facePairListForFaceAndPlane.size() == 0 );
+
+	wxASSERT( facePairListForFaceAndPlane.size() == 0 || facePairListForFaceAndPlane.size() == 1 );
+	if( facePairListForFaceAndPlane.size() == 0 )
+		return false;
+
+	facePair = facePairListForFaceAndPlane.front();
+	return true;
 }
 
 //==================================================================================================

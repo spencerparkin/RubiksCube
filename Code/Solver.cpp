@@ -85,8 +85,6 @@ void Solver::SituationStack::Push( const RubiksCube::Rotation& rotation )
 //==================================================================================================
 void Solver::SituationStack::Push( const RubiksCube::RotationSequence& rotationSequence )
 {
-	wxASSERT( !rotationSequence.empty() );
-
 	Situation situation;
 
 	const RubiksCube* copyCube = rubiksCube;

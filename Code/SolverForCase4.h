@@ -16,7 +16,6 @@ private:
 	{
 		RubiksCube::Plane plane;
 		RubiksCube::Face face;
-		RubiksCube::Color color;
 	};
 
 	typedef std::list< FacePair > FacePairList;
@@ -50,10 +49,11 @@ private:
 	static bool FacePairsOverlap( const FacePair& facePair0, const FacePair& facePair1 );
 	static void RotationThatPreservesFacePairs( const RubiksCube& rubiksCube, RubiksCube::Face face, const FacePairList& facePairList, const RubiksCube::Rotation& anticipatedRotation, RubiksCube::Rotation& rotation );
 	static void CollectFacePairsForFace( RubiksCube::Face face, const FacePairList& facePairList, FacePairList& facePairListForFace );
-	static void CollectFacePairsForFaceAndPlane( RubiksCube::Face face, const RubiksCube::Plane& plane, const FacePairList& facePairList, FacePairList& facePairListForFaceAndPlane );
+	static bool CollectFacePairForFaceAndPlane( RubiksCube::Face face, const RubiksCube::Plane& plane, const FacePairList& facePairList, FacePair& facePair );
 	static void CollectFacePairsForSubCube( const RubiksCube& rubiksCube, const RubiksCube::SubCube* subCube, const FacePairList& facePairList, FacePairList& facePairListForSubCube );
 	static bool FacePairColors( const RubiksCube& rubiksCube, const FacePair& facePair, RubiksCube::Color* colors );
 	static bool FacePairSubCubes( const RubiksCube& rubiksCube, const FacePair& facePair, const RubiksCube::SubCube** subCubes );
+	static bool IsFacePairValid( const RubiksCube& rubiksCube, const FacePair& facePair );
 	static bool AnticipatedRotationSplitsPair( const RubiksCube::Rotation& anticipatedRotation, const FacePair& facePair );
 
 	static void FindAllPotentialFacePairings( const RubiksCube& rubiksCube, const FacePairList& facePairList, PotentialFacePairList& potentialFacePairList );
@@ -62,7 +62,7 @@ private:
 	static bool IsSolitaryFaceCube( const RubiksCube& rubiksCube, const RubiksCube::SubCube* subCube, const FacePairList& facePairList );
 	//static bool IsSolitaryEdgeCube( const RubiksCube::SubCube* subCube, ... );
 
-	static bool FindFacePairPreservationSequence( SituationStack& situationStack, const RubiksCube::Plane& potentialSplitPlane, const RubiksCube::Rotation& anticipatedRotation, RubiksCube::RotationSequence& preservationSequence );
+	static bool FindFacePairPreservationSequence( SituationStack& situationStack, const FacePair& potentialSplitPair, const RubiksCube::Rotation& anticipatedRotation, const RubiksCube::Perspective& perspective, RubiksCube::RotationSequence& preservationSequence );
 
 	// struct EdgePair { ... };
 };
