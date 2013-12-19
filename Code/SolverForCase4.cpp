@@ -63,7 +63,7 @@ SolverForCase4::SolverForCase4( void )
 			FacePairList::iterator iter = facePairsForFace.begin();
 			FacePair facePair0 = *iter++;
 			FacePair facePair1 = *iter;
-			if( FacePairsOverlap( facePair0, facePair1 ) )
+			if( FacePairsOverlapAndAreDistinct( facePair0, facePair1 ) )
 				return false;
 		}	
 	}
@@ -415,7 +415,7 @@ SolverForCase4::SolverForCase4( void )
 	for( FacePairList::const_iterator iter = facePairList.begin(); iter != facePairList.end(); iter++ )
 	{
 		FacePair facePair = *iter;
-		if( FacePairsOverlap( facePair, facePairList.front() ) )
+		if( FacePairsOverlapAndAreDistinct( facePair, facePairListForSubCube.front() ) )
 			return true;
 	}
 
@@ -556,15 +556,20 @@ SolverForCase4::SolverForCase4( void )
 }
 
 //==================================================================================================
-/*static*/ bool SolverForCase4::FacePairsOverlap( const FacePair& facePair0, const FacePair& facePair1 )
+/*static*/ bool SolverForCase4::FacePairsOverlapAndAreDistinct( const FacePair& facePair0, const FacePair& facePair1 )
 {
 	wxASSERT( &facePair0 != &facePair1 );
 
+	// A pair of face-pairs can't overlap unless they share the same face.
 	if( facePair0.face != facePair1.face )
 		return false;
 
 	if( facePair0.plane.axis == facePair1.plane.axis )
+	{
+		// If the face-pairs are the same, then they're not distinct.
+		// If the face-pairs are distinct, but have the same axis, then they are parallel and can't overlap.
 		return false;
+	}
 
 	return true;
 }
@@ -587,7 +592,7 @@ SolverForCase4::SolverForCase4( void )
 		FacePairList::iterator iter = facePairsForFace.begin();
 		FacePair facePair0 = *iter++;
 		FacePair facePair1 = *iter;
-		if( FacePairsOverlap( facePair0, facePair1 ) || !AnticipatedRotationSplitsPair( anticipatedRotation, facePair0 ) )
+		if( FacePairsOverlapAndAreDistinct( facePair0, facePair1 ) || !AnticipatedRotationSplitsPair( anticipatedRotation, facePair0 ) )
 			return;
 	}
 

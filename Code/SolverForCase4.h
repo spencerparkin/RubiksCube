@@ -48,7 +48,7 @@ private:
 	//static void PrepareEdgePairing( const RubiksCube& rubiksCube, const FacePairList& facePairList, const PotentialFacePairing& potentialFacePairing, RubiksCube::RotationSequence& rotationSequence );
 
 	static void MakeFacePairList( const RubiksCube& rubiksCube, FacePairList& facePairList );
-	static bool FacePairsOverlap( const FacePair& facePair0, const FacePair& facePair1 );
+	static bool FacePairsOverlapAndAreDistinct( const FacePair& facePair0, const FacePair& facePair1 );
 	static void RotationThatPreservesFacePairs( const RubiksCube& rubiksCube, RubiksCube::Face face, const FacePairList& facePairList, const RubiksCube::Rotation& anticipatedRotation, RubiksCube::Rotation& rotation );
 	static void CollectFacePairsForFace( RubiksCube::Face face, const FacePairList& facePairList, FacePairList& facePairListForFace );
 	static bool CollectFacePairForFaceAndPlane( RubiksCube::Face face, const RubiksCube::Plane& plane, const FacePairList& facePairList, FacePair& facePair );
