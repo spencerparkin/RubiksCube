@@ -85,6 +85,13 @@ SolverForCase4::SolverForCase4( void )
 	if( potentialFacePairList.size() == 0 )
 		return false;
 
+	// When a pair of overlaping (solved) face-pairs exists, one of those pairs can be split without worry in
+	// order to solve another face-pair.  But if this in turn creates a different instance of the same situation,
+	// then the computer may choose to solve it in a way that resurrects the original instance of this situation.
+	// And by this it may happen that our algorithm loops indefinitely.  Although an unlikely case, to avoid it,
+	// we should shuffle the the potential face-pair list before iterating over it.
+	// TODO: Put shuffle here.
+
 	for( PotentialFacePairList::iterator iter = potentialFacePairList.begin(); iter != potentialFacePairList.end(); iter++ )
 	{
 		PotentialFacePair potentialFacePair = *iter;
@@ -106,10 +113,19 @@ SolverForCase4::SolverForCase4( void )
 	// To fix it, what you have to do is find an existing pair by the same color as one of the
 	// last two pairs you're trying to match, and then move that pair into the right face, then
 	// move out the other pair that it makes without destroying the adjacency of the existing
-	// pair-match situation.
+	// pair-match situation.  We have to be careful, though, because we might not end up with un-related
+	// colors in the up and right faces, which is what we want, so we have to make sure that happens.
+	// If we put it in, do a quarter turn, then move it the reverse way back out, that should always happen,
+	// because we started with two unrelated colors paired in the up and right faces.
 	if( potentialFacePairList.size() == 2 )
 	{
 		//...
+
+		// Look at just the first of the two potential face pairings.
+		// Find the completed face pair for its color.
+		// Move it into the right face so that it occupies that face with *both* potentially pair-able face cubes from both unresolved pairing problems.  (they will share a face.)
+		// Now do the right quater turn, then move out the other completed pair by the same distance, but opposite rotation direction.
+		// At this point, the algorithm should be able to resume without the parity problem.
 	}
 
 	return false;
@@ -132,9 +148,15 @@ SolverForCase4::SolverForCase4( void )
 	SituationStack situationStack( &rubiksCube );
 	situationStack.Push( setupRotation );
 
-	FacePair potentialSplitPair[2];		// These may not actually be calculated to be actual pairs, so the "color" field is meaningless in this case.
-	
-	// TODO: Determine the potential split pairs here for situationStack.Top().
+	FacePair potentialSplitPair[2];
+
+	potentialSplitPair[0].plane = situationStack.Top()->rubiksCube->TranslateFace( RubiksCube::TranslateNormal( potentialFacePair.perspective.uAxis ) );
+	potentialSplitPair[0].face = potentialFacePair.face[0];
+	//potentialSplitPair[0].plane.index = 3 - situationStack.Top()->rubiksCube->FindPlaneContainingSubCube( potentialSplitPair[0].plane.axis, potentialFacePair.subCube[0] );
+
+	potentialSplitPair[1].plane = situationStack.Top()->rubiksCube->TranslateFace( RubiksCube::TranslateNormal( potentialFacePair.perspective.rAxis ) );
+	potentialSplitPair[1].face = potentialFacePair.face[1];
+	//potentialSplitPair[1].plane.index = 3 - situationStack.Top()->rubiksCube->FindPlaneContainingSubCube( potentialSplitPair[1].plane.axis, potentialFacePair.subCube[1] );
 	
 	for( int pair = 0; pair < 2 && rotationSequence.size() == 0; pair++ )
 	{
