@@ -17,7 +17,8 @@ const char* RubiksCube::textureFiles[ MAX_COLORS ] =
 //==================================================================================================
 RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= true*/ )
 {
-	int id = 0;
+	int faceId = 0;
+	int subCubeId = 0;
 
 	this->subCubeMatrixSize = subCubeMatrixSize;
 	subCubeMatrix = new SubCube**[ subCubeMatrixSize ];
@@ -38,16 +39,18 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= tru
 				subCube->faceData[ NEG_Z ].color = ( z == 0 ) ? ORANGE : GREY;
 				subCube->faceData[ POS_Z ].color = ( z == subCubeMatrixSize - 1 ) ? RED : GREY;
 
-				subCube->faceData[ NEG_X ].id = ( x == 0 ) ? id++ : -1;
-				subCube->faceData[ POS_X ].id = ( x == subCubeMatrixSize - 1 ) ? id++ : -1;
-				subCube->faceData[ NEG_Y ].id = ( y == 0 ) ? id++ : -1;
-				subCube->faceData[ POS_Y ].id = ( y == subCubeMatrixSize - 1 ) ? id++ : -1;
-				subCube->faceData[ NEG_Z ].id = ( z == 0 ) ? id++ : -1;
-				subCube->faceData[ POS_Z ].id = ( z == subCubeMatrixSize - 1 ) ? id++ : -1;
+				subCube->faceData[ NEG_X ].id = ( x == 0 ) ? faceId++ : -1;
+				subCube->faceData[ POS_X ].id = ( x == subCubeMatrixSize - 1 ) ? faceId++ : -1;
+				subCube->faceData[ NEG_Y ].id = ( y == 0 ) ? faceId++ : -1;
+				subCube->faceData[ POS_Y ].id = ( y == subCubeMatrixSize - 1 ) ? faceId++ : -1;
+				subCube->faceData[ NEG_Z ].id = ( z == 0 ) ? faceId++ : -1;
+				subCube->faceData[ POS_Z ].id = ( z == subCubeMatrixSize - 1 ) ? faceId++ : -1;
 
 				subCube->coords.x = x;
 				subCube->coords.y = y;
 				subCube->coords.z = z;
+
+				subCube->id = subCubeId++;
 			}
 		}
 	}
@@ -786,6 +789,10 @@ RubiksCube::SubCube* RubiksCube::SubCubeIndexPlane( Plane plane, int i, int j )
 {
 	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
 		SwapFaces( subCube0->faceData[ face ], subCube1->faceData[ face ] );
+
+	int tempId = subCube0->id;
+	subCube0->id = subCube1->id;
+	subCube1->id = tempId;
 }
 
 //==================================================================================================
@@ -1166,69 +1173,88 @@ bool RubiksCube::TranslateRelativeRotation( const std::string& relativeRotationS
 }
 
 //==================================================================================================
-const RubiksCube::SubCube* RubiksCube::Matrix( const Coordinates& coords ) const
+const RubiksCube::SubCube* RubiksCube::Matrix( const Coordinates& actualCoords ) const
 {
-	if( !ValidMatrixCoordinates( coords ) )
+	if( !ValidMatrixCoordinates( actualCoords ) )
 		return 0;
 
-	return &subCubeMatrix[ coords.x ][ coords.y ][ coords.z ];
+	return &subCubeMatrix[ actualCoords.x ][ actualCoords.y ][ actualCoords.z ];
 }
 
 //==================================================================================================
-RubiksCube::SubCube* RubiksCube::Matrix( const Coordinates& coords )
+RubiksCube::SubCube* RubiksCube::Matrix( const Coordinates& actualCoords )
 {
-	if( !ValidMatrixCoordinates( coords ) )
+	if( !ValidMatrixCoordinates( actualCoords ) )
 		return 0;
 
-	return &subCubeMatrix[ coords.x ][ coords.y ][ coords.z ];
+	return &subCubeMatrix[ actualCoords.x ][ actualCoords.y ][ actualCoords.z ];
 }
 
 //==================================================================================================
-const RubiksCube::SubCube* RubiksCube::Matrix( const Coordinates& coords, const Perspective& perspective ) const
+const RubiksCube::SubCube* RubiksCube::Matrix( const Coordinates& relativeCoords, const Perspective& perspective ) const
 {
-	Coordinates remappedCoords;
-	RemapCoordinates( coords, remappedCoords, perspective );
-	return Matrix( remappedCoords );
+	Coordinates actualCoords;
+	RelativeToActual( relativeCoords, actualCoords, perspective );
+	return Matrix( actualCoords );
 }
 
 //==================================================================================================
-void RubiksCube::RemapCoordinates( const Coordinates& coords,
-									Coordinates& remappedCoords,
-									const Perspective& perspective ) const
+void RubiksCube::Perspective::PerspectiveSpaceToWorldSpace( const c3ga::vectorE3GA& perspectiveVector, c3ga::vectorE3GA& worldVector ) const
 {
-	remappedCoords.x = -1;
-	remappedCoords.y = -1;
-	remappedCoords.z = -1;
+	worldVector =
+			rAxis * perspectiveVector.get_e1() +
+			uAxis * perspectiveVector.get_e2() +
+			fAxis * perspectiveVector.get_e3();
+}
 
-	switch( TranslateNormal( perspective.rAxis ) )
-	{
-		case NEG_X: remappedCoords.x = subCubeMatrixSize - 1 - coords.x;	break;
-		case POS_X: remappedCoords.x = coords.x;							break;
-		case NEG_Y: remappedCoords.y = subCubeMatrixSize - 1 - coords.x;	break;
-		case POS_Y: remappedCoords.y = coords.x;							break;
-		case NEG_Z: remappedCoords.z = subCubeMatrixSize - 1 - coords.x;	break;
-		case POS_Z: remappedCoords.z = coords.x;							break;
-	}
+//==================================================================================================
+void RubiksCube::Perspective::PerspectiveSpaceFromWorldSpace( const c3ga::vectorE3GA& worldVector, c3ga::vectorE3GA& perspectiveVector ) const
+{
+	c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, rAxis.get_e1(), uAxis.get_e1(), fAxis.get_e1() );
+	c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, rAxis.get_e2(), uAxis.get_e2(), fAxis.get_e2() );
+	c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, rAxis.get_e3(), uAxis.get_e3(), fAxis.get_e3() );
+	perspectiveVector =
+			xAxis * worldVector.get_e1() +
+			yAxis * worldVector.get_e2() +
+			zAxis * worldVector.get_e3();
+}
 
-	switch( TranslateNormal( perspective.uAxis ) )
-	{
-		case NEG_X: remappedCoords.x = subCubeMatrixSize - 1 - coords.y;	break;
-		case POS_X: remappedCoords.x = coords.y;							break;
-		case NEG_Y: remappedCoords.y = subCubeMatrixSize - 1 - coords.y;	break;
-		case POS_Y: remappedCoords.y = coords.y;							break;
-		case NEG_Z: remappedCoords.z = subCubeMatrixSize - 1 - coords.y;	break;
-		case POS_Z: remappedCoords.z = coords.y;							break;
-	}
+//==================================================================================================
+void RubiksCube::RelativeToActual( const Coordinates& relativeCoords, Coordinates& actualCoords, const Perspective& perspective ) const
+{
+	c3ga::vectorE3GA perspectiveVector( c3ga::vectorE3GA::coord_e1_e2_e3, relativeCoords.x, relativeCoords.y, relativeCoords.z );
+	c3ga::vectorE3GA worldVector;
+	perspective.PerspectiveSpaceToWorldSpace( perspectiveVector, worldVector );
+	actualCoords.x = int( worldVector.get_e1() );
+	actualCoords.y = int( worldVector.get_e2() );
+	actualCoords.z = int( worldVector.get_e3() );
+	WrapCoordinates( actualCoords );
+}
 
-	switch( TranslateNormal( perspective.fAxis ) )
-	{
-		case NEG_X: remappedCoords.x = subCubeMatrixSize - 1 - coords.z;	break;
-		case POS_X: remappedCoords.x = coords.z;							break;
-		case NEG_Y: remappedCoords.y = subCubeMatrixSize - 1 - coords.z;	break;
-		case POS_Y: remappedCoords.y = coords.z;							break;
-		case NEG_Z: remappedCoords.z = subCubeMatrixSize - 1 - coords.z;	break;
-		case POS_Z: remappedCoords.z = coords.z;							break;
-	}
+//==================================================================================================
+void RubiksCube::RelativeFromActual( const Coordinates& actualCoords, Coordinates& relativeCoords, const Perspective& perspective ) const
+{
+	c3ga::vectorE3GA worldVector( c3ga::vectorE3GA::coord_e1_e2_e3, actualCoords.x, actualCoords.y, actualCoords.z );
+	c3ga::vectorE3GA perspectiveVector;
+	perspective.PerspectiveSpaceFromWorldSpace( worldVector, perspectiveVector );
+	relativeCoords.x = int( perspectiveVector.get_e1() );
+	relativeCoords.y = int( perspectiveVector.get_e2() );
+	relativeCoords.z = int( perspectiveVector.get_e3() );
+	WrapCoordinates( relativeCoords );
+}
+
+//==================================================================================================
+void RubiksCube::WrapCoordinates( Coordinates& coords ) const
+{
+	coords.x %= subCubeMatrixSize;
+	coords.y %= subCubeMatrixSize;
+	coords.z %= subCubeMatrixSize;
+	if( coords.x < 0 )
+		coords.x += subCubeMatrixSize;
+	if( coords.y < 0 )
+		coords.y += subCubeMatrixSize;
+	if( coords.z < 0 )
+		coords.z += subCubeMatrixSize;
 }
 
 //==================================================================================================
@@ -1555,6 +1581,44 @@ RubiksCube::RelativeRotation::RelativeRotation( Type type /*= U*/, int planeInde
 	if( face0 == face1 )
 		return false;
 	return true;
+}
+
+//==================================================================================================
+// Here we do a linear search which would be very impractical if we decided to work
+// with cubes of high order.  We could use a map to speed this up.  We would just
+// need to remember to update the map for each rotation.  For now, I'm keeping it simple.
+const RubiksCube::SubCube* RubiksCube::FindSubCubeById( int subCubeId ) const
+{
+	// Another sillyness to consider here, of course, is that we're searching
+	// the entire cube: the inner, non-exposed cubes, as well as the exposed cubes.
+	// We only need to track and search the exposed cubes.
+	for( int x = 0; x < subCubeMatrixSize; x++ )
+	{
+		for( int y = 0; y < subCubeMatrixSize; y++ )
+		{
+			for( int z = 0; z < subCubeMatrixSize; z++ )
+			{
+				const SubCube* subCube = &subCubeMatrix[x][y][z];
+				if( subCube->id == subCubeId )
+					return subCube;
+			}
+		}
+	}
+
+	return 0;
+}
+
+//==================================================================================================
+/*static*/ int RubiksCube::PlaneContainingSubCube( Axis axis, const SubCube* subCube )
+{
+	switch( axis )
+	{
+		case X_AXIS: return subCube->coords.x;
+		case Y_AXIS: return subCube->coords.y;
+		case Z_AXIS: return subCube->coords.z;
+	}
+
+	return -1;
 }
 
 // RubiksCube.cpp

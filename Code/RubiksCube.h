@@ -103,6 +103,9 @@ public:
 		c3ga::vectorE3GA rAxis;
 		c3ga::vectorE3GA uAxis;
 		c3ga::vectorE3GA fAxis;
+
+		void PerspectiveSpaceToWorldSpace( const c3ga::vectorE3GA& perspectiveVector, c3ga::vectorE3GA& worldVector ) const;
+		void PerspectiveSpaceFromWorldSpace( const c3ga::vectorE3GA& worldVector, c3ga::vectorE3GA& perspectiveVector ) const;
 	};
 
 	struct Coordinates
@@ -127,16 +130,19 @@ public:
 
 		FaceData faceData[ CUBE_FACE_COUNT ];
 		Coordinates coords;
+		int id;
 	};
 
 	typedef void ( *CopyMapFunc )( Coordinates& );
 	bool Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc );
 	static void CopyMap( Coordinates& coords );
 
-	const SubCube* Matrix( const Coordinates& coords ) const;
-	const SubCube* Matrix( const Coordinates& coords, const Perspective& perspective ) const;
-	bool ValidMatrixCoordinates( const Coordinates& coords ) const;
-	void RemapCoordinates( const Coordinates& coords, Coordinates& remappedCoords, const Perspective& perspective ) const;
+	const SubCube* Matrix( const Coordinates& actualCoords ) const;
+	const SubCube* Matrix( const Coordinates& relativeCoords, const Perspective& perspective ) const;
+	bool ValidMatrixCoordinates( const Coordinates& actualCoords ) const;
+	void RelativeToActual( const Coordinates& relativeCoords, Coordinates& actualCoords, const Perspective& perspective ) const;
+	void RelativeFromActual( const Coordinates& actualCoords, Coordinates& relativeCoords, const Perspective& perspective ) const;
+	void WrapCoordinates( Coordinates& coords ) const;
 
 	typedef std::vector< const SubCube* > SubCubeVector;
 
@@ -190,9 +196,13 @@ public:
 	static bool AreOppositeFaces( Face face0, Face face1 );
 	static bool AreAdjacentFaces( Face face0, Face face1 );
 
+	const SubCube* FindSubCubeById( int subCubeId ) const;
+
+	static int PlaneContainingSubCube( Axis axis, const SubCube* subCube );
+
 private:
 
-	SubCube* Matrix( const Coordinates& coords );
+	SubCube* Matrix( const Coordinates& actualCoords );
 
 	bool SaveToXml( wxXmlNode* xmlNode ) const;
 	bool LoadFromXml( const wxXmlNode* xmlNode );

@@ -31,6 +31,8 @@ private:
 
 	typedef std::list< PotentialFacePair > PotentialFacePairList;
 
+	// struct EdgePair { ... };
+
 	static bool AreFacesSolved( const RubiksCube& rubiksCube, const FacePairList& facePairList );
 	static bool AreFacePairsSolved( const RubiksCube& rubiksCube, const FacePairList& facePairList );
 	static bool AreEdgePairsSolved( const RubiksCube& rubiksCube );
@@ -64,7 +66,7 @@ private:
 
 	static bool FindFacePairPreservationSequence( SituationStack& situationStack, const FacePair& potentialSplitPair, const RubiksCube::Rotation& anticipatedRotation, const RubiksCube::Perspective& perspective, RubiksCube::RotationSequence& preservationSequence );
 
-	// struct EdgePair { ... };
+	static int PlacementForFacePairingSolver( const RubiksCube::Coordinates& relativeCoords );
 };
 
 // SolverForCase4.h

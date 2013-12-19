@@ -119,7 +119,7 @@ SolverForCase4::SolverForCase4( void )
 	// colors in the up and right faces, which is what we want, so we have to make sure that happens.
 	// If we put it in, do a quarter turn, then move it the reverse way back out, that should always happen,
 	// because we started with two unrelated colors paired in the up and right faces.
-	if( potentialFacePairList.size() == 4 )		// Four, because the 2 remaining potential pairing are each redundantly given.
+	if( potentialFacePairList.size() == 2 )
 	{
 		//...
 
@@ -134,76 +134,125 @@ SolverForCase4::SolverForCase4( void )
 }
 
 //==================================================================================================
-// Here we are always trying to move subCube0 from the right-face into the up-face to be paired with the subCube1.
+// Here a placement number is returned based upon the relative position given.  This is used in
+// the face-pairing solver logic.
+/*static*/ int SolverForCase4::PlacementForFacePairingSolver( const RubiksCube::Coordinates& relativeCoords )
+{
+	int rightMap[2][2] = { { 3, 0 }, { 2, 1 } };
+	int upMap[2][2] = { { 2, 1 }, { 3, 0 } };
+	if( relativeCoords.x == 3 )
+		return rightMap[ relativeCoords.y - 1 ][ relativeCoords.z - 1 ];
+	else if( relativeCoords.y == 3 )
+		return upMap[ relativeCoords.x - 1 ][ relativeCoords.z - 1 ];	
+	return -1;
+}
+
+//==================================================================================================
+// Here we are always trying to move subCube[0] from the right-face into the up-face to be paired with subCube[1].
 // Again, it's apparent from this code that if we were trying to solve a higher-order cube, this would just be too slow.
+// It should also be noted that, while playing with a 4x4x4, I've noticed cases where this algorithm certainly
+// does not find the optimal solution.  For example, there are cases where one rotation completes several pairs,
+// but this algorithm is not capable of detecting that.  One optimization would be the ability to recognize when
+// splitting an already-solved face-pairing is okay, because the move still completes more pairs.  In any case,
+// correctness is more important than speed to begin with.
 /*static*/ void SolverForCase4::SolveFacePairing( const RubiksCube& rubiksCube, const FacePairList& facePairList,
 													const PotentialFacePair& potentialFacePair, RubiksCube::RotationSequence& rotationSequence )
 {
 	if( !RubiksCube::AreAdjacentFaces( potentialFacePair.face[0], potentialFacePair.face[1] ) )
 		return;
 
-	// TODO: A more sophisticated version of this algorithm would consider multiple setup and pairing rotations.
-	RubiksCube::Rotation setupRotation, pairingRotation;
-	
-	// TODO: Determine setup rotation and pairingRotation here...
-
 	SituationStack situationStack( &rubiksCube );
-	situationStack.Push( setupRotation );
 
-	FacePair potentialSplitPair[2];
-
-	potentialSplitPair[0].plane = situationStack.Top()->rubiksCube->TranslateFace( RubiksCube::TranslateNormal( potentialFacePair.perspective.uAxis ) );
-	potentialSplitPair[0].face = potentialFacePair.face[0];
-	//potentialSplitPair[0].plane.index = 3 - situationStack.Top()->rubiksCube->FindPlaneContainingSubCube( potentialSplitPair[0].plane.axis, potentialFacePair.subCube[0] );
-
-	potentialSplitPair[1].plane = situationStack.Top()->rubiksCube->TranslateFace( RubiksCube::TranslateNormal( potentialFacePair.perspective.rAxis ) );
-	potentialSplitPair[1].face = potentialFacePair.face[1];
-	//potentialSplitPair[1].plane.index = 3 - situationStack.Top()->rubiksCube->FindPlaneContainingSubCube( potentialSplitPair[1].plane.axis, potentialFacePair.subCube[1] );
-	
-	for( int pair = 0; pair < 2 && rotationSequence.size() == 0; pair++ )
+	for( int quaterTurnCount = 0; quaterTurnCount < 4; quaterTurnCount++ )
 	{
-		int otherPair = ( pair + 1 ) % 2;
-
-		RubiksCube::RotationSequence firstFacePairPreservationSequence;
-		if( !FindFacePairPreservationSequence( situationStack, potentialSplitPair[ pair ], pairingRotation, potentialFacePair.perspective, firstFacePairPreservationSequence ) )
-			continue;
-		
-		if( firstFacePairPreservationSequence.size() > 0 )
-		{
-			situationStack.Push( firstFacePairPreservationSequence );
-			
-			// It's important to note that the second preservation sequence should never undo the preservation of the first such sequence.
-			RubiksCube::RotationSequence secondFacePairPreservationSequence;
-			if( !FindFacePairPreservationSequence( situationStack, potentialSplitPair[ otherPair ], pairingRotation, potentialFacePair.perspective, secondFacePairPreservationSequence ) )
-			{
-				situationStack.Pop();
-				continue;
-			}
-
-			if( secondFacePairPreservationSequence.size() > 0 )
-				situationStack.Push( secondFacePairPreservationSequence );
-		}
-		else
-		{
-			if( !FindFacePairPreservationSequence( situationStack, potentialSplitPair[ otherPair ], pairingRotation, potentialFacePair.perspective, firstFacePairPreservationSequence ) )
-				continue;
-
-			if( firstFacePairPreservationSequence.size() > 0 )
-				situationStack.Push( firstFacePairPreservationSequence );
-		}
-		
-		// If we get here, the pairing is solved!  Formulate the solution.
-		// Note that any zero-angle rotations we append here will just get optimized out.
-		rotationSequence.push_back( setupRotation );
-		rotationSequence.insert( rotationSequence.end(), situationStack.Top()->rotationSequence.begin(), situationStack.Top()->rotationSequence.end() );
-		FacePairList facePairList;
-		MakeFacePairList( *situationStack.Top()->rubiksCube, facePairList );
+		// Try this orientation of the up-face.
 		RubiksCube::Rotation rotation;
-		RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -potentialFacePair.perspective.uAxis ), facePairList, pairingRotation, rotation );
-		rotationSequence.push_back( rotation );
-		RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -potentialFacePair.perspective.rAxis ), facePairList, pairingRotation, rotation );
-		rotationSequence.push_back( rotation );
-		rotationSequence.push_back( pairingRotation );
+		rotation.angle = double( quaterTurnCount ) * M_PI / 2.0;
+		rotation.plane = rubiksCube.TranslateFace( RubiksCube::TranslateNormal( potentialFacePair.perspective.uAxis ) );
+		situationStack.Push( rotation );
+
+		// Now determine the proper orientation of the right-face so that subCube[0] is ready to be rotated next to subCube[1].
+		const RubiksCube::SubCube* subCube[2];
+		subCube[0] = situationStack.Top()->rubiksCube->FindSubCubeById( potentialFacePair.subCube[0]->id );
+		subCube[1] = situationStack.Top()->rubiksCube->FindSubCubeById( potentialFacePair.subCube[1]->id );
+		RubiksCube::Coordinates relativeCoords[2];
+		situationStack.Top()->rubiksCube->RelativeFromActual( subCube[0]->coords, relativeCoords[0], potentialFacePair.perspective );
+		situationStack.Top()->rubiksCube->RelativeFromActual( subCube[1]->coords, relativeCoords[1], potentialFacePair.perspective );
+		int faceCubePlacement[2] = { PlacementForFacePairingSolver( relativeCoords[0] ), PlacementForFacePairingSolver( relativeCoords[1] ) };
+		int targetPlacement = 3 - faceCubePlacement[1];
+		int placementDelta = targetPlacement - faceCubePlacement[0];
+		rotation.angle = double( placementDelta ) * M_PI / 2.0;
+		rotation.plane = situationStack.Top()->rubiksCube->TranslateFace( RubiksCube::TranslateNormal( potentialFacePair.perspective.rAxis ) );
+		situationStack.Push( rotation );
+		
+		// Determine the rotation that completes the potential pairing.
+		RubiksCube::RelativeRotation relativeRotation( RubiksCube::RelativeRotation::Fi );
+		if( faceCubePlacement[0] == 0 || faceCubePlacement[0] == 1 )
+			relativeRotation.planeIndex = 2;
+		else if( faceCubePlacement[0] == 2 || faceCubePlacement[0] == 3 )
+			relativeRotation.planeIndex = 1;
+		RubiksCube::Rotation pairingRotation;
+		situationStack.Top()->rubiksCube->TranslateRotation( potentialFacePair.perspective, relativeRotation, pairingRotation );
+
+		// Now determine the face-pairs, which may be complete, (or may not be), that are potentially split by the pairing rotation.
+		subCube[0] = situationStack.Top()->rubiksCube->FindSubCubeById( potentialFacePair.subCube[0]->id );
+		subCube[1] = situationStack.Top()->rubiksCube->FindSubCubeById( potentialFacePair.subCube[1]->id );
+		FacePair potentialSplitPair[2];
+		potentialSplitPair[0].plane = situationStack.Top()->rubiksCube->TranslateFace( RubiksCube::TranslateNormal( potentialFacePair.perspective.uAxis ) );
+		potentialSplitPair[0].face = potentialFacePair.face[0];
+		potentialSplitPair[0].plane.index = 3 - RubiksCube::PlaneContainingSubCube( potentialSplitPair[0].plane.axis, subCube[0] );
+		potentialSplitPair[1].plane = situationStack.Top()->rubiksCube->TranslateFace( RubiksCube::TranslateNormal( potentialFacePair.perspective.rAxis ) );
+		potentialSplitPair[1].face = potentialFacePair.face[1];
+		potentialSplitPair[1].plane.index = 3 - RubiksCube::PlaneContainingSubCube( potentialSplitPair[1].plane.axis, subCube[1] );
+		
+		// Now go search for a way to make the pairing rotation without spliting up any existing and completed face pairs.
+		for( int pair = 0; pair < 2; pair++ )
+		{
+			int otherPair = ( pair + 1 ) % 2;
+
+			RubiksCube::RotationSequence firstFacePairPreservationSequence;
+			if( !FindFacePairPreservationSequence( situationStack, potentialSplitPair[ pair ], pairingRotation, potentialFacePair.perspective, firstFacePairPreservationSequence ) )
+				continue;
+			
+			if( firstFacePairPreservationSequence.size() > 0 )
+			{
+				situationStack.Push( firstFacePairPreservationSequence );
+				
+				// It's important to note that the second preservation sequence should never undo the preservation of the first such sequence.
+				RubiksCube::RotationSequence secondFacePairPreservationSequence;
+				if( !FindFacePairPreservationSequence( situationStack, potentialSplitPair[ otherPair ], pairingRotation, potentialFacePair.perspective, secondFacePairPreservationSequence ) )
+				{
+					situationStack.Pop();
+					continue;
+				}
+
+				if( secondFacePairPreservationSequence.size() > 0 )
+					situationStack.Push( secondFacePairPreservationSequence );
+			}
+			else
+			{
+				if( !FindFacePairPreservationSequence( situationStack, potentialSplitPair[ otherPair ], pairingRotation, potentialFacePair.perspective, firstFacePairPreservationSequence ) )
+					continue;
+
+				if( firstFacePairPreservationSequence.size() > 0 )
+					situationStack.Push( firstFacePairPreservationSequence );
+			}
+			
+			// If we get here, the pairing is solved!  Formulate the solution.
+			// Note that any zero-angle rotations we append here will just get optimized out.
+			situationStack.AppendRotationSequence( rotationSequence );
+			FacePairList facePairList;
+			MakeFacePairList( *situationStack.Top()->rubiksCube, facePairList );
+			RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -potentialFacePair.perspective.uAxis ), facePairList, pairingRotation, rotation );
+			rotationSequence.push_back( rotation );
+			RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -potentialFacePair.perspective.rAxis ), facePairList, pairingRotation, rotation );
+			rotationSequence.push_back( rotation );
+			rotationSequence.push_back( pairingRotation );
+			return;
+		}
+
+		situationStack.Pop();
+		situationStack.Pop();
 	}
 }
 
@@ -224,7 +273,7 @@ SolverForCase4::SolverForCase4( void )
 	FacePairList facePairList;
 	MakeFacePairList( *situationStack.Top()->rubiksCube, facePairList );
 
-	// This appears to be brute force, but it seems no different to me than looking at a case-by-case basis anyway.
+	// This appears to be a brute force search, but it seems no different to me than looking at a case-by-case basis anyway.
 	for( int quaterTurnCount = 1; quaterTurnCount < 4 && preservationSequence.size() == 0; quaterTurnCount++ )
 	{
 		RubiksCube::Rotation avoidanceRotation;
@@ -303,24 +352,17 @@ SolverForCase4::SolverForCase4( void )
 		wxASSERT( subCubeVector.size() == 4 );
 
 		// Now go see which pairs of these face cubes are potentially pairable.
-		// It's important to realize here that we are creating redundant pairings.
-		// (i.e., if we list pair (a,b), we also list pair (b,a).)  What this does
-		// is simplify the solving code, because it allows the solving code to consider
-		// the problem from just one perspective.  If we only listed (a,b) and not (b,a),
-		// we would have to consider (a,b) from potentially two different perspectives,
-		// or consider two ways of working the problem from a single perspective,
-		// before being able to solve it.
+		// If I'm not mistaken, if consider one face cube against another, then this
+		// is equivilant to considering the second against the first, no matter the
+		// perspective, so here, these are non-ordered pairs.
 		for( int i = 0; i < 4; i++ )
 		{
 			const RubiksCube::SubCube* subCube0 = subCubeVector[i];
 			if( !IsSolitaryFaceCube( rubiksCube, subCube0, facePairList ) )
 				continue;
 
-			for( int j = 0; j < 4; j++ )
+			for( int j = i + 1; j < 4; j++ )
 			{
-				if( i == j )
-					continue;
-
 				const RubiksCube::SubCube* subCube1 = subCubeVector[j];
 				if( !IsSolitaryFaceCube( rubiksCube, subCube1, facePairList ) )
 					continue;

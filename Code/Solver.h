@@ -17,10 +17,11 @@ public:
 protected:
 
 	// A situation stack is a tool that a solver class derivative may or may not choose to utilize.
-	// Some solvers can return a rotation sequence to flush those moves out so that it can continue
-	// on in its logic.  If, however, the algorithm for determining a move sequence is more sophisticated,
-	// it may need to flush moves out on its own before it can continue on its logic and then at some point
-	// return a rotation sequence.  This is often the case when trial-and-error (searching) is involved.
+	// Solvers work by returning sequences until no new sequence needs to be returned.  Between requests
+	// for sequences, the solver may lose the context of what it was trying to figure out, so during
+	// the handling of such a request, it may choose to use a situation stack to flush intermediate moves
+	// to continue on in its logic.  The best example of this is that of searching for a good sequence
+	// to return to the requester.
 	class SituationStack
 	{
 	public:
@@ -40,6 +41,7 @@ protected:
 		void Push( const RubiksCube::Rotation& rotation );
 		void Push( const RubiksCube::RotationSequence& rotationSequence );
 		void Pop( void );
+		void AppendRotationSequence( RubiksCube::RotationSequence& rotationSequence ) const;
 
 	private:
 		SituationList situationList;

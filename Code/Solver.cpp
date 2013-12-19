@@ -90,13 +90,9 @@ void Solver::SituationStack::Push( const RubiksCube::RotationSequence& rotationS
 	const RubiksCube* copyCube = rubiksCube;
 	const Situation* top = Top();
 	if( top )
-	{
 		copyCube = top->rubiksCube;
-		situation.rotationSequence = top->rotationSequence;
-	}
 
-	situation.rotationSequence.insert( situation.rotationSequence.end(), rotationSequence.begin(), rotationSequence.end() );
-
+	situation.rotationSequence = rotationSequence;
 	situation.rubiksCube = new RubiksCube( copyCube->SubCubeMatrixSize(), false );
 	situation.rubiksCube->Copy( *copyCube, RubiksCube::CopyMap );
 	situation.rubiksCube->ApplySequence( rotationSequence );
@@ -113,6 +109,16 @@ void Solver::SituationStack::Pop( void )
 	Situation* top = &situationList.back();
 	delete top->rubiksCube;
 	situationList.pop_back();
+}
+
+//==================================================================================================
+void Solver::SituationStack::AppendRotationSequence( RubiksCube::RotationSequence& rotationSequence ) const
+{
+	for( SituationList::const_iterator iter = situationList.begin(); iter != situationList.end(); iter++ )
+	{
+		const Situation* situation = &*iter;
+		rotationSequence.insert( rotationSequence.end(), situation->rotationSequence.begin(), situation->rotationSequence.end() );
+	}
 }
 
 // Solver.cpp
