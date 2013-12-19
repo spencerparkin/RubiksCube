@@ -494,6 +494,9 @@ SolverForCase4::SolverForCase4( void )
 //==================================================================================================
 /*static*/ bool SolverForCase4::FacePairSubCubes( const RubiksCube& rubiksCube, const FacePair& facePair, const RubiksCube::SubCube** subCubes )
 {
+	subCubes[0] = 0;
+	subCubes[1] = 0;
+
 	switch( facePair.face )
 	{
 		case RubiksCube::NEG_X:
