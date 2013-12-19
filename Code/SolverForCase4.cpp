@@ -89,7 +89,9 @@ SolverForCase4::SolverForCase4( void )
 	// order to solve another face-pair.  But if this in turn creates a different instance of the same situation,
 	// then the computer may choose to solve it in a way that resurrects the original instance of this situation.
 	// And by this it may happen that our algorithm loops indefinitely.  Although an unlikely case, to avoid it,
-	// we should shuffle the the potential face-pair list before iterating over it.
+	// we should shuffle the the potential face-pair list before iterating over it.  This isn't the most elegant
+	// solution, but again, although unlikely, if it does happen, it's possible that our final solution sequence has
+	// a bunch of redundant moves in it, but the optimizer should have no problem removing those.
 	// TODO: Put shuffle here.
 
 	for( PotentialFacePairList::iterator iter = potentialFacePairList.begin(); iter != potentialFacePairList.end(); iter++ )
