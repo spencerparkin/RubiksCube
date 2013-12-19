@@ -186,7 +186,7 @@ SolverForCase4::SolverForCase4( void )
 //==================================================================================================
 // The name of this method is not really specific enough.  There are multiple ways to preserve
 // a face-pair from an impending rotation, but here we're trying to find a specific way of preserving
-// a potentially split face-pair by rotating in the given split plane.
+// a potentially split face-pair by rotating in the given potentially split face-pair's plane.
 /*static*/ bool SolverForCase4::FindFacePairPreservationSequence( SituationStack& situationStack, const FacePair& potentialSplitPair,
 																	const RubiksCube::Rotation& anticipatedRotation, const RubiksCube::Perspective& perspective,
 																	RubiksCube::RotationSequence& preservationSequence )
@@ -200,42 +200,54 @@ SolverForCase4::SolverForCase4( void )
 	FacePairList facePairList;
 	MakeFacePairList( *situationStack.Top()->rubiksCube, facePairList );
 
-	for( int quaterTurnCount = 1; quaterTurnCount < 4; quaterTurnCount++ )
+	// This appears to be brute force, but it seems no different to me than looking at a case-by-case basis anyway.
+	for( int quaterTurnCount = 1; quaterTurnCount < 4 && preservationSequence.size() == 0; quaterTurnCount++ )
 	{
-		RubiksCube::RotationSequence trialSequence;
-		RubiksCube::Rotation avoidanceRotation, rotation;
+		RubiksCube::Rotation avoidanceRotation;
 		avoidanceRotation.plane = potentialSplitPair.plane;
 		avoidanceRotation.angle = double( quaterTurnCount ) * M_PI / 2.0;
 		
-		// Again, rotations of angle zero will be optimized out, so don't bother to check.
-		RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( perspective.fAxis ), facePairList, avoidanceRotation, rotation );
-		trialSequence.push_back( rotation );
-		RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -perspective.fAxis ), facePairList, avoidanceRotation, rotation );
-		trialSequence.push_back( rotation );
-		if( potentialSplitPair.face == RubiksCube::TranslateNormal( perspective.uAxis ) )
+		for( int orientationPermutation = 0; orientationPermutation < 8; orientationPermutation++ )
 		{
-			RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -perspective.uAxis ), facePairList, avoidanceRotation, rotation );
+			RubiksCube::RotationSequence trialSequence;
+			RubiksCube::Rotation rotation;
+			
+			RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( perspective.fAxis ), facePairList, avoidanceRotation, rotation );
+			if( orientationPermutation & 0x1 )
+				rotation.angle += M_PI;
 			trialSequence.push_back( rotation );
-		}
-		else if( potentialSplitPair.face == RubiksCube::TranslateNormal( perspective.rAxis ) )
-		{
-			RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -perspective.rAxis ), facePairList, avoidanceRotation, rotation );
+
+			RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -perspective.fAxis ), facePairList, avoidanceRotation, rotation );
+			if( orientationPermutation & 0x2 )
+				rotation.angle += M_PI;
 			trialSequence.push_back( rotation );
+
+			if( potentialSplitPair.face == RubiksCube::TranslateNormal( perspective.uAxis ) )
+			{
+				RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -perspective.uAxis ), facePairList, avoidanceRotation, rotation );
+				if( orientationPermutation & 0x4 )
+					rotation.angle += M_PI;
+				trialSequence.push_back( rotation );
+			}
+			else if( potentialSplitPair.face == RubiksCube::TranslateNormal( perspective.rAxis ) )
+			{
+				RotationThatPreservesFacePairs( *situationStack.Top()->rubiksCube, RubiksCube::TranslateNormal( -perspective.rAxis ), facePairList, avoidanceRotation, rotation );
+				if( orientationPermutation & 0x4 )
+					rotation.angle += M_PI;
+				trialSequence.push_back( rotation );
+			}
+		
+			trialSequence.push_back( avoidanceRotation );
+			situationStack.Push( trialSequence );
+
+			if( !IsFacePairValid( *situationStack.Top()->rubiksCube, potentialSplitPair ) )
+				preservationSequence = trialSequence;
+
+			situationStack.Pop();
 		}
-
-		trialSequence.push_back( avoidanceRotation );
-		situationStack.Push( trialSequence );
-
-		if( !IsFacePairValid( *situationStack.Top()->rubiksCube, potentialSplitPair ) )
-			preservationSequence = trialSequence;
-
-		situationStack.Pop();
-
-		if( preservationSequence.size() > 0 )
-			return true;
 	}
 
-	return false;
+	return ( preservationSequence.size() == 0 ) ? false : true;
 }
 
 //==================================================================================================
@@ -521,14 +533,13 @@ SolverForCase4::SolverForCase4( void )
 }
 
 //==================================================================================================
+// Notice that we don't check if the given rotation is a zero-angle rotation.
 /*static*/ bool SolverForCase4::AnticipatedRotationSplitsPair( const RubiksCube::Rotation& anticipatedRotation, const FacePair& facePair )
 {
 	if( anticipatedRotation.plane.index == 0 || anticipatedRotation.plane.index == 3 )
 		return false;
-
 	if( facePair.plane.axis == facePair.plane.axis )
 		return false;
-
 	return true;
 }
 
