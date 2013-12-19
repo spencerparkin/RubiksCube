@@ -119,7 +119,7 @@ SolverForCase4::SolverForCase4( void )
 	// colors in the up and right faces, which is what we want, so we have to make sure that happens.
 	// If we put it in, do a quarter turn, then move it the reverse way back out, that should always happen,
 	// because we started with two unrelated colors paired in the up and right faces.
-	if( potentialFacePairList.size() == 2 )
+	if( potentialFacePairList.size() == 4 )		// Four, because the 2 remaining potential pairing are each redundantly given.
 	{
 		//...
 
