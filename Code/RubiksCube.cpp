@@ -45,9 +45,9 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= tru
 				subCube->faceData[ NEG_Z ].id = ( z == 0 ) ? id++ : -1;
 				subCube->faceData[ POS_Z ].id = ( z == subCubeMatrixSize - 1 ) ? id++ : -1;
 
-				subCube->x = x;
-				subCube->y = y;
-				subCube->z = z;
+				subCube->coords.x = x;
+				subCube->coords.y = y;
+				subCube->coords.z = z;
 			}
 		}
 	}
@@ -127,15 +127,15 @@ bool RubiksCube::Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc )
 			{
 				SubCube* dstSubCube = &subCubeMatrix[ dst_x ][ dst_y ][ dst_z ];
 
-				int src_x = dst_x;
-				int src_y = dst_y;
-				int src_z = dst_z;
+				Coordinates src;
+				src.x = dst_x;
+				src.y = dst_y;
+				src.z = dst_z;
 
-				copyMapFunc( src_x, src_y, src_z );
-				if( !rubiksCube.ValidMatrixCoordinates( src_x, src_y, src_z ) )
+				copyMapFunc( src );
+				const SubCube* srcSubCube = rubiksCube.Matrix( src );
+				if( !srcSubCube )
 					return false;
-
-				const SubCube* srcSubCube = &rubiksCube.subCubeMatrix[ src_x ][ src_y ][ src_z ];
 
 				for( int face = 0; face < CUBE_FACE_COUNT; face++ )
 					dstSubCube->faceData[ face ] = srcSubCube->faceData[ face ];
@@ -147,7 +147,7 @@ bool RubiksCube::Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc )
 }
 
 //==================================================================================================
-/*static*/ void RubiksCube::CopyMap( int& x, int& y, int& z )
+/*static*/ void RubiksCube::CopyMap( Coordinates& coords )
 {
 	// Leave the given coordinates untouched.
 }
@@ -300,8 +300,8 @@ void RubiksCube::Render( GLenum mode, const Rotation& rotation, const Size& size
 
 				SubCube* subCube = &subCubeMatrix[x][y][z];
 				const SubCube* comparativeSubCube = 0;
-				if( mode == GL_RENDER && comparativeRubiksCube && comparativeRubiksCube->ValidMatrixCoordinates( subCube->x, subCube->y, subCube->z ) )
-					comparativeSubCube = comparativeRubiksCube->Matrix( subCube->x, subCube->y, subCube->z );
+				if( mode == GL_RENDER && comparativeRubiksCube && comparativeRubiksCube->ValidMatrixCoordinates( subCube->coords ) )
+					comparativeSubCube = comparativeRubiksCube->Matrix( subCube->coords );
 				RenderSubCube( mode, subCube, vertexVersor, normalVersor, selectedFaceId, comparativeSubCube, highlightInvariants );
 
 				if( mode == GL_SELECT )
@@ -596,7 +596,7 @@ RubiksCube::Plane RubiksCube::TranslateFace( Face face ) const
 }
 
 //==================================================================================================
-/*static*/ bool RubiksCube::TranslateGrip( Grip& grip, int x, int y, int z, Face face )
+/*static*/ bool RubiksCube::TranslateGrip( Grip& grip, const Coordinates& coords, Face face )
 {
 	// If I'm touching the given face of the given sub-cube, what are
 	// the two rotation planes that I have a grip on?
@@ -606,27 +606,27 @@ RubiksCube::Plane RubiksCube::TranslateFace( Face face ) const
 		case POS_X:
 		{
 			grip.plane[0].axis = Y_AXIS;
-			grip.plane[0].index = y;
+			grip.plane[0].index = coords.y;
 			grip.plane[1].axis = Z_AXIS;
-			grip.plane[1].index = z;
+			grip.plane[1].index = coords.z;
 			return true;
 		}
 		case NEG_Y:
 		case POS_Y:
 		{
 			grip.plane[0].axis = X_AXIS;
-			grip.plane[0].index = x;
+			grip.plane[0].index = coords.x;
 			grip.plane[1].axis = Z_AXIS;
-			grip.plane[1].index = z;
+			grip.plane[1].index = coords.z;
 			return true;
 		}
 		case NEG_Z:
 		case POS_Z:
 		{
 			grip.plane[0].axis = X_AXIS;
-			grip.plane[0].index = x;
+			grip.plane[0].index = coords.x;
 			grip.plane[1].axis = Y_AXIS;
-			grip.plane[1].index = y;
+			grip.plane[1].index = coords.y;
 			return true;
 		}
 	}
@@ -805,12 +805,14 @@ bool RubiksCube::Select( unsigned int* hitBuffer, int hitBufferSize, int hitCoun
 		wxASSERT( nameCount == 4 );
 		if( nameCount == 4 )
 		{
-			int x = ( int )hitRecord[3];
-			int y = ( int )hitRecord[4];
-			int z = ( int )hitRecord[5];
+			Coordinates coords;
+			coords.x = ( int )hitRecord[3];
+			coords.y = ( int )hitRecord[4];
+			coords.z = ( int )hitRecord[5];
 			Face face = ( Face )hitRecord[6];
 
-			const SubCube* subCube = &subCubeMatrix[x][y][z];
+			const SubCube* subCube = Matrix( coords );
+			wxASSERT( subCube );
 			if( subCube->faceData[ face ].color != GREY )
 			{
 				float minZ = float( hitRecord[1] ) / float( 0x7FFFFFFF );
@@ -818,7 +820,7 @@ bool RubiksCube::Select( unsigned int* hitBuffer, int hitBufferSize, int hitCoun
 				{
 					smallestZ = minZ;
 					if( grip )
-						grippingCube = TranslateGrip( *grip, x, y, z, face );
+						grippingCube = TranslateGrip( *grip, coords, face );
 					if( faceId )
 						*faceId = subCube->faceData[ face ].id;
 				}
@@ -1164,24 +1166,81 @@ bool RubiksCube::TranslateRelativeRotation( const std::string& relativeRotationS
 }
 
 //==================================================================================================
-const RubiksCube::SubCube* RubiksCube::Matrix( int x, int y, int z ) const
+const RubiksCube::SubCube* RubiksCube::Matrix( const Coordinates& coords ) const
 {
-	if( !ValidMatrixCoordinates( x, y, z ) )
+	if( !ValidMatrixCoordinates( coords ) )
 		return 0;
 
-	return &subCubeMatrix[x][y][z];
+	return &subCubeMatrix[ coords.x ][ coords.y ][ coords.z ];
 }
 
 //==================================================================================================
-bool RubiksCube::ValidMatrixCoordinates( int x, int y, int z ) const
+RubiksCube::SubCube* RubiksCube::Matrix( const Coordinates& coords )
 {
-	if( x < 0 || y < 0 || z < 0 )
+	if( !ValidMatrixCoordinates( coords ) )
+		return 0;
+
+	return &subCubeMatrix[ coords.x ][ coords.y ][ coords.z ];
+}
+
+//==================================================================================================
+const RubiksCube::SubCube* RubiksCube::Matrix( const Coordinates& coords, const Perspective& perspective ) const
+{
+	Coordinates remappedCoords;
+	RemapCoordinates( coords, remappedCoords, perspective );
+	return Matrix( remappedCoords );
+}
+
+//==================================================================================================
+void RubiksCube::RemapCoordinates( const Coordinates& coords,
+									Coordinates& remappedCoords,
+									const Perspective& perspective ) const
+{
+	remappedCoords.x = -1;
+	remappedCoords.y = -1;
+	remappedCoords.z = -1;
+
+	switch( TranslateNormal( perspective.rAxis ) )
+	{
+		case NEG_X: remappedCoords.x = subCubeMatrixSize - 1 - coords.x;	break;
+		case POS_X: remappedCoords.x = coords.x;							break;
+		case NEG_Y: remappedCoords.y = subCubeMatrixSize - 1 - coords.x;	break;
+		case POS_Y: remappedCoords.y = coords.x;							break;
+		case NEG_Z: remappedCoords.z = subCubeMatrixSize - 1 - coords.x;	break;
+		case POS_Z: remappedCoords.z = coords.x;							break;
+	}
+
+	switch( TranslateNormal( perspective.uAxis ) )
+	{
+		case NEG_X: remappedCoords.x = subCubeMatrixSize - 1 - coords.y;	break;
+		case POS_X: remappedCoords.x = coords.y;							break;
+		case NEG_Y: remappedCoords.y = subCubeMatrixSize - 1 - coords.y;	break;
+		case POS_Y: remappedCoords.y = coords.y;							break;
+		case NEG_Z: remappedCoords.z = subCubeMatrixSize - 1 - coords.y;	break;
+		case POS_Z: remappedCoords.z = coords.y;							break;
+	}
+
+	switch( TranslateNormal( perspective.fAxis ) )
+	{
+		case NEG_X: remappedCoords.x = subCubeMatrixSize - 1 - coords.z;	break;
+		case POS_X: remappedCoords.x = coords.z;							break;
+		case NEG_Y: remappedCoords.y = subCubeMatrixSize - 1 - coords.z;	break;
+		case POS_Y: remappedCoords.y = coords.z;							break;
+		case NEG_Z: remappedCoords.z = subCubeMatrixSize - 1 - coords.z;	break;
+		case POS_Z: remappedCoords.z = coords.z;							break;
+	}
+}
+
+//==================================================================================================
+bool RubiksCube::ValidMatrixCoordinates( const Coordinates& coords ) const
+{
+	if( coords.x < 0 || coords.y < 0 || coords.z < 0 )
 		return false;
-	if( x > subCubeMatrixSize - 1 )
+	if( coords.x > subCubeMatrixSize - 1 )
 		return false;
-	if( y > subCubeMatrixSize - 1 )
+	if( coords.y > subCubeMatrixSize - 1 )
 		return false;
-	if( z > subCubeMatrixSize - 1 )
+	if( coords.z > subCubeMatrixSize - 1 )
 		return false;
 	return true;
 }
@@ -1326,13 +1385,13 @@ bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 		if( !( xString.ToLong( &xLong ) && yString.ToLong( &yLong ) && zString.ToLong( &zLong ) ) )
 			return false;
 
-		int x = int( xLong );
-		int y = int( yLong );
-		int z = int( zLong );
-		if( !ValidMatrixCoordinates( x, y, z ) )
+		Coordinates coords;
+		coords.x = int( xLong );
+		coords.y = int( yLong );
+		coords.z = int( zLong );
+		SubCube* subCube = Matrix( coords );
+		if( !subCube )
 			return false;
-
-		SubCube* subCube = &subCubeMatrix[x][y][z];
 
 		int color;
 		

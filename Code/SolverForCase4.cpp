@@ -459,13 +459,13 @@ SolverForCase4::SolverForCase4( void )
 			int x = ( facePair.face == RubiksCube::NEG_X ) ? 0 : 3;
 			if( facePair.plane.axis == RubiksCube::Y_AXIS )
 			{
-				subCubes[0] = rubiksCube.Matrix( x, facePair.plane.index, 1 );
-				subCubes[1] = rubiksCube.Matrix( x, facePair.plane.index, 2 );
+				subCubes[0] = rubiksCube.Matrix( RubiksCube::Coordinates( x, facePair.plane.index, 1 ) );
+				subCubes[1] = rubiksCube.Matrix( RubiksCube::Coordinates( x, facePair.plane.index, 2 ) );
 			}
 			else if( facePair.plane.axis == RubiksCube::Z_AXIS )
 			{
-				subCubes[0] = rubiksCube.Matrix( x, 1, facePair.plane.index );
-				subCubes[1] = rubiksCube.Matrix( x, 2, facePair.plane.index );
+				subCubes[0] = rubiksCube.Matrix( RubiksCube::Coordinates( x, 1, facePair.plane.index ) );
+				subCubes[1] = rubiksCube.Matrix( RubiksCube::Coordinates( x, 2, facePair.plane.index ) );
 			}
 			break;
 		}
@@ -475,13 +475,13 @@ SolverForCase4::SolverForCase4( void )
 			int y = ( facePair.face == RubiksCube::NEG_Y ) ? 0 : 3;
 			if( facePair.plane.axis == RubiksCube::X_AXIS )
 			{
-				subCubes[0] = rubiksCube.Matrix( facePair.plane.index, y, 1 );
-				subCubes[1] = rubiksCube.Matrix( facePair.plane.index, y, 2 );
+				subCubes[0] = rubiksCube.Matrix( RubiksCube::Coordinates( facePair.plane.index, y, 1 ) );
+				subCubes[1] = rubiksCube.Matrix( RubiksCube::Coordinates( facePair.plane.index, y, 2 ) );
 			}
 			else if( facePair.plane.axis == RubiksCube::Z_AXIS )
 			{
-				subCubes[0] = rubiksCube.Matrix( 1, y, facePair.plane.index );
-				subCubes[1] = rubiksCube.Matrix( 2, y, facePair.plane.index );
+				subCubes[0] = rubiksCube.Matrix( RubiksCube::Coordinates( 1, y, facePair.plane.index ) );
+				subCubes[1] = rubiksCube.Matrix( RubiksCube::Coordinates( 2, y, facePair.plane.index ) );
 			}
 			break;
 		}
@@ -491,13 +491,13 @@ SolverForCase4::SolverForCase4( void )
 			int z = ( facePair.face == RubiksCube::NEG_Z ) ? 0 : 3;
 			if( facePair.plane.axis == RubiksCube::X_AXIS )
 			{
-				subCubes[0] = rubiksCube.Matrix( facePair.plane.index, 1, z );
-				subCubes[1] = rubiksCube.Matrix( facePair.plane.index, 2, z );
+				subCubes[0] = rubiksCube.Matrix( RubiksCube::Coordinates( facePair.plane.index, 1, z ) );
+				subCubes[1] = rubiksCube.Matrix( RubiksCube::Coordinates( facePair.plane.index, 2, z ) );
 			}
 			else if( facePair.plane.axis == RubiksCube::Y_AXIS )
 			{
-				subCubes[0] = rubiksCube.Matrix( 1, facePair.plane.index, z );
-				subCubes[1] = rubiksCube.Matrix( 2, facePair.plane.index, z );
+				subCubes[0] = rubiksCube.Matrix( RubiksCube::Coordinates( 1, facePair.plane.index, z ) );
+				subCubes[1] = rubiksCube.Matrix( RubiksCube::Coordinates( 2, facePair.plane.index, z ) );
 			}
 			break;
 		}

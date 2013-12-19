@@ -105,6 +105,18 @@ public:
 		c3ga::vectorE3GA fAxis;
 	};
 
+	struct Coordinates
+	{
+		Coordinates( int x = -1, int y = -1, int z = -1 )
+		{
+			this->x = x;
+			this->y = y;
+			this->z = z;
+		}
+
+		int x, y, z;
+	};
+
 	struct SubCube
 	{
 		struct FaceData
@@ -114,15 +126,17 @@ public:
 		};
 
 		FaceData faceData[ CUBE_FACE_COUNT ];
-		int x, y, z;
+		Coordinates coords;
 	};
 
-	typedef void ( *CopyMapFunc )( int& x, int& y, int& z );
+	typedef void ( *CopyMapFunc )( Coordinates& );
 	bool Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc );
-	static void CopyMap( int& x, int& y, int& z );
+	static void CopyMap( Coordinates& coords );
 
-	const SubCube* Matrix( int x, int y, int z ) const;
-	bool ValidMatrixCoordinates( int x, int y, int z ) const;
+	const SubCube* Matrix( const Coordinates& coords ) const;
+	const SubCube* Matrix( const Coordinates& coords, const Perspective& perspective ) const;
+	bool ValidMatrixCoordinates( const Coordinates& coords ) const;
+	void RemapCoordinates( const Coordinates& coords, Coordinates& remappedCoords, const Perspective& perspective ) const;
 
 	typedef std::vector< const SubCube* > SubCubeVector;
 
@@ -154,7 +168,7 @@ public:
 	static c3ga::vectorE3GA TranslateAxis( Axis axis );
 	static c3ga::vectorE3GA TranslateNormal( Face face );
 	static Face TranslateNormal( const c3ga::vectorE3GA& unitNormal );
-	static bool TranslateGrip( Grip& grip, int x, int y, int z, Face face );
+	static bool TranslateGrip( Grip& grip, const Coordinates& coords, Face face );
 	static void TranslateAxis( wxString& axisString, Axis axis );
 	Plane TranslateFace( Face face ) const;
 	bool TranslateRotation( const Perspective& perspective, const RelativeRotation& relativeRotation, Rotation& rotation ) const;
@@ -177,6 +191,8 @@ public:
 	static bool AreAdjacentFaces( Face face0, Face face1 );
 
 private:
+
+	SubCube* Matrix( const Coordinates& coords );
 
 	bool SaveToXml( wxXmlNode* xmlNode ) const;
 	bool LoadFromXml( const wxXmlNode* xmlNode );
