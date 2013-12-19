@@ -307,7 +307,8 @@ SolverForCase4::SolverForCase4( void )
 		// (i.e., if we list pair (a,b), we also list pair (b,a).)  What this does
 		// is simplify the solving code, because it allows the solving code to consider
 		// the problem from just one perspective.  If we only listed (a,b) and not (b,a),
-		// we would have to consider (a,b) from potentially two different perspectives
+		// we would have to consider (a,b) from potentially two different perspectives,
+		// or consider two ways of working the problem from a single perspective,
 		// before being able to solve it.
 		for( int i = 0; i < 4; i++ )
 		{
