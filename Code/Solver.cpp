@@ -53,8 +53,9 @@ bool Solver::MakeEntireSolutionSequence( const RubiksCube* rubiksCube, RubiksCub
 }
 
 //==================================================================================================
-Solver::SituationStack::SituationStack( const RubiksCube* rubiksCube )
+Solver::SituationStack::SituationStack( Solver* solver, const RubiksCube* rubiksCube )
 {
+	this->solver = solver;
 	this->rubiksCube = rubiksCube;
 }
 
@@ -71,7 +72,19 @@ const Solver::SituationStack::Situation* Solver::SituationStack::Top( void )
 	if( situationList.size() == 0 )
 		return 0;
 
-	return &situationList.back();
+	return situationList.back();
+}
+
+//==================================================================================================
+Solver::SituationStack::Situation::Situation( void )
+{
+	rubiksCube = 0;
+}
+
+//==================================================================================================
+/*virtual*/ Solver::SituationStack::Situation::~Situation( void )
+{
+	delete rubiksCube;
 }
 
 //==================================================================================================
@@ -79,25 +92,30 @@ void Solver::SituationStack::Push( const RubiksCube::Rotation& rotation )
 {
 	RubiksCube::RotationSequence rotationSequence;
 	rotationSequence.push_back( rotation );
-	Push( rotationSequence );
+	Push( &rotationSequence );
 }
 
 //==================================================================================================
-void Solver::SituationStack::Push( const RubiksCube::RotationSequence& rotationSequence )
+void Solver::SituationStack::Push( const RubiksCube::RotationSequence* rotationSequence /*= 0*/ )
 {
-	Situation situation;
+	Situation* situation = solver->CreateSituation();
 
 	const RubiksCube* copyCube = rubiksCube;
 	const Situation* top = Top();
 	if( top )
 		copyCube = top->rubiksCube;
 
-	situation.rotationSequence = rotationSequence;
-	situation.rubiksCube = new RubiksCube( copyCube->SubCubeMatrixSize(), false );
-	situation.rubiksCube->Copy( *copyCube, RubiksCube::CopyMap );
-	situation.rubiksCube->ApplySequence( rotationSequence );
+	situation->rubiksCube = new RubiksCube( copyCube->SubCubeMatrixSize(), false );
+	situation->rubiksCube->Copy( *copyCube, RubiksCube::CopyMap );
+
+	if( rotationSequence )
+	{
+		situation->rotationSequence = *rotationSequence;
+		situation->rubiksCube->ApplySequence( *rotationSequence );
+	}
 
 	situationList.push_back( situation );
+	situation->PostPush( solver );
 }
 
 //==================================================================================================
@@ -106,8 +124,9 @@ void Solver::SituationStack::Pop( void )
 	if( situationList.size() == 0 )
 		return;
 
-	Situation* top = &situationList.back();
-	delete top->rubiksCube;
+	Situation* top = situationList.back();
+	top->PrePop( solver );
+	delete top;
 	situationList.pop_back();
 }
 
@@ -116,7 +135,7 @@ void Solver::SituationStack::AppendRotationSequence( RubiksCube::RotationSequenc
 {
 	for( SituationList::const_iterator iter = situationList.begin(); iter != situationList.end(); iter++ )
 	{
-		const Situation* situation = &*iter;
+		const Situation* situation = *iter;
 		rotationSequence.insert( rotationSequence.end(), situation->rotationSequence.begin(), situation->rotationSequence.end() );
 	}
 }
@@ -125,6 +144,34 @@ void Solver::SituationStack::AppendRotationSequence( RubiksCube::RotationSequenc
 int Solver::SituationStack::Size( void ) const
 {
 	return situationList.size();
+}
+
+//==================================================================================================
+/*virtual*/ void Solver::SituationStack::Situation::PostPush( Solver* solver )
+{
+	solver->PostPush( this );
+}
+
+//==================================================================================================
+/*virtual*/ void Solver::SituationStack::Situation::PrePop( Solver* solver )
+{
+	solver->PrePop( this );
+}
+
+//==================================================================================================
+/*virtual*/ Solver::SituationStack::Situation* Solver::CreateSituation( void )
+{
+	return new SituationStack::Situation();
+}
+
+//==================================================================================================
+/*virtual*/ void Solver::PostPush( SituationStack::Situation* situation )
+{
+}
+
+//==================================================================================================
+/*virtual*/ void Solver::PrePop( SituationStack::Situation* situation )
+{
 }
 
 // Solver.cpp

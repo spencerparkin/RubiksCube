@@ -26,28 +26,42 @@ protected:
 	{
 	public:
 
-		struct Situation
+		class Situation
 		{
+		public:
+			Situation( void );
+			virtual ~Situation( void );
+
 			RubiksCube* rubiksCube;
 			RubiksCube::RotationSequence rotationSequence;
+
+			virtual void PostPush( Solver* solver );
+			virtual void PrePop( Solver* solver );
 		};
 
-		typedef std::list< Situation > SituationList;
+		typedef std::list< Situation* > SituationList;
 
-		SituationStack( const RubiksCube* rubiksCube );
+		SituationStack( Solver* solver, const RubiksCube* rubiksCube );
 		~SituationStack( void );
 
 		const Situation* Top( void );
 		void Push( const RubiksCube::Rotation& rotation );
-		void Push( const RubiksCube::RotationSequence& rotationSequence );
+		void Push( const RubiksCube::RotationSequence* rotationSequence = 0 );
 		void Pop( void );
 		void AppendRotationSequence( RubiksCube::RotationSequence& rotationSequence ) const;
 		int Size( void ) const;
 
 	private:
-		SituationList situationList;
+
+		Solver* solver;
 		const RubiksCube* rubiksCube;
+		
+		SituationList situationList;
 	};
+
+	virtual SituationStack::Situation* CreateSituation( void );
+	virtual void PostPush( SituationStack::Situation* situation );
+	virtual void PrePop( SituationStack::Situation* situation );
 };
 
 // Solver.h
