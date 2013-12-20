@@ -142,7 +142,8 @@ public:
 	bool ValidMatrixCoordinates( const Coordinates& actualCoords ) const;
 	void RelativeToActual( const Coordinates& relativeCoords, Coordinates& actualCoords, const Perspective& perspective ) const;
 	void RelativeFromActual( const Coordinates& actualCoords, Coordinates& relativeCoords, const Perspective& perspective ) const;
-	void WrapCoordinates( Coordinates& coords ) const;
+	int PreCoordinateTransform( int coordinate ) const;
+	int PostCoordinateTransform( int coordinate ) const;
 
 	typedef std::vector< const SubCube* > SubCubeVector;
 

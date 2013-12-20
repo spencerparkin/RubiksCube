@@ -26,7 +26,8 @@ SolverForCase4::SolverForCase4( void )
 		if( !AreFacePairsSolved( *rubiksCube, facePairList ) )
 			return SolveFacePairs( *rubiksCube, facePairList, rotationSequence );
 		else
-			return SolveFaces( *rubiksCube, rotationSequence );
+			return true; // Do this for now so that we can debug the face-pair solver.
+			//return SolveFaces( *rubiksCube, rotationSequence );
 	}
 	else if( !AreEdgePairsSolved( *rubiksCube ) )
 		return SolveEdgePairs( *rubiksCube, rotationSequence );
@@ -188,9 +189,9 @@ SolverForCase4::SolverForCase4( void )
 		// Determine the rotation that completes the potential pairing.
 		RubiksCube::RelativeRotation relativeRotation( RubiksCube::RelativeRotation::Fi );
 		if( faceCubePlacement[0] == 0 || faceCubePlacement[0] == 1 )
-			relativeRotation.planeIndex = 2;
-		else if( faceCubePlacement[0] == 2 || faceCubePlacement[0] == 3 )
 			relativeRotation.planeIndex = 1;
+		else if( faceCubePlacement[0] == 2 || faceCubePlacement[0] == 3 )
+			relativeRotation.planeIndex = 2;
 		RubiksCube::Rotation pairingRotation;
 		situationStack.Top()->rubiksCube->TranslateRotation( potentialFacePair.perspective, relativeRotation, pairingRotation );
 

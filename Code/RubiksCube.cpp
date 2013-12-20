@@ -1025,10 +1025,7 @@ bool RubiksCube::TranslateRotation( const Perspective& perspective, const Relati
 		case RelativeRotation::F:	angle = -M_PI / 2.0;	break;
 	}
 
-	axis =
-		c3ga::gp( perspective.rAxis, axis.get_e1() ) +
-		c3ga::gp( perspective.uAxis, axis.get_e2() ) +
-		c3ga::gp( perspective.fAxis, axis.get_e3() );
+	perspective.PerspectiveSpaceToWorldSpace( axis, axis );
 
 	double epsilon = 1e-7;
 	if( c3ga::norm( axis - xAxis ) < epsilon )
@@ -1220,41 +1217,49 @@ void RubiksCube::Perspective::PerspectiveSpaceFromWorldSpace( const c3ga::vector
 }
 
 //==================================================================================================
+int RubiksCube::PreCoordinateTransform( int coordinate ) const
+{
+	// This is done so that we can detect a sign change in a zero index.
+	if( coordinate == 0 )
+		coordinate += subCubeMatrixSize;
+	return coordinate;
+}
+
+//==================================================================================================
+int RubiksCube::PostCoordinateTransform( int coordinate ) const
+{
+	// Map the index in the other direction.
+	if( coordinate < 0 )
+		coordinate = subCubeMatrixSize - 1 - ( -coordinate ) % subCubeMatrixSize;
+	return coordinate;
+}
+
+//==================================================================================================
 void RubiksCube::RelativeToActual( const Coordinates& relativeCoords, Coordinates& actualCoords, const Perspective& perspective ) const
 {
-	c3ga::vectorE3GA perspectiveVector( c3ga::vectorE3GA::coord_e1_e2_e3, relativeCoords.x, relativeCoords.y, relativeCoords.z );
+	c3ga::vectorE3GA perspectiveVector( c3ga::vectorE3GA::coord_e1_e2_e3,
+												PreCoordinateTransform( relativeCoords.x ),
+												PreCoordinateTransform( relativeCoords.y ),
+												PreCoordinateTransform( relativeCoords.z ) );
 	c3ga::vectorE3GA worldVector;
 	perspective.PerspectiveSpaceToWorldSpace( perspectiveVector, worldVector );
-	actualCoords.x = int( worldVector.get_e1() );
-	actualCoords.y = int( worldVector.get_e2() );
-	actualCoords.z = int( worldVector.get_e3() );
-	WrapCoordinates( actualCoords );
+	actualCoords.x = PostCoordinateTransform( int( worldVector.get_e1() ) );
+	actualCoords.y = PostCoordinateTransform( int( worldVector.get_e2() ) );
+	actualCoords.z = PostCoordinateTransform( int( worldVector.get_e3() ) );
 }
 
 //==================================================================================================
 void RubiksCube::RelativeFromActual( const Coordinates& actualCoords, Coordinates& relativeCoords, const Perspective& perspective ) const
 {
-	c3ga::vectorE3GA worldVector( c3ga::vectorE3GA::coord_e1_e2_e3, actualCoords.x, actualCoords.y, actualCoords.z );
+	c3ga::vectorE3GA worldVector( c3ga::vectorE3GA::coord_e1_e2_e3,
+												PreCoordinateTransform( actualCoords.x ),
+												PreCoordinateTransform( actualCoords.y ),
+												PreCoordinateTransform( actualCoords.z ) );
 	c3ga::vectorE3GA perspectiveVector;
 	perspective.PerspectiveSpaceFromWorldSpace( worldVector, perspectiveVector );
-	relativeCoords.x = int( perspectiveVector.get_e1() );
-	relativeCoords.y = int( perspectiveVector.get_e2() );
-	relativeCoords.z = int( perspectiveVector.get_e3() );
-	WrapCoordinates( relativeCoords );
-}
-
-//==================================================================================================
-void RubiksCube::WrapCoordinates( Coordinates& coords ) const
-{
-	coords.x %= subCubeMatrixSize;
-	coords.y %= subCubeMatrixSize;
-	coords.z %= subCubeMatrixSize;
-	if( coords.x < 0 )
-		coords.x += subCubeMatrixSize;
-	if( coords.y < 0 )
-		coords.y += subCubeMatrixSize;
-	if( coords.z < 0 )
-		coords.z += subCubeMatrixSize;
+	relativeCoords.x = PostCoordinateTransform( int( perspectiveVector.get_e1() ) );
+	relativeCoords.y = PostCoordinateTransform( int( perspectiveVector.get_e2() ) );
+	relativeCoords.z = PostCoordinateTransform( int( perspectiveVector.get_e3() ) );
 }
 
 //==================================================================================================
