@@ -188,15 +188,19 @@ SolverForCase4::SolverForCase4( void )
 		
 		// Determine the rotation that completes the potential pairing.
 		RubiksCube::RelativeRotation relativeRotation( RubiksCube::RelativeRotation::Fi );
+		subCube[0] = situationStack.Top()->rubiksCube->FindSubCubeById( potentialFacePair.subCube[0]->id );
+		situationStack.Top()->rubiksCube->RelativeFromActual( subCube[0]->coords, relativeCoords[0], potentialFacePair.perspective );
+		faceCubePlacement[0] = PlacementForFacePairingSolver( relativeCoords[0] );
 		if( faceCubePlacement[0] == 0 || faceCubePlacement[0] == 1 )
 			relativeRotation.planeIndex = 1;
 		else if( faceCubePlacement[0] == 2 || faceCubePlacement[0] == 3 )
 			relativeRotation.planeIndex = 2;
+		else
+			wxASSERT( false );
 		RubiksCube::Rotation pairingRotation;
 		situationStack.Top()->rubiksCube->TranslateRotation( potentialFacePair.perspective, relativeRotation, pairingRotation );
 
 		// Now determine the face-pairs, which may be complete, (or may not be), that are potentially split by the pairing rotation.
-		subCube[0] = situationStack.Top()->rubiksCube->FindSubCubeById( potentialFacePair.subCube[0]->id );
 		subCube[1] = situationStack.Top()->rubiksCube->FindSubCubeById( potentialFacePair.subCube[1]->id );
 		FacePair potentialSplitPair[2];
 		potentialSplitPair[0].plane = situationStack.Top()->rubiksCube->TranslateFace( RubiksCube::TranslateNormal( potentialFacePair.perspective.uAxis ) );
@@ -254,6 +258,8 @@ SolverForCase4::SolverForCase4( void )
 
 		situationStack.Pop();
 		situationStack.Pop();
+
+		wxASSERT( situationStack.Size() == 0 );
 	}
 }
 
@@ -585,7 +591,7 @@ SolverForCase4::SolverForCase4( void )
 	FacePairList facePairsForFace;
 	CollectFacePairsForFace( face, facePairList, facePairsForFace );
 
-	if( facePairsForFace.size() == 4 )
+	if( facePairsForFace.size() == 4 || facePairsForFace.size() == 0 )
 		return;
 
 	if( facePairsForFace.size() == 2 )
@@ -605,6 +611,7 @@ SolverForCase4::SolverForCase4( void )
 			return;
 	}
 
+	// If we reach here, then a rotation is necessary.  Any quarter turn will do.  Randomly choose?
 	rotation.angle = M_PI / 2.0;
 }
 
@@ -614,7 +621,7 @@ SolverForCase4::SolverForCase4( void )
 {
 	if( anticipatedRotation.plane.index == 0 || anticipatedRotation.plane.index == 3 )
 		return false;
-	if( facePair.plane.axis == facePair.plane.axis )
+	if( facePair.plane.axis == anticipatedRotation.plane.axis )
 		return false;
 	return true;
 }

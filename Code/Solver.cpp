@@ -121,4 +121,10 @@ void Solver::SituationStack::AppendRotationSequence( RubiksCube::RotationSequenc
 	}
 }
 
+//==================================================================================================
+int Solver::SituationStack::Size( void ) const
+{
+	return situationList.size();
+}
+
 // Solver.cpp

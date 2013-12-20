@@ -42,6 +42,7 @@ protected:
 		void Push( const RubiksCube::RotationSequence& rotationSequence );
 		void Pop( void );
 		void AppendRotationSequence( RubiksCube::RotationSequence& rotationSequence ) const;
+		int Size( void ) const;
 
 	private:
 		SituationList situationList;
