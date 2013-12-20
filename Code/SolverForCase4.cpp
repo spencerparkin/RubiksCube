@@ -43,6 +43,9 @@ SolverForCase4::SolverForCase4( void )
 		situationStack = new SituationStack( this, rubiksCube );
 		situationStack->Push();
 
+		const Situation* situation = ( const Situation* )situationStack->Top();
+		const FacePairList* facePairList = &situation->facePairList;
+
 		if( !AreFacesSolved() )
 		{
 			if( !AreFacePairsSolved() )
