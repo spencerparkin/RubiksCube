@@ -312,7 +312,7 @@ void Frame::OnTimer( wxTimerEvent& event )
 				case DEBUG_MODE_SCRAMBLE:
 				{
 					// This assert doesn't mean anything if we entered debug mode with an unsolved cube.
-					wxASSERT( rubiksCube->IsInSolvedState() );
+					//wxASSERT( rubiksCube->IsInSolvedState() );
 					rubiksCube->Scramble( time(0), 100, &executionSequence, false );
 					debugMode = DEBUG_MODE_SOLVE;
 					animationTolerance = 2.0;

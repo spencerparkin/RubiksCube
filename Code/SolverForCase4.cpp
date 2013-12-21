@@ -142,22 +142,15 @@ bool SolverForCase4::SolveFacePairs( RubiksCube::RotationSequence& rotationSeque
 	}
 
 	// There is a parity problem that arises 50% of the time in solving the last two pairs.
-	// To fix it, what you have to do is find an existing pair by the same color as one of the
-	// last two pairs you're trying to match, and then move that pair into the right face, then
-	// move out the other pair that it makes without destroying the adjacency of the existing
-	// pair-match situation.  We have to be careful, though, because we might not end up with un-related
-	// colors in the up and right faces, which is what we want, so we have to make sure that happens.
-	// If we put it in, do a quarter turn, then move it the reverse way back out, that should always happen,
-	// because we started with two unrelated colors paired in the up and right faces.
+	// Fixing it isn't too hard.  Just find a solved pair by the same color as one of the
+	// potential pair cubes.  Handle the 4 cases of where that solved pair is to get it into
+	// the same face (preserving existing pairs) as the chosen cube of the potential pair.
+	// Now do any quarter turn of that face, and then do the reverse of the last rotation
+	// that was used to place the solved pair so that an alternative version of that solved pair
+	// either exits that face, or is left alone in that face.  (Either will do.)  We are then
+	// left in essentially the same situation, but without the parity problem.
 	if( potentialFacePairList.size() == 2 )
 	{
-		//...
-
-		// Look at just the first of the two potential face pairings.
-		// Find the completed face pair for its color.
-		// Move it into the right face so that it occupies that face with *both* potentially pair-able face cubes from both unresolved pairing problems.  (they will share a face.)
-		// Now do the right quater turn, then move out the other completed pair by the same distance, but opposite rotation direction.
-		// At this point, the algorithm should be able to resume without the parity problem.
 	}
 
 	return false;
