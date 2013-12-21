@@ -151,6 +151,13 @@ bool SolverForCase4::SolveFacePairs( RubiksCube::RotationSequence& rotationSeque
 	// left in essentially the same situation, but without the parity problem.
 	if( potentialFacePairList.size() == 2 )
 	{
+		// TODO: Invoke a routine here that will become useful in the next solving phase.
+		//       This routine will, given a face-pair (not necessarily valid) and another
+		//       face-pair (also not necessarily valid) and rotate the latter to match up
+		//       with the former using just one rotation after doing the necessary face
+		//       rotations, if any, to insure that no existing face-pair (solved/valid) is
+		//       split.  Have the routine return the result in seperate sequences, because
+		//       to resolve this parity, we'll need to know which rotation performed the match.
 	}
 
 	return false;
