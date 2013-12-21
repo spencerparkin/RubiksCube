@@ -142,6 +142,8 @@ bool RubiksCube::Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc )
 
 				for( int face = 0; face < CUBE_FACE_COUNT; face++ )
 					dstSubCube->faceData[ face ] = srcSubCube->faceData[ face ];
+
+				dstSubCube->id = srcSubCube->id;
 			}
 		}
 	}
