@@ -95,7 +95,7 @@ bool SolverForCase4::AreFacePairsSolved( void )
 	{
 		FacePairList facePairsForFace;
 		CollectFacePairsForFace( ( RubiksCube::Face )face, facePairsForFace );
-		if( facePairsForFace.size() == 1 )
+		if( facePairsForFace.size() <= 1 )
 			return false;
 		if( facePairsForFace.size() == 2 )
 		{
@@ -409,8 +409,26 @@ void SolverForCase4::PrepareFacePairing( const PotentialFacePair& potentialFaceP
 		// in the face that contains the potential face pairs, and any quater
 		// rotation of an inner layer, provided we first do preservation rotations,
 		// and that the inner layer rotation transports one of the potential face pairs,
-		// will do.
-		//...
+		// will do.  Note that this case always leads to the parity problem.
+		RubiksCube::RelativeRotation relativeRotation( RubiksCube::RelativeRotation::Fi );
+		relativeRotation.planeIndex = 1;		// Arbitrarily choose the plane index here.
+		RubiksCube::Rotation desiredRotation;
+		situationStack->Top()->rubiksCube->TranslateRotation( potentialFacePair.perspective, relativeRotation, desiredRotation );
+
+		RubiksCube::Rotation saveRightFaceRotation, saveLeftFaceRotation;
+		RotationThatPreservesFacePairs( RubiksCube::TranslateNormal( potentialFacePair.perspective.rAxis ), desiredRotation, saveRightFaceRotation );
+		RotationThatPreservesFacePairs( RubiksCube::TranslateNormal( -potentialFacePair.perspective.rAxis ), desiredRotation, saveLeftFaceRotation );
+
+		RubiksCube::Rotation saveUpOrDownFaceRotation;
+		if( potentialFacePair.face[0] == RubiksCube::TranslateNormal( potentialFacePair.perspective.uAxis ) )
+			RotationThatPreservesFacePairs( RubiksCube::TranslateNormal( -potentialFacePair.perspective.uAxis ), desiredRotation, saveUpOrDownFaceRotation );
+		else if( potentialFacePair.face[0] == RubiksCube::TranslateNormal( -potentialFacePair.perspective.uAxis ) )
+			RotationThatPreservesFacePairs( RubiksCube::TranslateNormal( potentialFacePair.perspective.uAxis ), desiredRotation, saveUpOrDownFaceRotation );
+
+		rotationSequence.push_back( saveRightFaceRotation );
+		rotationSequence.push_back( saveLeftFaceRotation );
+		rotationSequence.push_back( saveUpOrDownFaceRotation );
+		rotationSequence.push_back( desiredRotation );
 	}
 	else if( RubiksCube::AreOppositeFaces( potentialFacePair.face[0], potentialFacePair.face[1] ) )
 	{
