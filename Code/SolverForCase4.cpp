@@ -409,7 +409,8 @@ void SolverForCase4::PrepareFacePairing( const PotentialFacePair& potentialFaceP
 		// in the face that contains the potential face pairs, and any quater
 		// rotation of an inner layer, provided we first do preservation rotations,
 		// and that the inner layer rotation transports one of the potential face pairs,
-		// will do.  Note that this case always leads to the parity problem.
+		// will do.  Note that this case always leads to the parity problem if all
+		// other face pairs are solved.
 		RubiksCube::RelativeRotation relativeRotation( RubiksCube::RelativeRotation::Fi );
 		relativeRotation.planeIndex = 1;		// Arbitrarily choose the plane index here.
 		RubiksCube::Rotation desiredRotation;
