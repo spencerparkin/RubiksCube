@@ -69,6 +69,8 @@ private:
 	bool FacePairColors( const FacePair& facePair, RubiksCube::Color* colors );
 	bool FacePairSubCubes( const FacePair& facePair, const RubiksCube::SubCube** subCubes );
 	bool IsFacePairValid( const FacePair& facePair );
+	void CalculatePlacementsForSubCubes( const RubiksCube::SubCube** subCubes, int* faceCubePlacements, const RubiksCube::Perspective& perspective );
+	void CalculatePlacementsForFacePair( const FacePair& facePair, const RubiksCube::SubCube** subCubes, int* faceCubePlacements, const RubiksCube::Perspective& perspective );
 	void CalculatePlacementsForPotentialFacePair( const PotentialFacePair& potentialFacePair, const RubiksCube::SubCube** subCubes, int* faceCubePlacements );
 
 	void FindAllPotentialFacePairings( PotentialFacePairList& potentialFacePairList );

@@ -114,9 +114,16 @@ bool SolverForCase4::SolveFaces( RubiksCube::RotationSequence& rotationSequence 
 {
 	if( AreFacesSolved( false ) )
 	{
+		// Try to solve a 4-color chain.
+		// If can't, try to solve a 3-color chain.
+		// If can't, try to solve a 2-color chain.
+		// If can't, try to solve a 2-color opposite.
+		// If can't, then...what?
 	}
 	else
 	{
+		// If there is a move that swaps adjacent face colors...
+		// For each face, swap its color into place.
 	}
 
 	return false;
@@ -167,13 +174,7 @@ bool SolverForCase4::SolveFacePairs( RubiksCube::RotationSequence& rotationSeque
 	// left in essentially the same situation, but without the parity problem.
 	if( potentialFacePairList.size() == 2 )
 	{
-		// TODO: Invoke a routine here that will become useful in the next solving phase.
-		//       This routine will, given a face-pair (not necessarily valid) and another
-		//       face-pair (also not necessarily valid) and rotate the latter to match up
-		//       with the former using just one rotation after doing the necessary face
-		//       rotations, if any, to insure that no existing face-pair (solved/valid) is
-		//       split.  Have the routine return the result in seperate sequences, because
-		//       to resolve this parity, we'll need to know which rotation performed the match.
+		
 	}
 
 	return false;
@@ -195,17 +196,35 @@ bool SolverForCase4::SolveFacePairs( RubiksCube::RotationSequence& rotationSeque
 }
 
 //==================================================================================================
+void SolverForCase4::CalculatePlacementsForSubCubes( const RubiksCube::SubCube** subCubes,
+														int* faceCubePlacements,
+														const RubiksCube::Perspective& perspective )
+{
+	RubiksCube::Coordinates relativeCoords[2];
+	situationStack->Top()->rubiksCube->RelativeFromActual( subCubes[0]->coords, relativeCoords[0], perspective );
+	situationStack->Top()->rubiksCube->RelativeFromActual( subCubes[1]->coords, relativeCoords[1], perspective );
+	faceCubePlacements[0] = PlacementForFacePairingSolver( relativeCoords[0] );
+	faceCubePlacements[1] = PlacementForFacePairingSolver( relativeCoords[1] );
+}
+
+//==================================================================================================
+void SolverForCase4::CalculatePlacementsForFacePair( const FacePair& facePair,
+														const RubiksCube::SubCube** subCubes,
+														int* faceCubePlacements,
+														const RubiksCube::Perspective& perspective )
+{
+	FacePairSubCubes( facePair, subCubes );
+	CalculatePlacementsForSubCubes( subCubes, faceCubePlacements, perspective );
+}
+
+//==================================================================================================
 void SolverForCase4::CalculatePlacementsForPotentialFacePair( const PotentialFacePair& potentialFacePair,
 																const RubiksCube::SubCube** subCubes,
 																int* faceCubePlacements )
 {
 	subCubes[0] = situationStack->Top()->rubiksCube->FindSubCubeById( potentialFacePair.subCube[0]->id );
 	subCubes[1] = situationStack->Top()->rubiksCube->FindSubCubeById( potentialFacePair.subCube[1]->id );
-	RubiksCube::Coordinates relativeCoords[2];
-	situationStack->Top()->rubiksCube->RelativeFromActual( subCubes[0]->coords, relativeCoords[0], potentialFacePair.perspective );
-	situationStack->Top()->rubiksCube->RelativeFromActual( subCubes[1]->coords, relativeCoords[1], potentialFacePair.perspective );
-	faceCubePlacements[0] = PlacementForFacePairingSolver( relativeCoords[0] );
-	faceCubePlacements[1] = PlacementForFacePairingSolver( relativeCoords[1] );
+	CalculatePlacementsForSubCubes( subCubes, faceCubePlacements, potentialFacePair.perspective );
 }
 
 //==================================================================================================
@@ -391,6 +410,7 @@ void SolverForCase4::PrepareFacePairing( const PotentialFacePair& potentialFaceP
 		// rotation of an inner layer, provided we first do preservation rotations,
 		// and that the inner layer rotation transports one of the potential face pairs,
 		// will do.
+		//...
 	}
 	else if( RubiksCube::AreOppositeFaces( potentialFacePair.face[0], potentialFacePair.face[1] ) )
 	{
@@ -398,7 +418,7 @@ void SolverForCase4::PrepareFacePairing( const PotentialFacePair& potentialFaceP
 		// bring the bottom of the two potential face-pairs up to the right-face, adjacent to its
 		// matching potential face-pair in the up-face, if we insist on doing it with
 		// a rotation about the forward axis.
-		for( int quaterTurnCount = 0; quaterTurnCount < 1; quaterTurnCount++ )
+		for( int quaterTurnCount = 0; quaterTurnCount < 2; quaterTurnCount++ )
 		{
 			RubiksCube::RelativeRotation setupRelativeRotation( RubiksCube::RelativeRotation::D );
 			RubiksCube::Rotation setupRotation;
@@ -412,9 +432,9 @@ void SolverForCase4::PrepareFacePairing( const PotentialFacePair& potentialFaceP
 			const RubiksCube::SubCube* subCubes[2];
 			CalculatePlacementsForPotentialFacePair( potentialFacePair, subCubes, faceCubePlacements );
 			RubiksCube::RelativeRotation relativeRotation( RubiksCube::RelativeRotation::Fi );
-			if( faceCubePlacements[1] == 0 || faceCubePlacements[1] == 1 )
+			if( faceCubePlacements[0] == 0 || faceCubePlacements[0] == 1 )
 				relativeRotation.planeIndex = 1;
-			else if( faceCubePlacements[1] == 2 || faceCubePlacements[1] == 3 )
+			else if( faceCubePlacements[0] == 2 || faceCubePlacements[0] == 3 )
 				relativeRotation.planeIndex = 2;
 			RubiksCube::Rotation desiredRotation;
 			situationStack->Top()->rubiksCube->TranslateRotation( potentialFacePair.perspective, relativeRotation, desiredRotation );
@@ -442,6 +462,7 @@ void SolverForCase4::PrepareFacePairing( const PotentialFacePair& potentialFaceP
 				situationStack->Pop();
 
 				// Now let the sequence happen.
+				rotationSequence.push_back( setupRotation );
 				rotationSequence.push_back( saveLeftFaceRotation );
 				rotationSequence.push_back( saveRightFaceRotation );
 				rotationSequence.push_back( saveUpFaceRotation );
