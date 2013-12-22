@@ -177,6 +177,7 @@ public:
 	static Face TranslateNormal( const c3ga::vectorE3GA& unitNormal );
 	static bool TranslateGrip( Grip& grip, const Coordinates& coords, Face face );
 	static void TranslateAxis( wxString& axisString, Axis axis );
+	static Color TranslateFaceColor( Face face );
 	Plane TranslateFace( Face face ) const;
 	bool TranslateRotation( const Perspective& perspective, const RelativeRotation& relativeRotation, Rotation& rotation ) const;
 	bool TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const;

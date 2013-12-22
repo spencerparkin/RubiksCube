@@ -47,7 +47,7 @@ private:
 	virtual void PostPush( SituationStack::Situation* situation ) override;
 	virtual void PrePop( SituationStack::Situation* situation ) override;
 
-	bool AreFacesSolved( void );
+	bool AreFacesSolved( bool andInCorrectPlacements = true );
 	bool AreFacePairsSolved( void );
 	bool AreEdgePairsSolved( void );
 
@@ -69,7 +69,8 @@ private:
 	bool FacePairColors( const FacePair& facePair, RubiksCube::Color* colors );
 	bool FacePairSubCubes( const FacePair& facePair, const RubiksCube::SubCube** subCubes );
 	bool IsFacePairValid( const FacePair& facePair );
-	
+	void CalculatePlacementsForPotentialFacePair( const PotentialFacePair& potentialFacePair, const RubiksCube::SubCube** subCubes, int* faceCubePlacements );
+
 	void FindAllPotentialFacePairings( PotentialFacePairList& potentialFacePairList );
 	//void FindAllPotentialEdgeParings(...);
 

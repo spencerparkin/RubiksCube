@@ -32,12 +32,12 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= tru
 			{
 				SubCube* subCube = &subCubeMatrix[x][y][z];
 
-				subCube->faceData[ NEG_X ].color = ( x == 0 ) ? WHITE : GREY;
-				subCube->faceData[ POS_X ].color = ( x == subCubeMatrixSize - 1 ) ? YELLOW : GREY;
-				subCube->faceData[ NEG_Y ].color = ( y == 0 ) ? GREEN : GREY;
-				subCube->faceData[ POS_Y ].color = ( y == subCubeMatrixSize - 1 ) ? BLUE : GREY;
-				subCube->faceData[ NEG_Z ].color = ( z == 0 ) ? ORANGE : GREY;
-				subCube->faceData[ POS_Z ].color = ( z == subCubeMatrixSize - 1 ) ? RED : GREY;
+				subCube->faceData[ NEG_X ].color = ( x == 0 ) ? TranslateFaceColor( NEG_X ) : GREY;
+				subCube->faceData[ POS_X ].color = ( x == subCubeMatrixSize - 1 ) ? TranslateFaceColor( POS_X ) : GREY;
+				subCube->faceData[ NEG_Y ].color = ( y == 0 ) ? TranslateFaceColor( NEG_Y ) : GREY;
+				subCube->faceData[ POS_Y ].color = ( y == subCubeMatrixSize - 1 ) ? TranslateFaceColor( POS_Y ) : GREY;
+				subCube->faceData[ NEG_Z ].color = ( z == 0 ) ? TranslateFaceColor( NEG_Z ) : GREY;
+				subCube->faceData[ POS_Z ].color = ( z == subCubeMatrixSize - 1 ) ? TranslateFaceColor( POS_Z ) : GREY;
 
 				subCube->faceData[ NEG_X ].id = ( x == 0 ) ? faceId++ : -1;
 				subCube->faceData[ POS_X ].id = ( x == subCubeMatrixSize - 1 ) ? faceId++ : -1;
@@ -598,6 +598,22 @@ RubiksCube::Plane RubiksCube::TranslateFace( Face face ) const
 	}
 
 	return plane;
+}
+
+//==================================================================================================
+/*static*/ RubiksCube::Color RubiksCube::TranslateFaceColor( Face face )
+{
+	switch( face )
+	{
+		case NEG_X: return WHITE;
+		case POS_X: return YELLOW;
+		case NEG_Y: return GREEN;
+		case POS_Y: return BLUE;
+		case NEG_Z: return ORANGE;
+		case POS_Z: return RED;
+	}
+
+	return GREY;
 }
 
 //==================================================================================================
