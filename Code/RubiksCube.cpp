@@ -1567,9 +1567,9 @@ Solver* RubiksCube::MakeSolver( void ) const
 			solver = new SolverForCase3();
 			break;
 		}
-		case 4:
+		default:
 		{
-			solver = new SolverForCase4();
+			solver = new SolverForCaseGreaterThan3();
 			break;
 		}
 	}

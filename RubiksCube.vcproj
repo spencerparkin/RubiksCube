@@ -237,14 +237,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Code\SolverForCase4.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Code\SolverForCase4.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Code\SolverForCaseGreaterThan3.cpp"
 				>
 			</File>
