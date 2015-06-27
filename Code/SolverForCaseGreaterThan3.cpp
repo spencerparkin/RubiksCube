@@ -39,6 +39,13 @@ SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( void )
 	}
 	else
 	{
+		// TODO: Get all colors in POS_X(yellow), then POS_Y(blue), POS_Z(red), NEG_X(white), NEG_Y(green), NEG_Z(orange).
+		//       Use "TranslateFaceColor".
+		//       If yellow found in NEG_X face, move to POS_Y face (arbitrarily).  If yellow found in any of POS_Y, NEG_Y, POS_Z or NEG_Z, move to POS_X face.
+		//       Blue can't be in POS_X face.  So if found in NEG_Y face, move to NEG_X face (arbitrarily).  If found in NEG_X, POS_Z or NEG_Z, move to POS_Y face.
+		//       Red can't be in POS_X or POS_Y face.  If found in NEG_Z face, move to NEG_X face (arbitrarily).  If in NEG_X or NEG_Y, move to POS_Z face.
+		//       Keep going...there is an easy algorithm for moving colors from one face to an adjacent face.
+
 		// TODO: Get the cube into the reduced state here.
 	}
 
