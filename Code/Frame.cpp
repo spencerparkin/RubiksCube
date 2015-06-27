@@ -445,7 +445,7 @@ void Frame::OnAbout( wxCommandEvent& event )
     aboutDialogInfo.SetName( "Rubik's Cube" );
     aboutDialogInfo.SetVersion( "1.0" );
     aboutDialogInfo.SetDescription( "This program is free software and distributed under the MIT license." );
-    aboutDialogInfo.SetCopyright( "Copyright (C) 2013 Spencer T. Parkin <SpencerTParkin@gmail.com>" );
+    aboutDialogInfo.SetCopyright( "Copyright (C) 2013, 2015 -- Spencer T. Parkin <SpencerTParkin@gmail.com>" );
 
     wxAboutBox( aboutDialogInfo );
 }
