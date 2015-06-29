@@ -85,7 +85,8 @@ void RubiksCube::LoadTextures( void )
 			continue;
 
 		wxImage image;
-		if( !image.LoadFile( textureFiles[ color ] ) )
+		wxString path = wxString( "C:/RubiksCube/Textures/" ) + textureFiles[ color ];		// TODO: Get rid of full-path.
+		if( !image.LoadFile( path ) )
 			continue;
 
 		GLuint texName;

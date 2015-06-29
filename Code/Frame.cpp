@@ -404,7 +404,7 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 
 	delete solver;
 
-	animationTolerance = 0.01;
+	animationTolerance = 1.0; //0.01;
 }
 
 //==================================================================================================

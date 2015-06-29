@@ -25,7 +25,7 @@ bool Solver::MakeEntireSolutionSequence( const RubiksCube* rubiksCube, RubiksCub
 
 	RubiksCube::RotationSequence subRotationSequence;
 
-	int maxSequenceLength = 70 * rubiksCube->SubCubeMatrixSize();
+	int maxSequenceLength = 99999999; //70 * rubiksCube->SubCubeMatrixSize();
 	rotationSequence.clear();
 	while( signed( rotationSequence.size() ) <= maxSequenceLength )
 	{
@@ -51,6 +51,9 @@ bool Solver::MakeEntireSolutionSequence( const RubiksCube* rubiksCube, RubiksCub
 
 	// Now compress across the entire solution sequence.
 	RubiksCube::CompressRotationSequence( rotationSequence );
+
+	bool solved = rubiksCubeCopy->IsInSolvedState();
+	//wxASSERT( solved );
 
 	return true;
 }

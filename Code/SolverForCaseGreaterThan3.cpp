@@ -241,6 +241,8 @@ bool SolverForCaseGreaterThan3::FaceSolver::GenerateRotationSequence( const Rubi
 	relativeRotation.type = RubiksCube::RelativeRotation::R;
 	if( ccwRotate )
 		relativeRotation.planeIndex = forwardCoords.y;
+	else
+		relativeRotation.planeIndex = subCubeMatrixSize - 1 - forwardCoords.y;
 	rubiksCube->TranslateRotation( perspective, relativeRotation, preservativeRotation );
 	invPreservativeRotation.SetInverse( preservativeRotation );
 
@@ -297,11 +299,148 @@ void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 			break;
 		}
 		case RubiksCube::POS_Y:
+		{
+			perspective.rAxis = xAxis;
+			perspective.uAxis = zAxis;
+			perspective.fAxis = -yAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = xAxis;
+			perspective.uAxis = yAxis;
+			perspective.fAxis = zAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -zAxis;
+			perspective.uAxis = yAxis;
+			perspective.fAxis = xAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -xAxis;
+			perspective.uAxis = yAxis;
+			perspective.fAxis = -zAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = zAxis;
+			perspective.uAxis = yAxis;
+			perspective.fAxis = -xAxis;
+			perspectiveList.push_back( perspective );
+
+			break;
+		}
 		case RubiksCube::POS_Z:
+		{
+			perspective.rAxis = yAxis;
+			perspective.uAxis = xAxis;
+			perspective.fAxis = -zAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = yAxis;
+			perspective.uAxis = zAxis;
+			perspective.fAxis = xAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -xAxis;
+			perspective.uAxis = zAxis;
+			perspective.fAxis = yAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -yAxis;
+			perspective.uAxis = zAxis;
+			perspective.fAxis = -xAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = xAxis;
+			perspective.uAxis = zAxis;
+			perspective.fAxis = -yAxis;
+			perspectiveList.push_back( perspective );
+
+			break;
+		}
 		case RubiksCube::NEG_X:
+		{
+			perspective.rAxis = yAxis;
+			perspective.uAxis = zAxis;
+			perspective.fAxis = xAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = yAxis;
+			perspective.uAxis = -xAxis;
+			perspective.fAxis = zAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -zAxis;
+			perspective.uAxis = -xAxis;
+			perspective.fAxis = yAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -yAxis;
+			perspective.uAxis = -xAxis;
+			perspective.fAxis = -zAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = zAxis;
+			perspective.uAxis = -xAxis;
+			perspective.fAxis = -yAxis;
+			perspectiveList.push_back( perspective );
+
+			break;
+		}
 		case RubiksCube::NEG_Y:
+		{
+			perspective.rAxis = -xAxis;
+			perspective.uAxis = zAxis;
+			perspective.fAxis = yAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -xAxis;
+			perspective.uAxis = -yAxis;
+			perspective.fAxis = zAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -zAxis;
+			perspective.uAxis = -yAxis;
+			perspective.fAxis = -xAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = xAxis;
+			perspective.uAxis = -yAxis;
+			perspective.fAxis = -zAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = zAxis;
+			perspective.uAxis = -yAxis;
+			perspective.fAxis = xAxis;
+			perspectiveList.push_back( perspective );
+
+			break;
+		}
 		case RubiksCube::NEG_Z:
 		{
+			perspective.rAxis = xAxis;
+			perspective.uAxis = yAxis;
+			perspective.fAxis = zAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = xAxis;
+			perspective.uAxis = -zAxis;
+			perspective.fAxis = yAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -yAxis;
+			perspective.uAxis = -zAxis;
+			perspective.fAxis = xAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -xAxis;
+			perspective.uAxis = -zAxis;
+			perspective.fAxis = -yAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = yAxis;
+			perspective.uAxis = -zAxis;
+			perspective.fAxis = -xAxis;
+			perspectiveList.push_back( perspective );
+
 			break;
 		}
 	}
