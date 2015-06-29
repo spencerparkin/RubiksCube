@@ -130,6 +130,7 @@ SolverForCaseGreaterThan3::StageSolver::StageSolver( void )
 SolverForCaseGreaterThan3::FaceSolver::FaceSolver( RubiksCube::Face face )
 {
 	this->face = face;
+	GeneratePerspectiveList();
 }
 
 /*virtual*/ SolverForCaseGreaterThan3::FaceSolver::~FaceSolver( void )
@@ -165,12 +166,7 @@ bool SolverForCaseGreaterThan3::FaceSolver::FindRotationSequence( const RubiksCu
 			forwardCoords.z = subCubeMatrixSize - 1;
 
 			const RubiksCube::SubCube* subCube = rubiksCube->Matrix( forwardCoords, perspective );
-
-			c3ga::vectorE3GA fAxis = perspective.fAxis;
-			perspective.PerspectiveSpaceToWorldSpace( fAxis, fAxis );
-
-			RubiksCube::Face forwardFace = RubiksCube::TranslateNormal( fAxis );
-
+			RubiksCube::Face forwardFace = RubiksCube::TranslateNormal( perspective.fAxis );
 			if( subCube->faceData[ forwardFace ].color == color )
 				return GenerateRotationSequence( rubiksCube, perspective, rotationSequence, forwardCoords );
 		}
@@ -200,12 +196,7 @@ bool SolverForCaseGreaterThan3::FaceSolver::GenerateRotationSequence( const Rubi
 	while( ccwRotationCount < 4 )
 	{
 		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( upwardCoords, perspective );
-
-		c3ga::vectorE3GA uAxis = perspective.uAxis;
-		perspective.PerspectiveSpaceToWorldSpace( uAxis, uAxis );
-
-		RubiksCube::Face upwardFace = RubiksCube::TranslateNormal( uAxis );
-
+		RubiksCube::Face upwardFace = RubiksCube::TranslateNormal( perspective.uAxis );
 		if( subCube->faceData[ upwardFace ].color != color )
 			break;
 
@@ -217,8 +208,8 @@ bool SolverForCaseGreaterThan3::FaceSolver::GenerateRotationSequence( const Rubi
 		upwardCoords.x = x;
 		upwardCoords.z = z;
 
-		relativeRotation.planeIndex = subCubeMatrixSize - 1;
-		relativeRotation.type = RubiksCube::RelativeRotation::Ui;
+		relativeRotation.planeIndex = 0;
+		relativeRotation.type = RubiksCube::RelativeRotation::U;
 		
 		rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
 		rotationSequence.push_back( rotation );
@@ -231,25 +222,25 @@ bool SolverForCaseGreaterThan3::FaceSolver::GenerateRotationSequence( const Rubi
 		return false;
 	}
 
-	relativeRotation.planeIndex = forwardCoords.x;
-	relativeRotation.type = RubiksCube::RelativeRotation::Ri;
+	relativeRotation.planeIndex = subCubeMatrixSize - 1 - forwardCoords.x;
+	relativeRotation.type = RubiksCube::RelativeRotation::R;
 	rubiksCube->TranslateRotation( perspective, relativeRotation, shiftRotation );
 	invShiftRotation.SetInverse( shiftRotation );
 
-	relativeRotation.planeIndex = subCubeMatrixSize - 1;
+	relativeRotation.planeIndex = 0;
 	bool ccwRotate = true;
 	if( forwardCoords.x == subCubeMatrixSize - 1 - forwardCoords.y )
 		ccwRotate = false;
 	if( ccwRotate )
-		relativeRotation.type = RubiksCube::RelativeRotation::F;
+		relativeRotation.type = RubiksCube::RelativeRotation::Ui;
 	else
-		relativeRotation.type = RubiksCube::RelativeRotation::Fi;
+		relativeRotation.type = RubiksCube::RelativeRotation::U;
 	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
 	invRotation.SetInverse( rotation );
 
-	relativeRotation.type = RubiksCube::RelativeRotation::Ri;
+	relativeRotation.type = RubiksCube::RelativeRotation::R;
 	if( ccwRotate )
-		relativeRotation.planeIndex = subCubeMatrixSize - 1 - forwardCoords.y;
+		relativeRotation.planeIndex = forwardCoords.y;
 	rubiksCube->TranslateRotation( perspective, relativeRotation, preservativeRotation );
 	invPreservativeRotation.SetInverse( preservativeRotation );
 
