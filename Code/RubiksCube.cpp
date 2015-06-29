@@ -1295,6 +1295,26 @@ bool RubiksCube::ValidMatrixCoordinates( const Coordinates& coords ) const
 }
 
 //==================================================================================================
+void RubiksCube::Rotation::Invert( void )
+{
+	angle *= -1.0;
+}
+
+//==================================================================================================
+void RubiksCube::Rotation::GetInverse( Rotation& rotation ) const
+{
+	rotation.plane = plane;
+	rotation.angle = -angle;
+}
+
+//==================================================================================================
+void RubiksCube::Rotation::SetInverse( const Rotation& rotation )
+{
+	plane = rotation.plane;
+	angle = -rotation.angle;
+}
+
+//==================================================================================================
 bool RubiksCube::SaveToFile( const wxString& file ) const
 {
 	return SaveToFile( this, file );

@@ -15,6 +15,9 @@ Solver::Solver( void )
 //==================================================================================================
 bool Solver::MakeEntireSolutionSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
+	if( !GetReady() )
+		return false;
+
 	wxScopedPtr< RubiksCube > rubiksCubeCopy;
 	rubiksCubeCopy.reset( new RubiksCube( rubiksCube->SubCubeMatrixSize(), false ) );
 	if( !rubiksCubeCopy->Copy( *rubiksCube, RubiksCube::CopyMap ) )

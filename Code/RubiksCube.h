@@ -82,6 +82,10 @@ public:
 	{
 		Plane plane;
 		double angle;
+
+		void Invert( void );
+		void GetInverse( Rotation& rotation ) const;
+		void SetInverse( const Rotation& rotation );
 	};
 
 	struct Grip

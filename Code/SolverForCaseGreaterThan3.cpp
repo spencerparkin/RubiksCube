@@ -5,15 +5,58 @@
 //==================================================================================================
 SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( void )
 {
-	solverForCase3 = 0;
-	reducedCube = 0;
+	CreateStageSolvers();
 }
 
 //==================================================================================================
 /*virtual*/ SolverForCaseGreaterThan3::~SolverForCaseGreaterThan3( void )
 {
-	delete solverForCase3;
-	delete reducedCube;
+	DestroyStageSolvers();
+}
+
+//==================================================================================================
+void SolverForCaseGreaterThan3::CreateStageSolvers( void )
+{
+	// It shouldn't matter at all what order we add these face solvers.
+	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_X ) );
+	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_Y ) );
+	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_Z ) );
+	stageSolverList.push_back( new FaceSolver( RubiksCube::NEG_X ) );
+	stageSolverList.push_back( new FaceSolver( RubiksCube::NEG_Y ) );
+	stageSolverList.push_back( new FaceSolver( RubiksCube::NEG_Z ) );
+
+	// TODO: Add more solvers here.
+}
+
+//==================================================================================================
+void SolverForCaseGreaterThan3::ResetStageSolvers( void )
+{
+	StageSolverList::iterator iter = stageSolverList.begin();
+	while( iter != stageSolverList.end() )
+	{
+		StageSolver* stageSolver = *iter;
+		stageSolver->SetState( StageSolver::STAGE_PENDING );
+		iter++;
+	}
+}
+
+//==================================================================================================
+void SolverForCaseGreaterThan3::DestroyStageSolvers( void )
+{
+	while( stageSolverList.size() > 0 )
+	{
+		StageSolverList::iterator iter = stageSolverList.begin();
+		StageSolver* stageSolver = *iter;
+		delete stageSolver;
+		stageSolverList.erase( iter );
+	}
+}
+
+//==================================================================================================
+/*virtual*/ bool SolverForCaseGreaterThan3::GetReady( void )
+{
+	ResetStageSolvers();
+	return true;
 }
 
 //==================================================================================================
@@ -22,31 +65,16 @@ SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( void )
 	if( rubiksCube->SubCubeMatrixSize() <= 3 )
 		return false;
 
-	// TODO: If the cube is equivilant to the 3x3x3 case, create the reduced cube and its solver here.
-
-	if( reducedCube && solverForCase3 )
+	for( StageSolverList::iterator iter = stageSolverList.begin(); iter != stageSolverList.end(); iter++ )
 	{
-		RubiksCube::RotationSequence reducedRotationSequence;
-		if( !solverForCase3->MakeRotationSequence( reducedCube, reducedRotationSequence ) || reducedRotationSequence.size() == 0 )
-			return false;
-
-		TranslateRotationSequence( rubiksCube, reducedRotationSequence, rotationSequence );
-
-		if( !reducedCube->ApplySequence( reducedRotationSequence ) )
-			return false;
-
-		return true;
-	}
-	else
-	{
-		// TODO: Get all colors in POS_X(yellow), then POS_Y(blue), POS_Z(red), NEG_X(white), NEG_Y(green), NEG_Z(orange).
-		//       Use "TranslateFaceColor".
-		//       If yellow found in NEG_X face, move to POS_Y face (arbitrarily).  If yellow found in any of POS_Y, NEG_Y, POS_Z or NEG_Z, move to POS_X face.
-		//       Blue can't be in POS_X face.  So if found in NEG_Y face, move to NEG_X face (arbitrarily).  If found in NEG_X, POS_Z or NEG_Z, move to POS_Y face.
-		//       Red can't be in POS_X or POS_Y face.  If found in NEG_Z face, move to NEG_X face (arbitrarily).  If in NEG_X or NEG_Y, move to POS_Z face.
-		//       Keep going...there is an easy algorithm for moving colors from one face to an adjacent face.
-
-		// TODO: Get the cube into the reduced state here.
+		StageSolver* stageSolver = *iter;
+		if( stageSolver->GetState() == StageSolver::STAGE_PENDING )
+		{
+			if( stageSolver->SolveStage( rubiksCube, rotationSequence ) )
+				return true;
+			else if( stageSolver->GetState() != StageSolver::STAGE_COMPLETE )
+				return false;
+		}
 	}
 
 	return true;
@@ -86,6 +114,204 @@ void SolverForCaseGreaterThan3::TranslateRotationSequence( const RubiksCube* rub
 				rotationSequence.push_back( rotation );
 				break;
 			}
+		}
+	}
+}
+
+SolverForCaseGreaterThan3::StageSolver::StageSolver( void )
+{
+	SetState( STAGE_PENDING );
+}
+
+/*virtual*/ SolverForCaseGreaterThan3::StageSolver::~StageSolver( void )
+{
+}
+
+SolverForCaseGreaterThan3::FaceSolver::FaceSolver( RubiksCube::Face face )
+{
+	this->face = face;
+}
+
+/*virtual*/ SolverForCaseGreaterThan3::FaceSolver::~FaceSolver( void )
+{
+}
+
+/*virtual*/ bool SolverForCaseGreaterThan3::FaceSolver::SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+	for( PerspectiveList::iterator iter = perspectiveList.begin(); iter != perspectiveList.end(); iter++ )
+	{
+		RubiksCube::Perspective perspective = *iter;
+		if( FindRotationSequence( rubiksCube, perspective, rotationSequence ) )
+			return true;
+	}
+
+	SetState( STAGE_COMPLETE );
+	return false;
+}
+
+bool SolverForCaseGreaterThan3::FaceSolver::FindRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, RubiksCube::RotationSequence& rotationSequence )
+{
+	RubiksCube::Color color = RubiksCube::TranslateFaceColor( face );
+
+	int subCubeMatrixSize = rubiksCube->SubCubeMatrixSize();
+
+	for( int x = 1; x < subCubeMatrixSize - 1; x++ )
+	{
+		for( int y = 1; y < subCubeMatrixSize - 1; y++ )
+		{
+			RubiksCube::Coordinates forwardCoords;
+			forwardCoords.x = x;
+			forwardCoords.y = y;
+			forwardCoords.z = subCubeMatrixSize - 1;
+
+			const RubiksCube::SubCube* subCube = rubiksCube->Matrix( forwardCoords, perspective );
+
+			c3ga::vectorE3GA fAxis = perspective.fAxis;
+			perspective.PerspectiveSpaceToWorldSpace( fAxis, fAxis );
+
+			RubiksCube::Face forwardFace = RubiksCube::TranslateNormal( fAxis );
+
+			if( subCube->faceData[ forwardFace ].color == color )
+				return GenerateRotationSequence( rubiksCube, perspective, rotationSequence, forwardCoords );
+		}
+	}
+
+	return false;
+}
+
+bool SolverForCaseGreaterThan3::FaceSolver::GenerateRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, RubiksCube::RotationSequence& rotationSequence, const RubiksCube::Coordinates& forwardCoords )
+{
+	RubiksCube::Color color = RubiksCube::TranslateFaceColor( face );
+
+	int subCubeMatrixSize = rubiksCube->SubCubeMatrixSize();
+
+	RubiksCube::Coordinates upwardCoords;
+	upwardCoords.x = forwardCoords.x;
+	upwardCoords.y = subCubeMatrixSize - 1;
+	upwardCoords.z = subCubeMatrixSize - 1 - forwardCoords.y;
+
+	RubiksCube::Rotation rotation, invRotation;
+	RubiksCube::Rotation shiftRotation, invShiftRotation;
+	RubiksCube::Rotation preservativeRotation, invPreservativeRotation;
+
+	RubiksCube::RelativeRotation relativeRotation;
+
+	int ccwRotationCount = 0;
+	while( ccwRotationCount < 4 )
+	{
+		const RubiksCube::SubCube* subCube = rubiksCube->Matrix( upwardCoords, perspective );
+
+		c3ga::vectorE3GA uAxis = perspective.uAxis;
+		perspective.PerspectiveSpaceToWorldSpace( uAxis, uAxis );
+
+		RubiksCube::Face upwardFace = RubiksCube::TranslateNormal( uAxis );
+
+		if( subCube->faceData[ upwardFace ].color != color )
+			break;
+
+		ccwRotationCount++;
+
+		int x = upwardCoords.z;
+		int z = subCubeMatrixSize - 1 - upwardCoords.x;
+
+		upwardCoords.x = x;
+		upwardCoords.z = z;
+
+		relativeRotation.planeIndex = subCubeMatrixSize - 1;
+		relativeRotation.type = RubiksCube::RelativeRotation::Ui;
+		
+		rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+		rotationSequence.push_back( rotation );
+	}
+
+	// This shouldn't be possible!
+	if( ccwRotationCount == 4 )
+	{
+		rotationSequence.clear();
+		return false;
+	}
+
+	relativeRotation.planeIndex = forwardCoords.x;
+	relativeRotation.type = RubiksCube::RelativeRotation::Ri;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, shiftRotation );
+	invShiftRotation.SetInverse( shiftRotation );
+
+	relativeRotation.planeIndex = subCubeMatrixSize - 1;
+	bool ccwRotate = true;
+	if( forwardCoords.x == subCubeMatrixSize - 1 - forwardCoords.y )
+		ccwRotate = false;
+	if( ccwRotate )
+		relativeRotation.type = RubiksCube::RelativeRotation::F;
+	else
+		relativeRotation.type = RubiksCube::RelativeRotation::Fi;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+	invRotation.SetInverse( rotation );
+
+	relativeRotation.type = RubiksCube::RelativeRotation::Ri;
+	if( ccwRotate )
+		relativeRotation.planeIndex = subCubeMatrixSize - 1 - forwardCoords.y;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, preservativeRotation );
+	invPreservativeRotation.SetInverse( preservativeRotation );
+
+	// Okay, here's the move!
+	rotationSequence.push_back( shiftRotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( preservativeRotation );
+	rotationSequence.push_back( invRotation );
+	rotationSequence.push_back( invShiftRotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( invPreservativeRotation );
+	rotationSequence.push_back( invRotation );		// Shouldn't need this one, but whatever.
+
+	return true;
+}
+
+void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
+{
+	RubiksCube::Perspective perspective;
+
+	c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
+	c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
+	c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
+
+	switch( face )
+	{
+		case RubiksCube::POS_X:
+		{
+			perspective.rAxis = zAxis;
+			perspective.uAxis = yAxis;
+			perspective.fAxis = -xAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = zAxis;
+			perspective.uAxis = xAxis;
+			perspective.fAxis = yAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -yAxis;
+			perspective.uAxis = xAxis;
+			perspective.fAxis = zAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = -zAxis;
+			perspective.uAxis = xAxis;
+			perspective.fAxis = -yAxis;
+			perspectiveList.push_back( perspective );
+
+			perspective.rAxis = yAxis;
+			perspective.uAxis = xAxis;
+			perspective.fAxis = -zAxis;
+			perspectiveList.push_back( perspective );
+
+			break;
+		}
+		case RubiksCube::POS_Y:
+		case RubiksCube::POS_Z:
+		case RubiksCube::NEG_X:
+		case RubiksCube::NEG_Y:
+		case RubiksCube::NEG_Z:
+		{
+			break;
 		}
 	}
 }

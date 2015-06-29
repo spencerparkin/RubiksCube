@@ -14,14 +14,66 @@ public:
 	SolverForCaseGreaterThan3( void );
 	virtual ~SolverForCaseGreaterThan3( void );
 
+	virtual bool GetReady( void ) override;
+
 	virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
 
 private:
 
 	void TranslateRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::RotationSequence& reducedRotationSequence, RubiksCube::RotationSequence& rotationSequence );
 
-	SolverForCase3* solverForCase3;
-	RubiksCube* reducedCube;
+	class StageSolver
+	{
+	public:
+
+		enum State
+		{
+			STAGE_PENDING,
+			STAGE_COMPLETE,
+		};
+
+		StageSolver( void );
+		virtual ~StageSolver( void );
+
+		virtual bool SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) = 0;
+
+		State GetState( void ) { return state; }
+		void SetState( State state ) { this->state = state; }
+
+	private:
+
+		State state;
+	};
+
+	class FaceSolver : public StageSolver
+	{
+	public:
+
+		FaceSolver( RubiksCube::Face face );
+		virtual ~FaceSolver( void );
+
+		virtual bool SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
+
+	private:
+
+		typedef std::list< RubiksCube::Perspective > PerspectiveList;
+		PerspectiveList perspectiveList;
+
+		void GeneratePerspectiveList( void );
+		bool FindRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, RubiksCube::RotationSequence& rotationSequence );
+		bool GenerateRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, RubiksCube::RotationSequence& rotationSequence, const RubiksCube::Coordinates& forwardCoords );
+
+		RubiksCube::Face face;
+	};
+
+	// EdgePairSolver : public StageSolver { ...
+
+	typedef std::list< StageSolver* > StageSolverList;
+	StageSolverList stageSolverList;
+
+	void CreateStageSolvers( void );
+	void ResetStageSolvers( void );
+	void DestroyStageSolvers( void );
 };
 
 // SolverForCaseGreaterThan3.h
