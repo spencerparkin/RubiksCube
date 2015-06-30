@@ -46,6 +46,16 @@ private:
 		State state;
 	};
 
+	class CenterFaceSolver : public StageSolver
+	{
+	public:
+
+		CenterFaceSolver( void );
+		virtual ~CenterFaceSolver( void );
+
+		virtual bool SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
+	};
+
 	class FaceSolver : public StageSolver
 	{
 	public:

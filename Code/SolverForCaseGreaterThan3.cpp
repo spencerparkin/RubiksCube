@@ -17,7 +17,7 @@ SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( void )
 //==================================================================================================
 void SolverForCaseGreaterThan3::CreateStageSolvers( void )
 {
-	// TODO: If we're solving a cube of odd order, then we need to solve the center face cubes first.
+	stageSolverList.push_back( new CenterFaceSolver() );
 
 	// Note that we must solve the faces in this order, because the face solver assumes this order in its logic.
 	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_X ) );
@@ -129,25 +129,139 @@ void SolverForCaseGreaterThan3::TranslateRotationSequence( const RubiksCube* rub
 	}
 }
 
+//==================================================================================================
+SolverForCaseGreaterThan3::CenterFaceSolver::CenterFaceSolver( void )
+{
+}
+
+//==================================================================================================
+/*virtual*/ SolverForCaseGreaterThan3::CenterFaceSolver::~CenterFaceSolver( void )
+{
+}
+
+//==================================================================================================
+// Note that since centers can't move, nothing is really being solved here.
+// What we're doing is orienting the cube for the computer to make it easier for the computer.
+/*virtual*/ bool SolverForCaseGreaterThan3::CenterFaceSolver::SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+	int subCubeMatrixSize = rubiksCube->SubCubeMatrixSize();
+
+	// In this case, there are no center face cubies to solve.
+	if( subCubeMatrixSize % 2 == 0 )
+	{
+		SetState( STAGE_COMPLETE );
+		return false;
+	}
+
+	int center = ( subCubeMatrixSize - 1 ) / 2;
+
+	const RubiksCube::SubCube* subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, center, center ) );
+	if( subCube->faceData[ RubiksCube::POS_X ].color != RubiksCube::YELLOW )
+	{
+		RubiksCube::Rotation rotation;
+		rotation.plane.index = center;
+		rotation.angle = 0.0;
+
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( 0, center, center ) );
+		if( subCube->faceData[ RubiksCube::NEG_X ].color == RubiksCube::YELLOW )
+		{
+			rotation.plane.axis = RubiksCube::Z_AXIS;
+			rotation.angle = M_PI;
+		}
+
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( center, subCubeMatrixSize - 1, center ) );
+		if( subCube->faceData[ RubiksCube::POS_Y ].color == RubiksCube::YELLOW )
+		{
+			rotation.plane.axis = RubiksCube::Z_AXIS;
+			rotation.angle = -M_PI / 2.f;
+		}
+
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( center, 0, center ) );
+		if( subCube->faceData[ RubiksCube::NEG_Y ].color == RubiksCube::YELLOW )
+		{
+			rotation.plane.axis = RubiksCube::Z_AXIS;
+			rotation.angle = M_PI / 2.f;
+		}
+
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( center, center, subCubeMatrixSize - 1 ) );
+		if( subCube->faceData[ RubiksCube::POS_Z ].color == RubiksCube::YELLOW )
+		{
+			rotation.plane.axis = RubiksCube::Y_AXIS;
+			rotation.angle = M_PI / 2.f;
+		}
+
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( center, center, 0 ) );
+		if( subCube->faceData[ RubiksCube::NEG_Z ].color == RubiksCube::YELLOW )
+		{
+			rotation.plane.axis = RubiksCube::Y_AXIS;
+			rotation.angle = -M_PI / 2.f;
+		}
+
+		wxASSERT( rotation.angle != 0.0 );
+		if( rotation.angle == 0.0 )
+			return false;
+
+		rotationSequence.push_back( rotation );
+		return true;
+	}
+	
+	subCube = rubiksCube->Matrix( RubiksCube::Coordinates( center, subCubeMatrixSize - 1, center ) );
+	if( subCube->faceData[ RubiksCube::POS_Y ].color != RubiksCube::BLUE )
+	{
+		RubiksCube::Rotation rotation;
+		rotation.plane.index = center;
+		rotation.plane.axis = RubiksCube::X_AXIS;
+		rotation.angle = 0.0;
+
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( center, 0, center ) );
+		if( subCube->faceData[ RubiksCube::NEG_Y ].color == RubiksCube::BLUE )
+			rotation.angle = M_PI;
+		
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( center, center, subCubeMatrixSize - 1 ) );
+		if( subCube->faceData[ RubiksCube::POS_Z ].color == RubiksCube::BLUE )
+			rotation.angle = -M_PI / 2.0;
+
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( center, center, 0 ) );
+		if( subCube->faceData[ RubiksCube::NEG_Z ].color == RubiksCube::BLUE )
+			rotation.angle = M_PI / 2.0;
+
+		wxASSERT( rotation.angle != 0.0 );
+		if( rotation.angle == 0.0 )
+			return false;
+
+		rotationSequence.push_back( rotation );
+		return true;
+	}
+
+	// If the yellow and blue center face cubies are where they need to be, then all other center face cubies are positioned correctly.
+	SetState( STAGE_COMPLETE );
+	return false;
+}
+
+//==================================================================================================
 SolverForCaseGreaterThan3::StageSolver::StageSolver( void )
 {
 	SetState( STAGE_PENDING );
 }
 
+//==================================================================================================
 /*virtual*/ SolverForCaseGreaterThan3::StageSolver::~StageSolver( void )
 {
 }
 
+//==================================================================================================
 SolverForCaseGreaterThan3::FaceSolver::FaceSolver( RubiksCube::Face face )
 {
 	this->face = face;
 	GeneratePerspectiveList();
 }
 
+//==================================================================================================
 /*virtual*/ SolverForCaseGreaterThan3::FaceSolver::~FaceSolver( void )
 {
 }
 
+//==================================================================================================
 bool SolverForCaseGreaterThan3::FaceSolver::VerifyActuallySolved( const RubiksCube* rubiksCube )
 {
 	RubiksCube::Color color = RubiksCube::TranslateFaceColor( face );
@@ -178,6 +292,7 @@ bool SolverForCaseGreaterThan3::FaceSolver::VerifyActuallySolved( const RubiksCu
 	return true;
 }
 
+//==================================================================================================
 /*virtual*/ bool SolverForCaseGreaterThan3::FaceSolver::SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
 {
 	for( PerspectiveList::iterator iter = perspectiveList.begin(); iter != perspectiveList.end(); iter++ )
@@ -191,6 +306,7 @@ bool SolverForCaseGreaterThan3::FaceSolver::VerifyActuallySolved( const RubiksCu
 	return false;
 }
 
+//==================================================================================================
 bool SolverForCaseGreaterThan3::FaceSolver::FindRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, RubiksCube::RotationSequence& rotationSequence )
 {
 	RubiksCube::Color color = RubiksCube::TranslateFaceColor( face );
@@ -216,6 +332,7 @@ bool SolverForCaseGreaterThan3::FaceSolver::FindRotationSequence( const RubiksCu
 	return false;
 }
 
+//==================================================================================================
 bool SolverForCaseGreaterThan3::FaceSolver::GenerateRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, RubiksCube::RotationSequence& rotationSequence, const RubiksCube::Coordinates& forwardCoords )
 {
 	RubiksCube::Color color = RubiksCube::TranslateFaceColor( face );
@@ -287,6 +404,9 @@ bool SolverForCaseGreaterThan3::FaceSolver::GenerateRotationSequence( const Rubi
 	rubiksCube->TranslateRotation( perspective, relativeRotation, preservativeRotation );
 	invPreservativeRotation.SetInverse( preservativeRotation );
 
+	if( shiftRotation.plane.index == preservativeRotation.plane.index )
+		return false;
+
 	// Okay, here's the move!
 	rotationSequence.push_back( shiftRotation );
 	rotationSequence.push_back( rotation );
@@ -300,6 +420,7 @@ bool SolverForCaseGreaterThan3::FaceSolver::GenerateRotationSequence( const Rubi
 	return true;
 }
 
+//==================================================================================================
 void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 {
 	RubiksCube::Perspective perspective;
@@ -398,9 +519,9 @@ void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 		}
 		case RubiksCube::NEG_Y:			// POS_X, POS_Y, POS_Z, NEG_X faces assumed solved at this point.
 		{
-			perspective.rAxis = -xAxis;
-			perspective.uAxis = -zAxis;
-			perspective.fAxis = -yAxis;
+			perspective.rAxis = xAxis;
+			perspective.uAxis = -yAxis;
+			perspective.fAxis = -zAxis;
 			perspectiveList.push_back( perspective );
 
 			break;
