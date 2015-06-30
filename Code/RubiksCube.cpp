@@ -1010,6 +1010,14 @@ bool RubiksCube::TranslateRotation( const Perspective& perspective, const Relati
 	if( !( 0 <= relativeRotation.planeIndex && relativeRotation.planeIndex < subCubeMatrixSize ) )
 		return false;
 
+#ifdef SOLVER_DEBUG
+	c3ga::bivectorE3GA blade = c3ga::op( perspective.rAxis, perspective.uAxis );
+	c3ga::trivectorE3GA I( c3ga::trivectorE3GA::coord_e1e2e3, -1.0 );
+	c3ga::vectorE3GA vec = c3ga::lc( blade, I );
+	double length = c3ga::norm( vec - perspective.fAxis );
+	wxASSERT( length < 1e-6 );
+#endif //SOLVER_DEBUG
+
 	c3ga::vectorE3GA axis;
 	switch( relativeRotation.type )
 	{

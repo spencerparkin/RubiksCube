@@ -17,7 +17,7 @@ SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( void )
 //==================================================================================================
 void SolverForCaseGreaterThan3::CreateStageSolvers( void )
 {
-	// It shouldn't matter at all what order we add these face solvers.
+	// Note that we must solve the faces in this order, because the face solver assumes this order in its logic.
 	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_X ) );
 	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_Y ) );
 	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_Z ) );
@@ -47,8 +47,8 @@ void SolverForCaseGreaterThan3::DestroyStageSolvers( void )
 	{
 		StageSolverList::iterator iter = stageSolverList.begin();
 		StageSolver* stageSolver = *iter;
-		delete stageSolver;
 		stageSolverList.erase( iter );
+		delete stageSolver;
 	}
 }
 
@@ -75,6 +75,15 @@ void SolverForCaseGreaterThan3::DestroyStageSolvers( void )
 			else if( stageSolver->GetState() != StageSolver::STAGE_COMPLETE )
 				return false;
 		}
+#ifdef SOLVER_DEBUG
+		else
+		{
+			bool solved = stageSolver->VerifyActuallySolved( rubiksCube );
+			wxASSERT( solved );
+			if( !solved )
+				break;
+		}
+#endif //SOLVER_DEBUG
 	}
 
 	return true;
@@ -135,6 +144,36 @@ SolverForCaseGreaterThan3::FaceSolver::FaceSolver( RubiksCube::Face face )
 
 /*virtual*/ SolverForCaseGreaterThan3::FaceSolver::~FaceSolver( void )
 {
+}
+
+bool SolverForCaseGreaterThan3::FaceSolver::VerifyActuallySolved( const RubiksCube* rubiksCube )
+{
+	RubiksCube::Color color = RubiksCube::TranslateFaceColor( face );
+
+	PerspectiveList::iterator iter = perspectiveList.begin();
+	iter++;
+
+	RubiksCube::Perspective perspective = *iter;
+
+	int subCubeMatrixSize = rubiksCube->SubCubeMatrixSize();
+
+	for( int x = 1; x < subCubeMatrixSize - 1; x++ )
+	{
+		for( int z = 1; z < subCubeMatrixSize - 1; z++ )
+		{
+			RubiksCube::Coordinates upwardCoords;
+			upwardCoords.x = x;
+			upwardCoords.y = subCubeMatrixSize - 1;
+			upwardCoords.z = z;
+
+			const RubiksCube::SubCube* subCube = rubiksCube->Matrix( upwardCoords, perspective );
+			RubiksCube::Face upwardFace = RubiksCube::TranslateNormal( perspective.uAxis );
+			if( subCube->faceData[ upwardFace ].color != color )
+				return false;
+		}
+	}
+
+	return true;
 }
 
 /*virtual*/ bool SolverForCaseGreaterThan3::FaceSolver::SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
@@ -269,7 +308,7 @@ void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 
 	switch( face )
 	{
-		case RubiksCube::POS_X:
+		case RubiksCube::POS_X:			// No faces assumed solved at this point.
 		{
 			perspective.rAxis = zAxis;
 			perspective.uAxis = yAxis;
@@ -298,7 +337,7 @@ void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 
 			break;
 		}
-		case RubiksCube::POS_Y:
+		case RubiksCube::POS_Y:			// POS_X face assumed solve at this point.
 		{
 			perspective.rAxis = xAxis;
 			perspective.uAxis = zAxis;
@@ -308,11 +347,6 @@ void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 			perspective.rAxis = xAxis;
 			perspective.uAxis = yAxis;
 			perspective.fAxis = zAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = -zAxis;
-			perspective.uAxis = yAxis;
-			perspective.fAxis = xAxis;
 			perspectiveList.push_back( perspective );
 
 			perspective.rAxis = -xAxis;
@@ -327,21 +361,11 @@ void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 
 			break;
 		}
-		case RubiksCube::POS_Z:
+		case RubiksCube::POS_Z:			// POS_X, POS_Y faces assumed solved at this point.
 		{
-			perspective.rAxis = yAxis;
-			perspective.uAxis = xAxis;
+			perspective.rAxis = xAxis;
+			perspective.uAxis = -yAxis;
 			perspective.fAxis = -zAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = yAxis;
-			perspective.uAxis = zAxis;
-			perspective.fAxis = xAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = -xAxis;
-			perspective.uAxis = zAxis;
-			perspective.fAxis = yAxis;
 			perspectiveList.push_back( perspective );
 
 			perspective.rAxis = -yAxis;
@@ -356,23 +380,8 @@ void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 
 			break;
 		}
-		case RubiksCube::NEG_X:
+		case RubiksCube::NEG_X:			// POS_X, POS_Y, POS_Z faces assumed solved at this point.
 		{
-			perspective.rAxis = yAxis;
-			perspective.uAxis = zAxis;
-			perspective.fAxis = xAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = yAxis;
-			perspective.uAxis = -xAxis;
-			perspective.fAxis = zAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = -zAxis;
-			perspective.uAxis = -xAxis;
-			perspective.fAxis = yAxis;
-			perspectiveList.push_back( perspective );
-
 			perspective.rAxis = -yAxis;
 			perspective.uAxis = -xAxis;
 			perspective.fAxis = -zAxis;
@@ -385,62 +394,18 @@ void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 
 			break;
 		}
-		case RubiksCube::NEG_Y:
+		case RubiksCube::NEG_Y:			// POS_X, POS_Y, POS_Z, NEG_X faces assumed solved at this point.
 		{
-			perspective.rAxis = -xAxis;
-			perspective.uAxis = zAxis;
-			perspective.fAxis = yAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = -xAxis;
-			perspective.uAxis = -yAxis;
-			perspective.fAxis = zAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = -zAxis;
-			perspective.uAxis = -yAxis;
-			perspective.fAxis = -xAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = xAxis;
-			perspective.uAxis = -yAxis;
-			perspective.fAxis = -zAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = zAxis;
-			perspective.uAxis = -yAxis;
-			perspective.fAxis = xAxis;
-			perspectiveList.push_back( perspective );
-
-			break;
-		}
-		case RubiksCube::NEG_Z:
-		{
-			perspective.rAxis = xAxis;
-			perspective.uAxis = yAxis;
-			perspective.fAxis = zAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = xAxis;
-			perspective.uAxis = -zAxis;
-			perspective.fAxis = yAxis;
-			perspectiveList.push_back( perspective );
-
-			perspective.rAxis = -yAxis;
-			perspective.uAxis = -zAxis;
-			perspective.fAxis = xAxis;
-			perspectiveList.push_back( perspective );
-
 			perspective.rAxis = -xAxis;
 			perspective.uAxis = -zAxis;
 			perspective.fAxis = -yAxis;
 			perspectiveList.push_back( perspective );
 
-			perspective.rAxis = yAxis;
-			perspective.uAxis = -zAxis;
-			perspective.fAxis = -xAxis;
-			perspectiveList.push_back( perspective );
-
+			break;
+		}
+		case RubiksCube::NEG_Z:			// POS_X, POS_Y, POS_Z, NEG_X, NEG_Y faces assumed solved at this point.
+		{
+			// The NEG_Z face must then be solved too.  No perspective to add!  :)
 			break;
 		}
 	}

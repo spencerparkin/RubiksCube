@@ -36,6 +36,7 @@ private:
 		virtual ~StageSolver( void );
 
 		virtual bool SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) = 0;
+		virtual bool VerifyActuallySolved( const RubiksCube* rubiksCube ) { return true; }
 
 		State GetState( void ) { return state; }
 		void SetState( State state ) { this->state = state; }
@@ -53,6 +54,7 @@ private:
 		virtual ~FaceSolver( void );
 
 		virtual bool SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
+		virtual bool VerifyActuallySolved( const RubiksCube* rubiksCube ) override;
 
 	private:
 
