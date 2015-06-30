@@ -17,6 +17,8 @@ SolverForCaseGreaterThan3::SolverForCaseGreaterThan3( void )
 //==================================================================================================
 void SolverForCaseGreaterThan3::CreateStageSolvers( void )
 {
+	// TODO: If we're solving a cube of odd order, then we need to solve the center face cubes first.
+
 	// Note that we must solve the faces in this order, because the face solver assumes this order in its logic.
 	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_X ) );
 	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_Y ) );
