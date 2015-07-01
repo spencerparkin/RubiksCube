@@ -581,7 +581,7 @@ bool SolverForCaseGreaterThan3::FaceSolver::GenerateRotationSequence( const Rubi
 	rotationSequence.push_back( invShiftRotation );
 	rotationSequence.push_back( rotation );
 	rotationSequence.push_back( invPreservativeRotation );
-	rotationSequence.push_back( invRotation );		// Shouldn't need this one, but whatever.
+	//rotationSequence.push_back( invRotation );		// Shouldn't need this one, but whatever.
 
 	return true;
 }
