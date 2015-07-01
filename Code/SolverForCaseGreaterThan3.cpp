@@ -143,6 +143,110 @@ void SolverForCaseGreaterThan3::TranslateRotationSequence( const RubiksCube* rub
 }
 
 //==================================================================================================
+// I'm not sure who came up with the edge-parity fix sequence.  It's not obvious or intuitive to me,
+// but it was easy to see how it generalizes.
+/*static*/ bool SolverForCaseGreaterThan3::GenerateEdgeParityFixSequence( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, const std::vector< int >& planeIndexVector, RubiksCube::RotationSequence& rotationSequence )
+{
+	if( planeIndexVector.size() == 0 )
+		return false;
+
+	int subCubeMatrixSize = rubiksCube->SubCubeMatrixSize();
+
+	for( int i = 0; i < ( int )planeIndexVector.size(); i++ )
+	{
+		int planeIndex = planeIndexVector[i];
+		if( planeIndex > subCubeMatrixSize / 2 )
+			return false;
+	}
+
+	RubiksCube::RelativeRotation relativeRotation;
+	relativeRotation.planeIndex = 0;
+	RubiksCube::Rotation rotation;
+
+	BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::D, 2, rotationSequence );
+
+	relativeRotation.type = RubiksCube::RelativeRotation::B;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( rotation );
+
+	//---
+
+	relativeRotation.type = RubiksCube::RelativeRotation::R;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( rotation );
+
+	BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::U, 1, rotationSequence );
+
+	relativeRotation.type = RubiksCube::RelativeRotation::R;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( rotation );
+
+	BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::Di, 1, rotationSequence );
+
+	//---
+
+	relativeRotation.type = RubiksCube::RelativeRotation::R;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( rotation );
+
+	BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::D, 1, rotationSequence );
+
+	relativeRotation.type = RubiksCube::RelativeRotation::R;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( rotation );
+
+	//---
+
+	relativeRotation.type = RubiksCube::RelativeRotation::F;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( rotation );
+
+	BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::D, 1, rotationSequence );
+
+	relativeRotation.type = RubiksCube::RelativeRotation::F;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( rotation );
+
+	BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::Ui, 1, rotationSequence );
+
+	//---
+
+	relativeRotation.type = RubiksCube::RelativeRotation::B;
+	rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+	rotationSequence.push_back( rotation );
+	rotationSequence.push_back( rotation );
+
+	BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::D, 2, rotationSequence );
+
+	return true;
+}
+
+//==================================================================================================
+/*static*/ void SolverForCaseGreaterThan3::BatchRotate( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, const std::vector< int >& planeIndexVector, RubiksCube::RelativeRotation::Type type, int rotationCount, RubiksCube::RotationSequence& rotationSequence )
+{
+	RubiksCube::RelativeRotation relativeRotation;
+	relativeRotation.type = type;
+
+	for( int i = 0; i < ( int )planeIndexVector.size(); i++ )
+	{
+		relativeRotation.planeIndex = planeIndexVector[i];
+		RubiksCube::Rotation rotation;
+		rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+
+		// These should get compressed into one rotation.
+		for( int j = 0; j < rotationCount; j++ )
+			rotationSequence.push_back( rotation );
+	}
+}
+
+//==================================================================================================
 SolverForCaseGreaterThan3::CenterFaceSolver::CenterFaceSolver( void )
 {
 }
@@ -739,16 +843,43 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 	if( !bestPerspective )
 		return false;
 
+	rightFace = RubiksCube::TranslateNormal( bestPerspective->rAxis );
+	forwardFace = RubiksCube::TranslateNormal( bestPerspective->fAxis );
+
 	if( biggestEdgeCount == subCubeMatrixSize - 2 )
 	{
-		// TODO: Solve edge parity here.  For cubes of odd order, we know the proper fix.  For even order, we won't know until we start solving as a 3x3x3.
+		RubiksCube::Color rightColor, forwardColor;
+		if( subCubeMatrixSize % 2 == 1 )
+		{
+			subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, ( subCubeMatrixSize - 1 ) / 2, subCubeMatrixSize - 1 ), *bestPerspective );
+			rightColor = subCube->faceData[ rightFace ].color;
+			forwardColor = subCube->faceData[ forwardFace ].color;
+		}
+		else
+		{
+			// In the case of cubes of even order, determining the proper right and forward face colors is not obvious.
+			// For large cubes, we should choose these colors to minimize the number of parity-fix moves we have to do,
+			// but to make things simpler here, I'm just going to choose arbitrarily.  Notice that our choice here generates
+			// no parity fix in the case that the edge is already solved.
+			subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, 1, subCubeMatrixSize - 1 ), *bestPerspective );
+			rightColor = subCube->faceData[ rightFace ].color;
+			forwardColor = subCube->faceData[ forwardFace ].color;
+		}
+
+		std::vector< int > planeIndexVector;
+		for( int y = 1; y < subCubeMatrixSize / 2; y++ )
+		{
+			subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, y, subCubeMatrixSize - 1 ), *bestPerspective );
+			if( subCube->faceData[ rightFace ].color != rightColor )
+				planeIndexVector.push_back( y );
+		}
+
+		if( planeIndexVector.size() > 0 )
+			return GenerateEdgeParityFixSequence( rubiksCube, *bestPerspective, planeIndexVector, rotationSequence );
 
 		SetState( STAGE_COMPLETE );
 		return false;
 	}
-
-	rightFace = RubiksCube::TranslateNormal( bestPerspective->rAxis );
-	forwardFace = RubiksCube::TranslateNormal( bestPerspective->fAxis );
 
 	RubiksCube::SubCubeVector edgeCubies;
 	rubiksCube->CollectSubCubes( colors, 2, edgeCubies );

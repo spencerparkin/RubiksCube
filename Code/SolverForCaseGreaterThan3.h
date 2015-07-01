@@ -18,6 +18,10 @@ public:
 
 	virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
 
+	static bool GenerateEdgeParityFixSequence( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, const std::vector< int >& planeIndexVector, RubiksCube::RotationSequence& rotationSequence );
+
+	static void BatchRotate( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, const std::vector< int >& planeIndexVector, RubiksCube::RelativeRotation::Type type, int rotationCount, RubiksCube::RotationSequence& rotationSequence );
+
 private:
 
 	void TranslateRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::RotationSequence& reducedRotationSequence, RubiksCube::RotationSequence& rotationSequence );
