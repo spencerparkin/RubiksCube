@@ -27,7 +27,20 @@ void SolverForCaseGreaterThan3::CreateStageSolvers( void )
 	stageSolverList.push_back( new FaceSolver( RubiksCube::NEG_Y ) );
 	stageSolverList.push_back( new FaceSolver( RubiksCube::NEG_Z ) );
 
-	// TODO: Add more solvers here.
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::BLUE ) );
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::RED ) );
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::GREEN ) );
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::ORANGE ) );
+
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::BLUE ) );
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::RED ) );
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::GREEN ) );
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::ORANGE ) );
+
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::BLUE, RubiksCube::ORANGE ) );
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::ORANGE, RubiksCube::GREEN ) );
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::GREEN, RubiksCube::RED ) );
+	//stageSolverList.push_back( new EdgeSolver( RubiksCube::RED, RubiksCube::BLUE ) );
 }
 
 //==================================================================================================
@@ -532,6 +545,359 @@ void SolverForCaseGreaterThan3::FaceSolver::GeneratePerspectiveList( void )
 			break;
 		}
 	}
+}
+
+//==================================================================================================
+SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, RubiksCube::Color colorB )
+{
+	colors[0] = colorA;
+	colors[1] = colorB;
+
+	c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
+	c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
+	c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
+
+	RubiksCube::Perspective perspective;
+
+	// Make a list of perspectives for each edge.
+
+	perspective.rAxis = xAxis;
+	perspective.rAxis = yAxis;
+	perspective.rAxis = zAxis;
+	perspectiveList.push_back( perspective );
+
+	perspective.rAxis = zAxis;
+	perspective.rAxis = yAxis;
+	perspective.rAxis = -xAxis;
+	perspectiveList.push_back( perspective );
+
+	perspective.rAxis = -xAxis;
+	perspective.rAxis = yAxis;
+	perspective.rAxis = -zAxis;
+	perspectiveList.push_back( perspective );
+
+	perspective.rAxis = -zAxis;
+	perspective.rAxis = yAxis;
+	perspective.rAxis = xAxis;
+	perspectiveList.push_back( perspective );
+
+	//---
+
+	perspective.rAxis = xAxis;
+	perspective.rAxis = -zAxis;
+	perspective.rAxis = yAxis;
+	perspectiveList.push_back( perspective );
+
+	perspective.rAxis = yAxis;
+	perspective.rAxis = -zAxis;
+	perspective.rAxis = -xAxis;
+	perspectiveList.push_back( perspective );
+
+	perspective.rAxis = zAxis;
+	perspective.rAxis = xAxis;
+	perspective.rAxis = yAxis;
+	perspectiveList.push_back( perspective );
+
+	perspective.rAxis = yAxis;
+	perspective.rAxis = xAxis;
+	perspective.rAxis = -zAxis;
+	perspectiveList.push_back( perspective );
+
+	//---
+
+	perspective.rAxis = zAxis;
+	perspective.rAxis = -xAxis;
+	perspective.rAxis = -yAxis;
+	perspectiveList.push_back( perspective );
+
+	perspective.rAxis = -yAxis;
+	perspective.rAxis = -xAxis;
+	perspective.rAxis = -zAxis;
+	perspectiveList.push_back( perspective );
+
+	perspective.rAxis = xAxis;
+	perspective.rAxis = zAxis;
+	perspective.rAxis = -yAxis;
+	perspectiveList.push_back( perspective );
+
+	perspective.rAxis = -yAxis;
+	perspective.rAxis = zAxis;
+	perspective.rAxis = -xAxis;
+	perspectiveList.push_back( perspective );
+}
+
+//==================================================================================================
+/*virtual*/ SolverForCaseGreaterThan3::EdgeSolver::~EdgeSolver( void )
+{
+}
+
+//==================================================================================================
+/*virtual*/ bool SolverForCaseGreaterThan3::EdgeSolver::SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+	int subCubeMatrixSize = rubiksCube->SubCubeMatrixSize();
+
+	const RubiksCube::Perspective* bestPerspective = 0;
+	int biggestEdgeCount = 0;
+	const RubiksCube::SubCube* subCube = 0;
+	RubiksCube::Face rightFace, forwardFace;
+
+	// Find the perspective that views the largest partially or perhaps fully completed version of the edge we want to complete.
+	for( PerspectiveList::iterator iter = perspectiveList.begin(); iter != perspectiveList.end(); iter++ )
+	{
+		const RubiksCube::Perspective& perspective = *iter;
+
+		int edgeCount = 0;
+		for( int y = 1; y < subCubeMatrixSize - 1; y++ )
+		{
+			RubiksCube::Coordinates coords;
+			coords.x = subCubeMatrixSize - 1;
+			coords.y = y;
+			coords.z = subCubeMatrixSize - 1;
+
+			subCube = rubiksCube->Matrix( coords, perspective );
+			
+			rightFace = RubiksCube::TranslateNormal( perspective.rAxis );
+			forwardFace = RubiksCube::TranslateNormal( perspective.fAxis );
+
+			if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
+				( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
+			{
+				edgeCount++;
+			}
+		}
+
+		if( edgeCount > biggestEdgeCount )
+		{
+			biggestEdgeCount = edgeCount;
+			bestPerspective = &perspective;
+		}
+	}
+
+	if( !bestPerspective )
+		return false;
+
+	if( biggestEdgeCount == subCubeMatrixSize - 2 )
+	{
+		SetState( STAGE_COMPLETE );
+		return true;
+	}
+
+	rightFace = RubiksCube::TranslateNormal( bestPerspective->rAxis );
+	forwardFace = RubiksCube::TranslateNormal( bestPerspective->fAxis );
+
+	RubiksCube::SubCubeVector edgeCubies;
+	rubiksCube->CollectSubCubes( colors, 2, edgeCubies );
+	if( edgeCubies.size() != subCubeMatrixSize - 2 )
+		return false;
+
+	// Find the edge cube that we'll move into the partially completed edge.
+	const RubiksCube::SubCube* edgeCube = 0;
+	RubiksCube::Coordinates edgeCubeCoords;
+	int i;
+	for( i = 0; i < ( int )edgeCubies.size(); i++ )
+	{
+		edgeCube = edgeCubies[i];
+		rubiksCube->RelativeFromActual( subCube->coords, edgeCubeCoords, *bestPerspective );
+		if( edgeCubeCoords.x != subCubeMatrixSize - 1 && edgeCubeCoords.z != subCubeMatrixSize - 1 )
+			break;
+	}
+	if( i == edgeCubies.size() )
+		return false;
+
+	RubiksCube::RelativeRotation relativeRotation;
+	relativeRotation.planeIndex = 0;
+	RubiksCube::Rotation rotation;
+	int yCoordWhenLanded = -1;
+
+	// Make the rotations that put the edge cube into the opposite edge.
+	if( edgeCubeCoords.y == subCubeMatrixSize - 1 )
+	{
+		if( edgeCubeCoords.x == 0 )
+		{
+			relativeRotation.type = RubiksCube::RelativeRotation::Li;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			yCoordWhenLanded = edgeCubeCoords.z;
+		}
+		else if( edgeCubeCoords.x == subCubeMatrixSize - 1 )
+		{
+			relativeRotation.type = RubiksCube::RelativeRotation::Ui;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			relativeRotation.type = RubiksCube::RelativeRotation::B;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			yCoordWhenLanded = edgeCubeCoords.z;
+		}
+		else if( edgeCubeCoords.z == 0 )
+		{
+			relativeRotation.type = RubiksCube::RelativeRotation::B;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			yCoordWhenLanded = edgeCubeCoords.x;
+		}
+		else if( edgeCubeCoords.z == subCubeMatrixSize - 1 )
+		{
+			relativeRotation.type = RubiksCube::RelativeRotation::U;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			relativeRotation.type = RubiksCube::RelativeRotation::Li;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			yCoordWhenLanded = edgeCubeCoords.x;
+		}
+		else
+		{
+			// Something is wrong with the cube.
+			return false;
+		}
+	}
+	else if( edgeCubeCoords.y == 0 )
+	{
+		if( edgeCubeCoords.x == 0 )
+		{
+			relativeRotation.type = RubiksCube::RelativeRotation::L;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			yCoordWhenLanded = subCubeMatrixSize - 1 - edgeCubeCoords.z;
+		}
+		else if( edgeCubeCoords.x == subCubeMatrixSize - 1 )
+		{
+			relativeRotation.type = RubiksCube::RelativeRotation::D;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			relativeRotation.type = RubiksCube::RelativeRotation::Bi;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			yCoordWhenLanded = subCubeMatrixSize - 1 - edgeCubeCoords.z;
+		}
+		else if( edgeCubeCoords.z == 0 )
+		{
+			relativeRotation.type = RubiksCube::RelativeRotation::Bi;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			yCoordWhenLanded = subCubeMatrixSize - 1 - edgeCubeCoords.x;
+		}
+		else if( edgeCubeCoords.z == subCubeMatrixSize - 1 )
+		{
+			relativeRotation.type = RubiksCube::RelativeRotation::Di;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+
+			relativeRotation.type = RubiksCube::RelativeRotation::L;
+			rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+			rotationSequence.push_back( rotation );
+			
+			yCoordWhenLanded = subCubeMatrixSize - 1 - edgeCubeCoords.x;
+		}
+		else
+		{
+			// Something is wrong with the cube.
+			return false;
+		}
+	}
+	else if( edgeCubeCoords.z == 0 && edgeCubeCoords.x == subCubeMatrixSize - 1 )
+	{
+		relativeRotation.type = RubiksCube::RelativeRotation::B;
+		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+		rotationSequence.push_back( rotation );
+		rotationSequence.push_back( rotation );
+
+		yCoordWhenLanded = subCubeMatrixSize - 1 - edgeCubeCoords.y;
+	}
+	else if( edgeCubeCoords.x == 0 && edgeCubeCoords.z == subCubeMatrixSize - 1 )
+	{
+		relativeRotation.type = RubiksCube::RelativeRotation::Li;
+		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+		rotationSequence.push_back( rotation );
+		rotationSequence.push_back( rotation );
+
+		yCoordWhenLanded = subCubeMatrixSize - 1 - edgeCubeCoords.y;
+	}
+
+	subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
+	if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
+		( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
+	{
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, subCubeMatrixSize - 1 - yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
+		if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
+			( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
+		{
+			// Something is wrong with the cube.
+			return false;
+		}
+
+		relativeRotation.type = RubiksCube::RelativeRotation::D;
+		relativeRotation.planeIndex = yCoordWhenLanded;
+		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+		rotationSequence.push_back( rotation );
+		rotationSequence.push_back( rotation );
+
+		RubiksCube::RelativeRotationSequence relativeRotationSequence;
+		rubiksCube->ParseRelativeRotationSequenceString( "Fi, R, Ui, F, Ri", relativeRotationSequence );
+		rubiksCube->TranslateRotationSequence( *bestPerspective, relativeRotationSequence, rotationSequence );
+
+		relativeRotation.type = RubiksCube::RelativeRotation::D;
+		relativeRotation.planeIndex = yCoordWhenLanded;
+		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+		rotationSequence.push_back( rotation );
+		rotationSequence.push_back( rotation );
+
+		return true;
+	}
+
+	subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, subCubeMatrixSize - 1 - yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
+	if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
+		( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
+	{
+		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
+		if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
+			( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
+		{
+			// Something is wrong with the cube.
+			return false;
+		}
+
+		relativeRotation.type = RubiksCube::RelativeRotation::B;
+		relativeRotation.planeIndex = 0;
+		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+		rotationSequence.push_back( rotation );
+		rotationSequence.push_back( rotation );
+
+		relativeRotation.type = RubiksCube::RelativeRotation::Di;
+		relativeRotation.planeIndex = subCubeMatrixSize - 1 - yCoordWhenLanded;
+		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+		rotationSequence.push_back( rotation );
+
+		RubiksCube::RelativeRotationSequence relativeRotationSequence;
+		rubiksCube->ParseRelativeRotationSequenceString( "Fi, R, Ui, F, Ri", relativeRotationSequence );
+		rubiksCube->TranslateRotationSequence( *bestPerspective, relativeRotationSequence, rotationSequence );
+
+		relativeRotation.type = RubiksCube::RelativeRotation::D;
+		relativeRotation.planeIndex = subCubeMatrixSize - 1 - yCoordWhenLanded;
+		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
+		rotationSequence.push_back( rotation );
+
+		return true;
+	}
+
+	return false;
+}
+
+//==================================================================================================
+/*virtual*/ bool SolverForCaseGreaterThan3::EdgeSolver::VerifyActuallySolved( const RubiksCube* rubiksCube )
+{
+	return true;
 }
 
 // SolverForCaseGreaterThan3.cpp

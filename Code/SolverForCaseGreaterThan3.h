@@ -78,7 +78,23 @@ private:
 		RubiksCube::Face face;
 	};
 
-	// EdgePairSolver : public StageSolver { ...
+	class EdgeSolver : public StageSolver
+	{
+	public:
+
+		EdgeSolver( RubiksCube::Color colorA, RubiksCube::Color colorB );
+		virtual ~EdgeSolver( void );
+
+		virtual bool SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
+		virtual bool VerifyActuallySolved( const RubiksCube* rubiksCube ) override;
+
+	private:
+
+		RubiksCube::Color colors[2];
+
+		typedef std::list< RubiksCube::Perspective > PerspectiveList;
+		PerspectiveList perspectiveList;
+	};
 
 	typedef std::list< StageSolver* > StageSolverList;
 	StageSolverList stageSolverList;
