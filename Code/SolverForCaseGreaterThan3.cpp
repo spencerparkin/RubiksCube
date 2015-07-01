@@ -695,6 +695,20 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 	{
 		const RubiksCube::Perspective& perspective = *iter;
 
+		rightFace = RubiksCube::TranslateNormal( perspective.rAxis );
+		forwardFace = RubiksCube::TranslateNormal( perspective.fAxis );
+
+		bool hasCenterEdgeCube = false;
+		if( subCubeMatrixSize % 2 == 1 )	// Cubes of even order have no center edge cubies.
+		{
+			subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, ( subCubeMatrixSize - 1 ) / 2, subCubeMatrixSize - 1 ), perspective );
+			if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
+				( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
+			{
+				hasCenterEdgeCube = true;
+			}
+		}
+
 		int edgeCount = 0;
 		for( int y = 1; y < subCubeMatrixSize - 1; y++ )
 		{
@@ -704,14 +718,14 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 			coords.z = subCubeMatrixSize - 1;
 
 			subCube = rubiksCube->Matrix( coords, perspective );
-			
-			rightFace = RubiksCube::TranslateNormal( perspective.rAxis );
-			forwardFace = RubiksCube::TranslateNormal( perspective.fAxis );
 
 			if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
 				( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
 			{
-				edgeCount++;
+				// This makes odd-order cubes slower to solve in a worst case, because we always choose the perspective with the center edge cube.
+				// For cubes of even-order, we can always start with the edge that is most solved.
+				if( subCubeMatrixSize % 2 == 0 || hasCenterEdgeCube )
+					edgeCount++;
 			}
 		}
 
@@ -727,6 +741,8 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 
 	if( biggestEdgeCount == subCubeMatrixSize - 2 )
 	{
+		// TODO: Solve edge parity here.  For cubes of odd order, we know the proper fix.  For even order, we won't know until we start solving as a 3x3x3.
+
 		SetState( STAGE_COMPLETE );
 		return false;
 	}
