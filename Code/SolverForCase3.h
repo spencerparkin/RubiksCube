@@ -6,22 +6,14 @@ class SolverForCase3 : public Solver
 {
 public:
 
-	//==================================================================================================
-	// If the solver is given an invalid 3x3x3, (a 3x3x3 cube that was assembled incorrectly),
-	// here we can call upon a resolver to fix the problem.  This can happen if the calling code
-	// is trying to solve a 4x4x4 as a 3x3x3 in the case that the 4x4x4 case does or almosts reduces
-	// to the case of the 3x3x3.  The caller into our code may be solving a 4x4x4 as we go along
-	// solving our 3x3x3, and so when we call the resolver, it can fix our 3x3x3, but then do sequences
-	// on the 4x4x4 that do the equivilant fix.  Such fixes that I know of, are highly surgical in that
-	// they fix only the parity problem while leaving everything else invariant.
-	class InvalidCubeResolver
+	enum ParityError
 	{
-	public:
-		virtual void SwapEdgeOrientation( RubiksCube* rubiksCube, const RubiksCube::SubCube* edgeSubCube ) = 0;
-		virtual void SwapEdges( RubiksCube* rubiksCube, const RubiksCube::SubCube* edgeSubCube0, const RubiksCube::SubCube* edgeSubCube1 ) = 0;
+		ERROR_NONE,
+		ERROR_PARITY_FIX_WITH_EDGE_SWAP,
+		ERROR_PARITY_FIX_WITH_EDGE_FLIP,
 	};
 
-	SolverForCase3( InvalidCubeResolver* invalidCubeResolver = 0 );
+	SolverForCase3( ParityError* parityError = 0 );
 	virtual ~SolverForCase3( void );
 
 	virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
@@ -60,7 +52,7 @@ private:
 
 	static void AppendZeroRotation( RubiksCube::RotationSequence& rotationSequence );
 
-	InvalidCubeResolver* invalidCubeResolver;
+	ParityError* parityError;
 };
 
 // SolverForCase3.h

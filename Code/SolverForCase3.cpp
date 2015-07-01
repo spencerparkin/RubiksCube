@@ -90,9 +90,9 @@ int SolverForCase3::orangeCornerTargetLocations[4][3] =
 };
 
 //==================================================================================================
-SolverForCase3::SolverForCase3( InvalidCubeResolver* invalidCubeResolver /*= 0*/ )
+SolverForCase3::SolverForCase3( ParityError* parityError /*= 0*/ )
 {
-	this->invalidCubeResolver = invalidCubeResolver;
+	this->parityError = parityError;
 
 	standardPerspectives[0].rAxis = xAxis;
 	standardPerspectives[0].uAxis = zAxis;
@@ -545,9 +545,6 @@ void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksC
 	int properOrientationCount = 0;
 	bool orientedProperly[4];
 
-	// TODO: If the cube is improperly built, we need to detect that here and
-	//       call the invalid cube handler to get it fixed.
-
 	int edge;
 	for( edge = 0; edge < 4; edge++ )
 	{
@@ -582,19 +579,11 @@ void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksC
 			perspective = standardPerspectivesNegated[0];	// Choose any of the 4 perspectives arbitrarily.
 			break;
 		}
-		case 1:		// Take us to case 2.
+		case 1:
 		{
-			sequence = SEQUENCE_NORMAL;
-			for( edge = 0; edge < 4; edge++ )
-			{
-				if( orientedProperly[ edge ] )
-				{
-					perspective = standardPerspectivesNegated[ edge ];
-					break;
-				}
-			}
-			wxASSERT( edge < 4 );
-			break;
+			if( parityError )
+				*parityError = ERROR_PARITY_FIX_WITH_EDGE_FLIP;
+			return;
 		}
 		case 2:		// Take us to case 4.
 		{
@@ -626,6 +615,7 @@ void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksC
 		}
 		case 3:		// Take us to case 1.
 		{
+			// Here we're doomed for parity error, but we can still solve things a bit more.
 			sequence = SEQUENCE_NORMAL;
 			for( edge = 0; edge < 4; edge++ )
 			{
@@ -748,21 +738,13 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 		bool found = TriCycleSolver::FindSmallestTriCycleSequenceThatOrdersQuadTheSame( cornerQuad, edgeQuad, triCycleSequence );
 
 		// If the 3x3x3 is built improperly, such as can be the case when solving the 4x4x4 as a 3x3x3,
-		// it is possible that we won't find a tri-cycle solution.  In that case, we simply call the
-		// resolver to perform a sequence of rotations that fixes the problem.
+		// it is possible that we won't find a tri-cycle solution.  In that case, our algorithm terminates
+		// with a partial solution.  This works out, because the caller can do the parity fix, then call
+		// into our algorithm again to complete their sequence, because this algorithm is re-entrant.
 		if( !found )
 		{
-			if( !invalidCubeResolver )
-				wxASSERT( false );
-			else
-			{
-				int* location = orangeEdgeTargetLocations[0];
-				const RubiksCube::SubCube* edgeSubCube0 = rubiksCube->Matrix( RubiksCube::Coordinates( location[0], location[1], 0 ) );
-				location = orangeEdgeTargetLocations[2];
-				const RubiksCube::SubCube* edgeSubCube1 = rubiksCube->Matrix( RubiksCube::Coordinates( location[0], location[1], 0 ) );
-				invalidCubeResolver->SwapEdges( const_cast< RubiksCube* >( rubiksCube ), edgeSubCube0, edgeSubCube1 );
-				AppendZeroRotation( rotationSequence );		// This will just get optimized out, but we need it to tell our caller to exit.
-			}
+			if( parityError )
+				*parityError = ERROR_PARITY_FIX_WITH_EDGE_SWAP;
 			return;
 		}
 
