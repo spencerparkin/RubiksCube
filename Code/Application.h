@@ -18,8 +18,6 @@ public:
 	bool RotationHistoryCanGoBackward( void );
 	void RotationHistoryClear( void );
 
-	enum { ROTATION_STACK_CAPACITY = 50 };
-
 	RubiksCube* rubiksCube;
 
 private:

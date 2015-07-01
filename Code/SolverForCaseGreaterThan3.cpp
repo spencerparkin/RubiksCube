@@ -25,22 +25,22 @@ void SolverForCaseGreaterThan3::CreateStageSolvers( void )
 	stageSolverList.push_back( new FaceSolver( RubiksCube::POS_Z ) );
 	stageSolverList.push_back( new FaceSolver( RubiksCube::NEG_X ) );
 	stageSolverList.push_back( new FaceSolver( RubiksCube::NEG_Y ) );
-	stageSolverList.push_back( new FaceSolver( RubiksCube::NEG_Z ) );
+	stageSolverList.push_back( new FaceSolver( RubiksCube::NEG_Z ) );		// This should be a no-op.
 
 	stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::BLUE ) );
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::RED ) );
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::GREEN ) );
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::ORANGE ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::RED ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::GREEN ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::YELLOW, RubiksCube::ORANGE ) );
 
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::BLUE ) );
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::RED ) );
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::GREEN ) );
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::ORANGE ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::BLUE ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::RED ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::GREEN ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::WHITE, RubiksCube::ORANGE ) );
 
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::BLUE, RubiksCube::ORANGE ) );
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::ORANGE, RubiksCube::GREEN ) );
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::GREEN, RubiksCube::RED ) );
-	//stageSolverList.push_back( new EdgeSolver( RubiksCube::RED, RubiksCube::BLUE ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::BLUE, RubiksCube::ORANGE ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::ORANGE, RubiksCube::GREEN ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::GREEN, RubiksCube::RED ) );
+	stageSolverList.push_back( new EdgeSolver( RubiksCube::RED, RubiksCube::BLUE ) );		// This should be a no-op.
 }
 
 //==================================================================================================
@@ -562,67 +562,67 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 	// Make a list of perspectives for each edge.
 
 	perspective.rAxis = xAxis;
-	perspective.rAxis = yAxis;
-	perspective.rAxis = zAxis;
+	perspective.uAxis = yAxis;
+	perspective.fAxis = zAxis;
 	perspectiveList.push_back( perspective );
 
 	perspective.rAxis = zAxis;
-	perspective.rAxis = yAxis;
-	perspective.rAxis = -xAxis;
+	perspective.uAxis = yAxis;
+	perspective.fAxis = -xAxis;
 	perspectiveList.push_back( perspective );
 
 	perspective.rAxis = -xAxis;
-	perspective.rAxis = yAxis;
-	perspective.rAxis = -zAxis;
+	perspective.uAxis = yAxis;
+	perspective.fAxis = -zAxis;
 	perspectiveList.push_back( perspective );
 
 	perspective.rAxis = -zAxis;
-	perspective.rAxis = yAxis;
-	perspective.rAxis = xAxis;
+	perspective.uAxis = yAxis;
+	perspective.fAxis = xAxis;
 	perspectiveList.push_back( perspective );
 
 	//---
 
 	perspective.rAxis = xAxis;
-	perspective.rAxis = -zAxis;
-	perspective.rAxis = yAxis;
+	perspective.uAxis = -zAxis;
+	perspective.fAxis = yAxis;
 	perspectiveList.push_back( perspective );
 
 	perspective.rAxis = yAxis;
-	perspective.rAxis = -zAxis;
-	perspective.rAxis = -xAxis;
+	perspective.uAxis = -zAxis;
+	perspective.fAxis = -xAxis;
 	perspectiveList.push_back( perspective );
 
 	perspective.rAxis = zAxis;
-	perspective.rAxis = xAxis;
-	perspective.rAxis = yAxis;
+	perspective.uAxis = xAxis;
+	perspective.fAxis = yAxis;
 	perspectiveList.push_back( perspective );
 
 	perspective.rAxis = yAxis;
-	perspective.rAxis = xAxis;
-	perspective.rAxis = -zAxis;
+	perspective.uAxis = xAxis;
+	perspective.fAxis = -zAxis;
 	perspectiveList.push_back( perspective );
 
 	//---
 
 	perspective.rAxis = zAxis;
-	perspective.rAxis = -xAxis;
-	perspective.rAxis = -yAxis;
+	perspective.uAxis = -xAxis;
+	perspective.fAxis = -yAxis;
 	perspectiveList.push_back( perspective );
 
 	perspective.rAxis = -yAxis;
-	perspective.rAxis = -xAxis;
-	perspective.rAxis = -zAxis;
+	perspective.uAxis = -xAxis;
+	perspective.fAxis = -zAxis;
 	perspectiveList.push_back( perspective );
 
 	perspective.rAxis = xAxis;
-	perspective.rAxis = zAxis;
-	perspective.rAxis = -yAxis;
+	perspective.uAxis = zAxis;
+	perspective.fAxis = -yAxis;
 	perspectiveList.push_back( perspective );
 
 	perspective.rAxis = -yAxis;
-	perspective.rAxis = zAxis;
-	perspective.rAxis = -xAxis;
+	perspective.uAxis = zAxis;
+	perspective.fAxis = -xAxis;
 	perspectiveList.push_back( perspective );
 }
 
@@ -697,8 +697,8 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 	for( i = 0; i < ( int )edgeCubies.size(); i++ )
 	{
 		edgeCube = edgeCubies[i];
-		rubiksCube->RelativeFromActual( subCube->coords, edgeCubeCoords, *bestPerspective );
-		if( edgeCubeCoords.x != subCubeMatrixSize - 1 && edgeCubeCoords.z != subCubeMatrixSize - 1 )
+		rubiksCube->RelativeFromActual( edgeCube->coords, edgeCubeCoords, *bestPerspective );
+		if( edgeCubeCoords.x != subCubeMatrixSize - 1 || edgeCubeCoords.z != subCubeMatrixSize - 1 )
 			break;
 	}
 	if( i == edgeCubies.size() )
@@ -825,24 +825,17 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 		yCoordWhenLanded = subCubeMatrixSize - 1 - edgeCubeCoords.y;
 	}
 
-	subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
-	if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
-		( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
+	subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, subCubeMatrixSize - 1 - yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
+	if( ( subCube->faceData[ rightFace ].color != colors[0] || subCube->faceData[ forwardFace ].color != colors[1] ) &&
+		( subCube->faceData[ rightFace ].color != colors[1] || subCube->faceData[ forwardFace ].color != colors[0] ) )
 	{
-		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, subCubeMatrixSize - 1 - yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
-		if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
-			( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
-		{
-			// Something is wrong with the cube.
-			return false;
-		}
-
 		relativeRotation.type = RubiksCube::RelativeRotation::D;
 		relativeRotation.planeIndex = yCoordWhenLanded;
 		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
 		rotationSequence.push_back( rotation );
 		rotationSequence.push_back( rotation );
 
+		// Flip the edge up-side down.
 		RubiksCube::RelativeRotationSequence relativeRotationSequence;
 		rubiksCube->ParseRelativeRotationSequenceString( "Fi, R, Ui, F, Ri", relativeRotationSequence );
 		rubiksCube->TranslateRotationSequence( *bestPerspective, relativeRotationSequence, rotationSequence );
@@ -856,24 +849,17 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 		return true;
 	}
 
-	subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, subCubeMatrixSize - 1 - yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
-	if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
-		( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
+	subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
+	if( ( subCube->faceData[ rightFace ].color != colors[0] || subCube->faceData[ forwardFace ].color != colors[1] ) &&
+		( subCube->faceData[ rightFace ].color != colors[1] || subCube->faceData[ forwardFace ].color != colors[0] ) )
 	{
-		subCube = rubiksCube->Matrix( RubiksCube::Coordinates( subCubeMatrixSize - 1, yCoordWhenLanded, subCubeMatrixSize - 1 ), *bestPerspective );
-		if( ( subCube->faceData[ rightFace ].color == colors[0] && subCube->faceData[ forwardFace ].color == colors[1] ) ||
-			( subCube->faceData[ rightFace ].color == colors[1] && subCube->faceData[ forwardFace ].color == colors[0] ) )
-		{
-			// Something is wrong with the cube.
-			return false;
-		}
-
 		relativeRotation.type = RubiksCube::RelativeRotation::B;
 		relativeRotation.planeIndex = 0;
 		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
 		rotationSequence.push_back( rotation );
 		rotationSequence.push_back( rotation );
 
+		//Flip the edge up-side down.
 		relativeRotation.type = RubiksCube::RelativeRotation::Di;
 		relativeRotation.planeIndex = subCubeMatrixSize - 1 - yCoordWhenLanded;
 		rubiksCube->TranslateRotation( *bestPerspective, relativeRotation, rotation );
@@ -891,6 +877,7 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 		return true;
 	}
 
+	// There is something wrong with the cube.
 	return false;
 }
 

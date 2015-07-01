@@ -1258,6 +1258,7 @@ int RubiksCube::PostCoordinateTransform( int coordinate ) const
 	// Map the index in the other direction.
 	if( coordinate < 0 )
 		coordinate = subCubeMatrixSize - 1 - ( -coordinate ) % subCubeMatrixSize;
+	coordinate %= subCubeMatrixSize;
 	return coordinate;
 }
 
