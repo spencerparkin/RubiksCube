@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;../../wxWidgets-3.0.2/include&quot;;&quot;../../wxWidgets-3.0.2/include/msvc&quot;;../../boost_1_58_0;../../freeglut/include"
+				AdditionalIncludeDirectories="&quot;../../wxWidgets-3.0.2/include&quot;;&quot;../../wxWidgets-3.0.2/include/msvc&quot;;../../boost_1_58_0;../../freeglut/include;../../boost_1_50"
 				PreprocessorDefinitions="__WXMSW__;_UNICODE_;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;NDEBUG;SOLVER_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxmsw30ud_core.lib wxbase30ud.lib wxmsw30ud_gl.lib comctl32.lib rpcrt4.lib advapi32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib freeglut.lib"
+				AdditionalDependencies="wxmsw30ud_core.lib wxbase30ud.lib wxmsw30ud_gl.lib comctl32.lib rpcrt4.lib advapi32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib glut32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;../../wxWidgets-3.0.2/lib/vc_lib&quot;;../../freeglut/lib"
 				GenerateDebugInformation="true"
