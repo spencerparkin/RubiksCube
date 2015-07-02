@@ -1141,16 +1141,25 @@ SolverForCaseGreaterThan3::As3x3x3Solver::As3x3x3Solver( void )
 		}
 	}
 
+	if( parityError != SolverForCase3::ERROR_NONE && subCubeMatrixSize % 2 == 1 )
+	{
+		// Something went wrong.
+		return false;
+	}
+
 	if( parityError == SolverForCase3::ERROR_PARITY_FIX_WITH_EDGE_FLIP )
 	{
 		// TODO: Find the edge that needs to be flipped and flip it.
+		return true;
 	}
 	else if( parityError == SolverForCase3::ERROR_PARITY_FIX_WITH_EDGE_SWAP )
 	{
 		// TODO: Swap any two opposite edges in the -z face.
+		return true;
 	}
-
-	return true;
+	
+	SetState( STAGE_COMPLETE );
+	return false;
 }
 
 // SolverForCaseGreaterThan3.cpp
