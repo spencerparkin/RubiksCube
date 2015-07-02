@@ -1141,33 +1141,107 @@ SolverForCaseGreaterThan3::As3x3x3Solver::As3x3x3Solver( void )
 		}
 	}
 
-	if( parityErrorList.size() > 0 && subCubeMatrixSize % 2 == 1 )
+	if( parityErrorList.size() > 0 )
 	{
-		// Something went wrong.  We should never run into parity errors solving cubes of odd order as 3x3x3s.
-		return false;
-	}
+		if( subCubeMatrixSize % 2 == 1 )
+		{
+			// Something went wrong.  We should never run into parity errors solving cubes of odd order as 3x3x3s.
+			return false;
+		}
 
-	for( SolverForCase3::ParityErrorList::iterator iter = parityErrorList.begin(); iter != parityErrorList.end(); iter++ )
-	{
+		c3ga::vectorE3GA xAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
+		c3ga::vectorE3GA yAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
+		c3ga::vectorE3GA zAxis( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
+
+		// Fix just the first error on the list.  Adding a set of moves that fixes one error prevents us from analyzing how to fix another.
+		SolverForCase3::ParityErrorList::iterator iter = parityErrorList.begin();
 		SolverForCase3::ParityError parityError = *iter;
 
 		switch( parityError )
 		{
+			// It really doesn't matter which edge we flip here, but we can speed things along by flipping the one edge that's not oriented properly.
 			case SolverForCase3::ERROR_PARITY_FIX_WITH_EDGE_FLIP:
 			{
-				// TODO: Find the edge that needs to be flipped and flip it.
+				RubiksCube::Perspective perspective;
+				if( reducedRubiksCube->Matrix( RubiksCube::Coordinates( 0, 1, 0 ) )->faceData[ RubiksCube::NEG_Z ].color != RubiksCube::ORANGE )
+				{
+					perspective.rAxis = -xAxis;
+					perspective.uAxis = yAxis;
+					perspective.fAxis = -zAxis;
+				}
+				else if( reducedRubiksCube->Matrix( RubiksCube::Coordinates( 2, 1, 0 ) )->faceData[ RubiksCube::NEG_Z ].color != RubiksCube::ORANGE )
+				{
+					perspective.rAxis = xAxis;
+					perspective.uAxis = -yAxis;
+					perspective.fAxis = -zAxis;
+				}
+				else if( reducedRubiksCube->Matrix( RubiksCube::Coordinates( 1, 0, 0 ) )->faceData[ RubiksCube::NEG_Z ].color != RubiksCube::ORANGE )
+				{
+					perspective.rAxis = -yAxis;
+					perspective.uAxis = -xAxis;
+					perspective.fAxis = -zAxis;
+				}
+				else if( reducedRubiksCube->Matrix( RubiksCube::Coordinates( 1, 2, 0 ) )->faceData[ RubiksCube::NEG_Z ].color != RubiksCube::ORANGE )
+				{
+					perspective.rAxis = yAxis;
+					perspective.uAxis = xAxis;
+					perspective.fAxis = -zAxis;
+				}
+
+				std::vector< int > planeIndexVector;
+				for( int i = 1; i < subCubeMatrixSize / 2; i++ )
+					planeIndexVector.push_back( i );
+
+				GenerateEdgeParityFixSequence( rubiksCube, perspective, planeIndexVector, rotationSequence );
 				break;
 			}
 			case SolverForCase3::ERROR_PARITY_FIX_WITH_EDGE_SWAP:
 			{
-				// TODO: Swap any two opposite edges in the -z face.
+				std::vector< int > planeIndexVector;
+				for( int i = 1; i < subCubeMatrixSize / 2; i++ )
+					planeIndexVector.push_back( i );
+
+				RubiksCube::Perspective perspective;
+				perspective.rAxis = -xAxis;
+				perspective.uAxis = -zAxis;
+				perspective.fAxis = -yAxis;
+
+				RubiksCube::RelativeRotation relativeRotation;
+				RubiksCube::Rotation rotation;
+
+				BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::R, 2, rotationSequence );
+
+				relativeRotation.planeIndex = 0;
+				relativeRotation.type = RubiksCube::RelativeRotation::U;
+				rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+				rotationSequence.push_back( rotation );
+				rotationSequence.push_back( rotation );
+
+				BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::R, 2, rotationSequence );
+
+				BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::U, 2, rotationSequence );
+
+				relativeRotation.planeIndex = 0;
+				relativeRotation.type = RubiksCube::RelativeRotation::U;
+				rubiksCube->TranslateRotation( perspective, relativeRotation, rotation );
+				rotationSequence.push_back( rotation );
+				rotationSequence.push_back( rotation );
+
+				BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::R, 2, rotationSequence );
+
+				BatchRotate( rubiksCube, perspective, planeIndexVector, RubiksCube::RelativeRotation::U, 2, rotationSequence );
+
 				break;
 			}
+			default:
+			{
+				wxASSERT( false );
+				return false;
+			}
 		}
-	}
 
-	if( parityErrorList.size() > 0 )
 		return true;
+	}
 	
 	SetState( STAGE_COMPLETE );
 	return false;

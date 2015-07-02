@@ -297,41 +297,50 @@ void Frame::OnTimer( wxTimerEvent& event )
 {
 	if( !canvas->IsAnimating( animationTolerance ) )
 	{
+		wxStatusBar* statusBar = GetStatusBar();
+
 		if( executionSequence.size() > 0 )
 		{
 			RubiksCube::RotationSequence::iterator iter = executionSequence.begin();
 			RubiksCube::Rotation rotation = *iter;
 			executionSequence.erase( iter );
 			canvas->ApplyRotation( rotation );
+
+			statusBar->SetStatusText( wxString::Format( "%d animation moves remaining.", executionSequence.size() ) );
 		}
-		else if( debugMode != DEBUG_MODE_NONE && wxGetApp().rubiksCube )
+		else
 		{
-			RubiksCube* rubiksCube = wxGetApp().rubiksCube;
-			switch( debugMode )
+			statusBar->SetStatusText( "" );
+
+			if( debugMode != DEBUG_MODE_NONE && wxGetApp().rubiksCube )
 			{
-				case DEBUG_MODE_SCRAMBLE:
+				RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+				switch( debugMode )
 				{
-					// This assert doesn't mean anything if we entered debug mode with an unsolved cube.
-					//wxASSERT( rubiksCube->IsInSolvedState() );
-					rubiksCube->Scramble( time(0), 100, &executionSequence, false );
-					debugMode = DEBUG_MODE_SOLVE;
-					animationTolerance = 2.0;
-					break;
-				}
-				case DEBUG_MODE_SOLVE:
-				{
-					Solver* solver = rubiksCube->MakeSolver();
-					if( solver )
+					case DEBUG_MODE_SCRAMBLE:
 					{
-						bool success = rubiksCube->SaveToFile( "debugCube.xml" );
-						wxASSERT( success );
-						success = solver->MakeEntireSolutionSequence( wxGetApp().rubiksCube, executionSequence );
-						wxASSERT( success );
-						debugMode = DEBUG_MODE_SCRAMBLE;
-						animationTolerance = 0.1;
-						delete solver;
+						// This assert doesn't mean anything if we entered debug mode with an unsolved cube.
+						wxASSERT( rubiksCube->IsInSolvedState() );
+						rubiksCube->Scramble( time(0), 100, &executionSequence, false );
+						debugMode = DEBUG_MODE_SOLVE;
+						animationTolerance = 2.0;
+						break;
 					}
-					break;
+					case DEBUG_MODE_SOLVE:
+					{
+						Solver* solver = rubiksCube->MakeSolver();
+						if( solver )
+						{
+							bool success = rubiksCube->SaveToFile( "debugCube.xml" );
+							wxASSERT( success );
+							success = solver->MakeEntireSolutionSequence( wxGetApp().rubiksCube, executionSequence );
+							wxASSERT( success );
+							debugMode = DEBUG_MODE_SCRAMBLE;
+							animationTolerance = 2.0;
+							delete solver;
+						}
+						break;
+					}
 				}
 			}
 		}
