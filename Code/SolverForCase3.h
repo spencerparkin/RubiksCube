@@ -8,12 +8,13 @@ public:
 
 	enum ParityError
 	{
-		ERROR_NONE,
 		ERROR_PARITY_FIX_WITH_EDGE_SWAP,
 		ERROR_PARITY_FIX_WITH_EDGE_FLIP,
 	};
 
-	SolverForCase3( ParityError* parityError = 0 );
+	typedef std::list< ParityError > ParityErrorList;
+
+	SolverForCase3( ParityErrorList* parityErrorList = 0 );
 	virtual ~SolverForCase3( void );
 
 	virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
@@ -52,7 +53,7 @@ private:
 
 	static void AppendZeroRotation( RubiksCube::RotationSequence& rotationSequence );
 
-	ParityError* parityError;
+	ParityErrorList* parityErrorList;
 };
 
 // SolverForCase3.h

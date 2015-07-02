@@ -90,11 +90,11 @@ int SolverForCase3::orangeCornerTargetLocations[4][3] =
 };
 
 //==================================================================================================
-SolverForCase3::SolverForCase3( ParityError* parityError /*= 0*/ )
+SolverForCase3::SolverForCase3( ParityErrorList* parityErrorList /*= 0*/ )
 {
-	this->parityError = parityError;
-	if( parityError )
-		*parityError = ERROR_NONE;
+	this->parityErrorList = parityErrorList;
+	if( parityErrorList )
+		parityErrorList->clear();
 
 	standardPerspectives[0].rAxis = xAxis;
 	standardPerspectives[0].uAxis = zAxis;
@@ -581,11 +581,20 @@ void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksC
 			perspective = standardPerspectivesNegated[0];	// Choose any of the 4 perspectives arbitrarily.
 			break;
 		}
-		case 1:
+		case 1:		// Take us to case 3.
 		{
-			if( parityError )
-				*parityError = ERROR_PARITY_FIX_WITH_EDGE_FLIP;
-			return;
+			// Here we're doomed for parity error, but we can still solve things a bit more.
+			sequence = SEQUENCE_NORMAL;
+			for( edge = 0; edge < 4; edge++ )
+			{
+				if( orientedProperly[ edge ] )
+				{
+					perspective = standardPerspectivesNegated[ ( edge + 2 ) % 4 ];
+					break;
+				}
+			}
+			wxASSERT( edge < 4 );
+			break;
 		}
 		case 2:		// Take us to case 4.
 		{
@@ -615,19 +624,12 @@ void SolverForCase3::PerformOrangeCrossOrientingStage( const RubiksCube* rubiksC
 
 			break;
 		}
-		case 3:		// Take us to case 1.
+		case 3:
 		{
-			// Here we're doomed for parity error, but we can still solve things a bit more.
-			sequence = SEQUENCE_NORMAL;
-			for( edge = 0; edge < 4; edge++ )
-			{
-				if( !orientedProperly[ edge ] && orientedProperly[ ( edge + 1 ) % 4 ] )
-				{
-					perspective = standardPerspectivesNegated[ ( edge + 2 ) % 4 ];
-					break;
-				}
-			}
-			wxASSERT( edge < 4 );
+			if( parityErrorList )
+				parityErrorList->push_back( ERROR_PARITY_FIX_WITH_EDGE_FLIP );
+
+			sequence = NO_SEQUENCE;
 			break;
 		}
 		case 4:		// In this case, our work is done!
@@ -745,8 +747,8 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 		// into our algorithm again to complete their sequence, because this algorithm is re-entrant.
 		if( !found )
 		{
-			if( parityError )
-				*parityError = ERROR_PARITY_FIX_WITH_EDGE_SWAP;
+			if( parityErrorList )
+				parityErrorList->push_back( ERROR_PARITY_FIX_WITH_EDGE_SWAP );
 			return;
 		}
 
