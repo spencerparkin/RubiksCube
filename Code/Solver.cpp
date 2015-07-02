@@ -37,7 +37,7 @@ bool Solver::MakeEntireSolutionSequence( const RubiksCube* rubiksCube, RubiksCub
 			break;
 		else
 		{
-			//RubiksCube::CompressRotationSequence( subRotationSequence );
+			RubiksCube::CompressRotationSequence( subRotationSequence );
 			rubiksCubeCopy->ApplySequence( subRotationSequence );
 			rotationSequence.insert( rotationSequence.end(), subRotationSequence.begin(), subRotationSequence.end() );
 		}
@@ -50,7 +50,7 @@ bool Solver::MakeEntireSolutionSequence( const RubiksCube* rubiksCube, RubiksCub
 	}
 
 	// Now compress across the entire solution sequence.
-	//RubiksCube::CompressRotationSequence( rotationSequence );
+	RubiksCube::CompressRotationSequence( rotationSequence );
 
 	bool solved = rubiksCubeCopy->IsInSolvedState();
 	//wxASSERT( solved );

@@ -41,6 +41,8 @@ void SolverForCaseGreaterThan3::CreateStageSolvers( void )
 	stageSolverList.push_back( new EdgeSolver( RubiksCube::ORANGE, RubiksCube::GREEN ) );
 	stageSolverList.push_back( new EdgeSolver( RubiksCube::GREEN, RubiksCube::RED ) );
 	stageSolverList.push_back( new EdgeSolver( RubiksCube::RED, RubiksCube::BLUE ) );		// This should be a no-op.
+
+	stageSolverList.push_back( new As3x3x3Solver() );
 }
 
 //==================================================================================================
@@ -102,44 +104,6 @@ void SolverForCaseGreaterThan3::DestroyStageSolvers( void )
 	}
 
 	return true;
-}
-
-//==================================================================================================
-void SolverForCaseGreaterThan3::TranslateRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::RotationSequence& reducedRotationSequence, RubiksCube::RotationSequence& rotationSequence )
-{
-	for( RubiksCube::RotationSequence::const_iterator iter = reducedRotationSequence.begin(); iter != reducedRotationSequence.end(); iter++ )
-	{
-		RubiksCube::Rotation reducedRotation = *iter;
-		
-		switch( reducedRotation.plane.index )
-		{
-			case 0:
-			{
-				rotationSequence.push_back( reducedRotation );
-				break;
-			}
-			case 1:
-			{
-				// The 3x3x3 solver doesn't ever have to make moves like this, because
-				// it needs only rotate the outer planes to solve the puzzle.
-				for( int index = 1; index < rubiksCube->SubCubeMatrixSize() - 1; index++ )
-				{
-					RubiksCube::Rotation rotation = reducedRotation;
-					rotation.plane.index = index;
-					rotationSequence.push_back( rotation );
-				}
-
-				break;
-			}
-			case 2:
-			{
-				RubiksCube::Rotation rotation = reducedRotation;
-				rotation.plane.index = rubiksCube->SubCubeMatrixSize() - 1;
-				rotationSequence.push_back( rotation );
-				break;
-			}
-		}
-	}
 }
 
 //==================================================================================================
@@ -1090,6 +1054,102 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 //==================================================================================================
 /*virtual*/ bool SolverForCaseGreaterThan3::EdgeSolver::VerifyActuallySolved( const RubiksCube* rubiksCube )
 {
+	return true;
+}
+
+//==================================================================================================
+SolverForCaseGreaterThan3::As3x3x3Solver::As3x3x3Solver( void )
+{
+}
+
+//==================================================================================================
+/*virtual*/ SolverForCaseGreaterThan3::As3x3x3Solver::~As3x3x3Solver( void )
+{
+}
+
+//==================================================================================================
+/*virtual*/ bool SolverForCaseGreaterThan3::As3x3x3Solver::SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence )
+{
+	int subCubeMatrixSize = rubiksCube->SubCubeMatrixSize();
+	if( subCubeMatrixSize <= 3 )
+		return false;
+
+	RubiksCube* reducedRubiksCube = new RubiksCube( 3, false );
+
+	for( int x = 0; x < 3; x++ )
+	{
+		for( int y = 0; y < 3; y++ )
+		{
+			for( int z = 0; z < 3; z++ )
+			{
+				RubiksCube::Coordinates coords( x, y, z );
+				RubiksCube::SubCube* targetSubCube = reducedRubiksCube->Matrix( coords );
+				
+				if( x == 2 )
+					coords.x = subCubeMatrixSize - 1;
+				if( y == 2 )
+					coords.y = subCubeMatrixSize - 1;
+				if( z == 2 )
+					coords.z = subCubeMatrixSize - 1;
+
+				const RubiksCube::SubCube* subCube = rubiksCube->Matrix( coords );
+				
+				for( int i = 0; i < RubiksCube::CUBE_FACE_COUNT; i++ )
+					targetSubCube->faceData[i].color = subCube->faceData[i].color;
+			}
+		}
+	}
+
+	SolverForCase3::ParityError parityError;
+	SolverForCase3 solverForCase3( &parityError );
+	RubiksCube::RotationSequence reducedRotationSequence;
+	solverForCase3.MakeEntireSolutionSequence( reducedRubiksCube, reducedRotationSequence );
+	delete reducedRubiksCube;
+
+	for( RubiksCube::RotationSequence::const_iterator iter = reducedRotationSequence.begin(); iter != reducedRotationSequence.end(); iter++ )
+	{
+		RubiksCube::Rotation reducedRotation = *iter;
+		
+		switch( reducedRotation.plane.index )
+		{
+			case 0:
+			{
+				rotationSequence.push_back( reducedRotation );
+				break;
+			}
+			case 1:
+			{
+				// The 3x3x3 solver doesn't ever have to make moves like this, because
+				// it needs only rotate the outer planes to solve the puzzle, but account
+				// for this anyway.
+				for( int index = 1; index < subCubeMatrixSize - 1; index++ )
+				{
+					RubiksCube::Rotation rotation = reducedRotation;
+					rotation.plane.index = index;
+					rotationSequence.push_back( rotation );
+				}
+
+				break;
+			}
+			case 2:
+			{
+				RubiksCube::Rotation rotation = reducedRotation;
+				rotation.plane.index = subCubeMatrixSize - 1;
+				rotationSequence.push_back( rotation );
+				break;
+			}
+		}
+	}
+
+	if( parityError == SolverForCase3::ERROR_PARITY_FIX_WITH_EDGE_FLIP )
+	{
+		// TODO: Find the edge that needs to be flipped and flip it.
+	}
+	else if( parityError == SolverForCase3::ERROR_PARITY_FIX_WITH_EDGE_SWAP )
+	{
+		// TODO: Swap any two opposite edges in the -z face.
+	}
+
 	return true;
 }
 

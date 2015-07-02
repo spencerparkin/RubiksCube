@@ -93,6 +93,8 @@ int SolverForCase3::orangeCornerTargetLocations[4][3] =
 SolverForCase3::SolverForCase3( ParityError* parityError /*= 0*/ )
 {
 	this->parityError = parityError;
+	if( parityError )
+		*parityError = ERROR_NONE;
 
 	standardPerspectives[0].rAxis = xAxis;
 	standardPerspectives[0].uAxis = zAxis;

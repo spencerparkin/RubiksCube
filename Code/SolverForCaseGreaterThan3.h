@@ -15,16 +15,12 @@ public:
 	virtual ~SolverForCaseGreaterThan3( void );
 
 	virtual bool GetReady( void ) override;
-
 	virtual bool MakeRotationSequence( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
 
 	static bool GenerateEdgeParityFixSequence( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, const std::vector< int >& planeIndexVector, RubiksCube::RotationSequence& rotationSequence );
-
 	static void BatchRotate( const RubiksCube* rubiksCube, const RubiksCube::Perspective& perspective, const std::vector< int >& planeIndexVector, RubiksCube::RelativeRotation::Type type, int rotationCount, RubiksCube::RotationSequence& rotationSequence );
 
 private:
-
-	void TranslateRotationSequence( const RubiksCube* rubiksCube, const RubiksCube::RotationSequence& reducedRotationSequence, RubiksCube::RotationSequence& rotationSequence );
 
 	class StageSolver
 	{
@@ -98,6 +94,16 @@ private:
 
 		typedef std::list< RubiksCube::Perspective > PerspectiveList;
 		PerspectiveList perspectiveList;
+	};
+
+	class As3x3x3Solver : public StageSolver
+	{
+	public:
+
+		As3x3x3Solver( void );
+		virtual ~As3x3x3Solver( void );
+
+		virtual bool SolveStage( const RubiksCube* rubiksCube, RubiksCube::RotationSequence& rotationSequence ) override;
 	};
 
 	typedef std::list< StageSolver* > StageSolverList;

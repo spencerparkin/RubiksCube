@@ -141,6 +141,7 @@ public:
 	bool Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc );
 	static void CopyMap( Coordinates& coords );
 
+	SubCube* Matrix( const Coordinates& actualCoords );
 	const SubCube* Matrix( const Coordinates& actualCoords ) const;
 	const SubCube* Matrix( const Coordinates& relativeCoords, const Perspective& perspective ) const;
 	bool ValidMatrixCoordinates( const Coordinates& actualCoords ) const;
@@ -207,8 +208,6 @@ public:
 	static int PlaneContainingSubCube( Axis axis, const SubCube* subCube );
 
 private:
-
-	SubCube* Matrix( const Coordinates& actualCoords );
 
 	bool SaveToXml( wxXmlNode* xmlNode ) const;
 	bool LoadFromXml( const wxXmlNode* xmlNode );
