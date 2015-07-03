@@ -218,6 +218,11 @@ private:
 	void RotatePlane( Plane plane, RotationDirection rotationDirection, int rotationCount );
 	void RotatePlaneCCW( Plane plane );
 
+	void RenderSubCube( GLenum mode, int x, int y, int z,
+								const Rotation& rotation, const Size& size,
+								int* selectedFaceId,
+								const RubiksCube* comparativeRubiksCube,
+								bool highlightInvariants ) const;
 	void RenderSubCube( GLenum mode, const SubCube* subCube,
 								const c3ga::evenVersor& vertexVersor,
 								const c3ga::evenVersor& normalVersor,

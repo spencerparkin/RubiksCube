@@ -319,8 +319,10 @@ void Frame::OnTimer( wxTimerEvent& event )
 				{
 					case DEBUG_MODE_SCRAMBLE:
 					{
-						// This assert doesn't mean anything if we entered debug mode with an unsolved cube.
-						wxASSERT( rubiksCube->IsInSolvedState() );
+						// This message doesn't mean anything if we entered debug mode with an unsolved cube.
+						bool solved = rubiksCube->IsInSolvedState();
+						if( !solved )
+							wxMessageBox( "Failed to solve cube!", "Error", wxCENTRE | wxICON_ERROR );
 						rubiksCube->Scramble( time(0), 100, &executionSequence, false );
 						debugMode = DEBUG_MODE_SOLVE;
 						animationTolerance = 2.0;
@@ -356,7 +358,7 @@ void Frame::OnCreateCube( wxCommandEvent& event )
 	if( wxGetApp().rubiksCube )
 		return;
 	
-	int subCubeMatrixSize = ( int )wxGetNumberFromUser( "Enter what will be the width, height and depth of the cube.", "Size (2-6):", "Rubik's Cube Size", 3, 2, 6 );
+	int subCubeMatrixSize = ( int )wxGetNumberFromUser( "Enter what will be the width, height and depth of the cube.", "Size (2-12):", "Rubik's Cube Size", 3, 2, 12 );
 	if( subCubeMatrixSize < 0 )
 		return;
 

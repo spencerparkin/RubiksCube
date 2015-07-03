@@ -247,80 +247,116 @@ int RubiksCube::SubCubeMatrixSize( void ) const
 }
 
 //==================================================================================================
+void RubiksCube::RenderSubCube( GLenum mode, int x, int y, int z,
+										const Rotation& rotation, const Size& size,
+										int* selectedFaceId,
+										const RubiksCube* comparativeRubiksCube,
+										bool highlightInvariants ) const
+{
+	double t;
+	c3ga::vectorE3GA subCubeCenter;
+
+	t = double( x ) / double( subCubeMatrixSize - 1 );
+	subCubeCenter.set_e1( size.cubeWidthHeightAndDepth * ( t - 0.5 ) );
+
+	t = double( y ) / double( subCubeMatrixSize - 1 );
+	subCubeCenter.set_e2( size.cubeWidthHeightAndDepth * ( t - 0.5 ) );
+
+	t = double( z ) / double( subCubeMatrixSize - 1 );
+	subCubeCenter.set_e3( size.cubeWidthHeightAndDepth * ( t - 0.5 ) );
+
+	if( mode == GL_SELECT )
+	{
+		glPushName( x );
+		glPushName( y );
+		glPushName( z );
+	}
+
+	c3ga::rotorE3GA rotor( c3ga::rotorE3GA::coord_scalar_e1e2_e2e3_e3e1, 1.0, 0.0, 0.0, 0.0 );
+
+	if( ( rotation.plane.axis == X_AXIS && x == rotation.plane.index ) ||
+		( rotation.plane.axis == Y_AXIS && y == rotation.plane.index ) ||
+		( rotation.plane.axis == Z_AXIS && z == rotation.plane.index ) )
+	{
+		c3ga::vectorE3GA rotationAxis = TranslateAxis( rotation.plane.axis );
+		double rotationAngle = rotation.angle;
+		c3ga::bivectorE3GA rotationBlade;
+		rotationBlade.set( c3ga::lc( rotationAxis, c3ga::trivectorE3GA( c3ga::trivectorE3GA::coord_e1e2e3, 1.0 ) ) );
+		rotor = c3ga::exp( rotationBlade * -0.5 * rotationAngle );
+	}
+
+	c3ga::mv motor = 1.0 - 0.5 * subCubeCenter * c3ga::ni;
+
+	double scale = double( size.subCubeWidthHeightAndDepth ) * 0.5;
+	c3ga::mv dilator = ( c3ga::no - 0.5 * scale * c3ga::ni ) * ( c3ga::no - 0.5 * c3ga::ni );
+
+	// Notice that the rotor is applied last, because we want the sub-cube
+	// to rotate about an axis that goes through the center of the entire cube.
+	c3ga::evenVersor vertexVersor;
+	vertexVersor.set( rotor * motor * dilator );
+	c3ga::evenVersor normalVersor;
+	normalVersor.set( rotor );
+
+	SubCube* subCube = &subCubeMatrix[x][y][z];
+	const SubCube* comparativeSubCube = 0;
+	if( mode == GL_RENDER && comparativeRubiksCube && comparativeRubiksCube->ValidMatrixCoordinates( subCube->coords ) )
+		comparativeSubCube = comparativeRubiksCube->Matrix( subCube->coords );
+	RenderSubCube( mode, subCube, vertexVersor, normalVersor, selectedFaceId, comparativeSubCube, highlightInvariants );
+
+	if( mode == GL_SELECT )
+	{
+		glPopName();
+		glPopName();
+		glPopName();
+	}
+}
+
+//==================================================================================================
 void RubiksCube::Render( GLenum mode, const Rotation& rotation, const Size& size,
 										int* selectedFaceId /*= 0*/,
 										const RubiksCube* comparativeRubiksCube /*= 0*/,
 										bool highlightInvariants /*= false*/ ) const
 {
-	double t;
-	c3ga::vectorE3GA subCubeCenter;
-
-	for( int x = 0; x < subCubeMatrixSize; x++ )
+	for( int i = 1; i < subCubeMatrixSize - 1; i++ )
 	{
-		t = double( x ) / double( subCubeMatrixSize - 1 );
-		subCubeCenter.set_e1( size.cubeWidthHeightAndDepth * ( t - 0.5 ) );
-
-		if( mode == GL_SELECT )
-			glPushName( x );
-
-		for( int y = 0; y < subCubeMatrixSize; y++ )
+		for( int j = 1; j < subCubeMatrixSize - 1; j++ )
 		{
-			t = double( y ) / double( subCubeMatrixSize - 1 );
-			subCubeCenter.set_e2( size.cubeWidthHeightAndDepth * ( t - 0.5 ) );
+			RenderSubCube( mode, i, j, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, 0, i, j, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, j, 0, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
 
-			if( mode == GL_SELECT )
-				glPushName( y );
-
-			for( int z = 0; z < subCubeMatrixSize; z++ )
-			{
-				t = double( z ) / double( subCubeMatrixSize - 1 );
-				subCubeCenter.set_e3( size.cubeWidthHeightAndDepth * ( t - 0.5 ) );
-
-				if( mode == GL_SELECT )
-					glPushName( z );
-
-				c3ga::rotorE3GA rotor( c3ga::rotorE3GA::coord_scalar_e1e2_e2e3_e3e1, 1.0, 0.0, 0.0, 0.0 );
-
-				if( ( rotation.plane.axis == X_AXIS && x == rotation.plane.index ) ||
-					( rotation.plane.axis == Y_AXIS && y == rotation.plane.index ) ||
-					( rotation.plane.axis == Z_AXIS && z == rotation.plane.index ) )
-				{
-					c3ga::vectorE3GA rotationAxis = TranslateAxis( rotation.plane.axis );
-					double rotationAngle = rotation.angle;
-					c3ga::bivectorE3GA rotationBlade;
-					rotationBlade.set( c3ga::lc( rotationAxis, c3ga::trivectorE3GA( c3ga::trivectorE3GA::coord_e1e2e3, 1.0 ) ) );
-					rotor = c3ga::exp( rotationBlade * -0.5 * rotationAngle );
-				}
-
-				c3ga::mv motor = 1.0 - 0.5 * subCubeCenter * c3ga::ni;
-
-				double scale = double( size.subCubeWidthHeightAndDepth ) * 0.5;
-				c3ga::mv dilator = ( c3ga::no - 0.5 * scale * c3ga::ni ) * ( c3ga::no - 0.5 * c3ga::ni );
-
-				// Notice that the rotor is applied last, because we want the sub-cube
-				// to rotate about an axis that goes through the center of the entire cube.
-				c3ga::evenVersor vertexVersor;
-				vertexVersor.set( rotor * motor * dilator );
-				c3ga::evenVersor normalVersor;
-				normalVersor.set( rotor );
-
-				SubCube* subCube = &subCubeMatrix[x][y][z];
-				const SubCube* comparativeSubCube = 0;
-				if( mode == GL_RENDER && comparativeRubiksCube && comparativeRubiksCube->ValidMatrixCoordinates( subCube->coords ) )
-					comparativeSubCube = comparativeRubiksCube->Matrix( subCube->coords );
-				RenderSubCube( mode, subCube, vertexVersor, normalVersor, selectedFaceId, comparativeSubCube, highlightInvariants );
-
-				if( mode == GL_SELECT )
-					glPopName();
-			}
-
-			if( mode == GL_SELECT )
-				glPopName();
+			RenderSubCube( mode, i, j, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, subCubeMatrixSize - 1, i, j, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, j, subCubeMatrixSize - 1, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
 		}
-
-		if( mode == GL_SELECT )
-			glPopName();
 	}
+
+	for( int i = 1; i < subCubeMatrixSize - 1; i++ )
+	{
+		RenderSubCube( mode, i, 0, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, i, subCubeMatrixSize - 1, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, i, 0, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, i, subCubeMatrixSize - 1, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+
+		RenderSubCube( mode, 0, i, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, subCubeMatrixSize - 1, i, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, 0, i, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, subCubeMatrixSize - 1, i, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+
+		RenderSubCube( mode, 0, 0, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, subCubeMatrixSize - 1, 0, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, 0, subCubeMatrixSize - 1, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, subCubeMatrixSize - 1, subCubeMatrixSize - 1, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	}
+
+	RenderSubCube( mode, 0, 0, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, subCubeMatrixSize - 1, 0, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, 0, subCubeMatrixSize - 1, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, subCubeMatrixSize - 1, subCubeMatrixSize - 1, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, 0, 0, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, subCubeMatrixSize - 1, 0, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, 0, subCubeMatrixSize - 1, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, subCubeMatrixSize - 1, subCubeMatrixSize - 1, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
 }
 
 //==================================================================================================
