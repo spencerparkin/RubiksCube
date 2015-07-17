@@ -838,6 +838,11 @@ SolverForCaseGreaterThan3::EdgeSolver::EdgeSolver( RubiksCube::Color colorA, Rub
 				planeIndexVector.push_back( y );
 		}
 
+		// NOTE: I've come to learn that all edges can be constructed by putting edge cubies in both the right position and orientation.
+		//       Our algorithm here puts edges together by getting all edge cubies into the right position, but not necessarily the right orientation.
+		//       Consequently, we need this edge parity fix sequence, but if the edge is contructed right, there's really no need for it.
+		//       I'm not going to bother rewriting the edge solver, but I wanted to make a note here that this parity fix really isn't needed if
+		//       the edge is constructed correctly to begin with.
 		if( planeIndexVector.size() > 0 )
 			return GenerateEdgeParityFixSequence( rubiksCube, *bestPerspective, planeIndexVector, rotationSequence );
 
