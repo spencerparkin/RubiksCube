@@ -3,6 +3,8 @@
 *.suo
 *.user
 *.tss
+*.sdf
+*.htm
 
 # Ignore built files and intermmediates
 Build/
