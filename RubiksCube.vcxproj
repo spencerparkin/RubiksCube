@@ -53,7 +53,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../wxWidgets-3.0.2/include;../../wxWidgets-3.0.2/include/msvc;../../boost_1_58_0;../../freeglut/include;../../boost_1_50;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../wxWidgets-3.0.2/include;../../wxWidgets-3.0.2/include/msvc;../boost_1_59_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__WXMSW__;_UNICODE_;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;NDEBUG;SOLVER_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -64,7 +64,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>wxmsw30ud_core.lib;wxbase30ud.lib;wxmsw30ud_gl.lib;comctl32.lib;rpcrt4.lib;advapi32.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../wxWidgets-3.0.2/lib/vc_lib;../../freeglut/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../wxWidgets-3.0.2/lib/vc_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
@@ -74,7 +74,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>../../wxWidgets-3.0.2/include;../../wxWidgets-3.0.2/include/msvc;../../freeglut/include;../../boost_1_58_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../wxWidgets-3.0.2/include;../../wxWidgets-3.0.2/include/msvc;../boost_1_59_0</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__WXMSW__;_UNICODE_;_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -84,7 +84,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>wxmsw30u_core.lib;wxbase30u.lib;wxmsw30u_gl.lib;comctl32.lib;rpcrt4.lib;advapi32.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../wxWidgets-3.0.2/lib/vc_lib;../../freeglut/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../wxWidgets-3.0.2/lib/vc_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
