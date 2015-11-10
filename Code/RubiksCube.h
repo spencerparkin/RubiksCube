@@ -189,6 +189,11 @@ public:
 	bool TranslateRelativeRotation( const std::string& relativeRotationString, RelativeRotation& relativeRotation ) const;
 	bool ParseRelativeRotationSequenceString( const std::string& relativeRotationSequenceString, RelativeRotationSequence& relativeRotationSequence ) const;
 	static void CompressRotationSequence( RotationSequence& rotationSequence );
+	static void InvertRelativeRotation( RelativeRotation& relativeRotation );
+	static void InvertRelativeRotationSequence( RelativeRotationSequence& relativeRotationSequence );
+	static void InvertRotation( Rotation& rotation );
+	static void InvertRotationSequence( RotationSequence& rotationSequence );
+	static void ConcatinateRotationSequence( RotationSequence& rotationSequence, const RotationSequence& otherRotationSequence );
 
 	bool SaveToFile( const wxString& file ) const;
 	

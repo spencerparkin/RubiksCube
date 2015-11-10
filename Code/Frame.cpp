@@ -14,6 +14,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxMenuItem* destroyCubeMenuItem = new wxMenuItem( programMenu, ID_DestroyCube, "Destroy Cube\tF6", "Destroy the Rubik's Cube." );
 	wxMenuItem* scrambleCubeMenuItem = new wxMenuItem( programMenu, ID_ScrambleCube, "Scramble Cube", "Randomize the Rubik's Cube." );
 	wxMenuItem* solveCubeMenuItem = new wxMenuItem( programMenu, ID_SolveCube, "Solve Cube", "Solve the Rubik's Cube." );
+	wxMenuItem* cubeInACubeMenuItem = new wxMenuItem( programMenu, ID_CubeInACube, "Cube In A Cube", "Solve for the cube-in-a-cube configuration of the Rubik's Cube." );
 	wxMenuItem* saveCubeMenuItem = new wxMenuItem( programMenu, ID_SaveCube, "Save Cube", "Save the Rubik's Cube to file." );
 	wxMenuItem* loadCubeMenuItem = new wxMenuItem( programMenu, ID_LoadCube, "Load Cube", "Load a Rubik's Cube from file." );
 	wxMenuItem* exitMenuItem = new wxMenuItem( programMenu, ID_Exit, "Exit", "Exit this program." );
@@ -25,6 +26,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	programMenu->AppendSeparator();
 	programMenu->Append( scrambleCubeMenuItem );
 	programMenu->Append( solveCubeMenuItem );
+	programMenu->Append( cubeInACubeMenuItem );
 	programMenu->AppendSeparator();
 	programMenu->Append( exitMenuItem );
 
@@ -93,6 +95,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnDestroyCube, this, ID_DestroyCube );
 	Bind( wxEVT_MENU, &Frame::OnScrambleCube, this, ID_ScrambleCube );
 	Bind( wxEVT_MENU, &Frame::OnSolveCube, this, ID_SolveCube );
+	Bind( wxEVT_MENU, &Frame::OnCubeInACube, this, ID_CubeInACube );
 	Bind( wxEVT_MENU, &Frame::OnSaveCube, this, ID_SaveCube );
 	Bind( wxEVT_MENU, &Frame::OnLoadCube, this, ID_LoadCube );
 	Bind( wxEVT_MENU, &Frame::OnShowPerspectiveLabels, this, ID_ShowPerspectiveLabels );
@@ -111,6 +114,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DestroyCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ScrambleCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SolveCube );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_CubeInACube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SaveCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_LoadCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowPerspectiveLabels );
@@ -419,6 +423,24 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 }
 
 //==================================================================================================
+void Frame::OnCubeInACube( wxCommandEvent& event )
+{
+	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	if( !rubiksCube )
+		return;
+
+	CubeInACube cubeInACube;
+
+	if( !cubeInACube.MakeEntireSolutionSequence( rubiksCube, executionSequence ) )
+	{
+		executionSequence.clear();
+		wxMessageBox( "An error occurred while attempting to solve for cube-in-a-cube.", "Error" );
+	}
+
+	animationTolerance = 1.0;
+}
+
+//==================================================================================================
 void Frame::OnRotationHistoryClear( wxCommandEvent& event )
 {
 	wxGetApp().RotationHistoryClear();
@@ -478,6 +500,11 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		case ID_SilentDebugMode:
 		{
 			event.Enable( wxGetApp().rubiksCube != 0 ? true : false );
+			break;
+		}
+		case ID_CubeInACube:
+		{
+			event.Enable( wxGetApp().rubiksCube != 0 ? wxGetApp().rubiksCube->IsInSolvedState() : false );
 			break;
 		}
 		case ID_SolveCube:

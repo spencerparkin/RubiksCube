@@ -36,6 +36,7 @@ class SolverForCase2;
 class SolverForCase3;
 class SolverForCaseGreaterThan3;
 class TriCycleSolver;
+class CubeInACube;
 
 #include "RubiksCube.h"
 #include "Application.h"
@@ -46,5 +47,6 @@ class TriCycleSolver;
 #include "SolverForCase3.h"
 #include "SolverForCaseGreaterThan3.h"
 #include "TriCycleSolver.h"
+#include "CubeInACube.h"
 
 // Header.h

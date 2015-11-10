@@ -1027,6 +1027,79 @@ bool RubiksCube::IsInSolvedState( void ) const
 }
 
 //==================================================================================================
+/*static*/ void RubiksCube::InvertRelativeRotation( RelativeRotation& relativeRotation )
+{
+	switch( relativeRotation.type )
+	{
+		case RelativeRotation::L:	relativeRotation.type = RelativeRotation::Li;	return;
+		case RelativeRotation::R:	relativeRotation.type = RelativeRotation::Ri;	return;
+		case RelativeRotation::D:	relativeRotation.type = RelativeRotation::Di;	return;
+		case RelativeRotation::U:	relativeRotation.type = RelativeRotation::Ui;	return;
+		case RelativeRotation::B:	relativeRotation.type = RelativeRotation::Bi;	return;
+		case RelativeRotation::F:	relativeRotation.type = RelativeRotation::Fi;	return;
+		case RelativeRotation::Li:	relativeRotation.type = RelativeRotation::L;	return;
+		case RelativeRotation::Ri:	relativeRotation.type = RelativeRotation::R;	return;
+		case RelativeRotation::Di:	relativeRotation.type = RelativeRotation::D;	return;
+		case RelativeRotation::Ui:	relativeRotation.type = RelativeRotation::U;	return;
+		case RelativeRotation::Bi:	relativeRotation.type = RelativeRotation::B;	return;
+		case RelativeRotation::Fi:	relativeRotation.type = RelativeRotation::F;	return;
+	}
+
+	wxASSERT( false );
+}
+
+//==================================================================================================
+/*static*/ void RubiksCube::InvertRelativeRotationSequence( RelativeRotationSequence& relativeRotationSequence )
+{
+	if( relativeRotationSequence.size() <= 0 )
+		return;
+
+	RelativeRotationSequence::iterator iter = relativeRotationSequence.begin();
+	RelativeRotation relativeRotation = *iter;
+
+	relativeRotationSequence.erase( iter );
+	InvertRelativeRotationSequence( relativeRotationSequence );
+
+	InvertRelativeRotation( relativeRotation );
+
+	relativeRotationSequence.push_back( relativeRotation );
+}
+
+//==================================================================================================
+/*static*/ void RubiksCube::InvertRotation( Rotation& rotation )
+{
+	rotation.angle = -rotation.angle;
+}
+
+//==================================================================================================
+/*static*/ void RubiksCube::InvertRotationSequence( RotationSequence& rotationSequence )
+{
+	if( rotationSequence.size() <= 0 )
+		return;
+
+	RotationSequence::iterator iter = rotationSequence.begin();
+	Rotation rotation = *iter;
+
+	rotationSequence.erase( iter );
+	InvertRotationSequence( rotationSequence );
+
+	InvertRotation( rotation );
+
+	rotationSequence.push_back( rotation );
+}
+
+//==================================================================================================
+/*static*/ void RubiksCube::ConcatinateRotationSequence( RotationSequence& rotationSequence, const RotationSequence& otherRotationSequence )
+{
+	RotationSequence::const_iterator iter = otherRotationSequence.begin();
+	while( iter != otherRotationSequence.end() )
+	{
+		rotationSequence.push_back( *iter );
+		iter++;
+	}
+}
+
+//==================================================================================================
 // Notice here that we do not clear the given list before appending to it.
 bool RubiksCube::TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const
 {
