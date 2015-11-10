@@ -954,10 +954,11 @@ bool RubiksCube::IsInSolvedState( void ) const
 	{
 		optimizationFound = false;
 
-		for( RotationSequence::iterator iter0 = rotationSequence.begin(); iter0 != rotationSequence.end(); iter0++ )
+		RotationSequence::iterator iter0 = rotationSequence.begin();
+		while( iter0 != rotationSequence.end() )
 		{
 			Rotation rotation0 = *iter0;
-			if( rotation0.angle == 0.0 )
+			if( fabs( rotation0.angle ) < epsilon )
 			{
 				rotationSequence.erase( iter0 );
 				optimizationFound = true;
@@ -987,29 +988,39 @@ bool RubiksCube::IsInSolvedState( void ) const
 			RotationSequence::iterator iter1 = iter0;
 			iter1++;
 
-			if( iter1 != rotationSequence.end() )
+			while( iter1 != rotationSequence.end() )
 			{
 				Rotation rotation1 = *iter1;
 
-				if( rotation0.plane.axis == rotation1.plane.axis && rotation0.plane.index == rotation1.plane.index )
+				if( rotation0.plane.axis != rotation1.plane.axis )
+					break;
+				else
 				{
-					// Adjacent rotations of opposite angles cancel one another out.
-					if( fabs( rotation0.angle + rotation1.angle ) < epsilon )
+					if( rotation0.plane.index == rotation1.plane.index )
 					{
-						rotationSequence.erase( iter0 );
+						if( fabs( rotation0.angle + rotation1.angle ) < epsilon )
+						{
+							rotationSequence.erase( iter0 );
+							rotationSequence.erase( iter1 );
+							optimizationFound = true;
+							break;
+						}
+
+						rotation0.angle += rotation1.angle;
 						rotationSequence.erase( iter1 );
+						*iter0 = rotation0;
 						optimizationFound = true;
 						break;
 					}
-
-					// This isn't quite an optimization, but it does compress the sequence a bit.
-					rotation0.angle += rotation1.angle;
-					rotationSequence.erase( iter1 );
-					*iter0 = rotation0;
-					optimizationFound = true;
-					break;
+				
+					iter1++;
 				}
 			}
+
+			if( !optimizationFound )
+				iter0++;
+			else
+				break;
 		}
 	}
 	while( optimizationFound );
