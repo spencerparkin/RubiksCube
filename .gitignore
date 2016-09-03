@@ -8,3 +8,4 @@
 
 # Ignore built files and intermmediates
 Build/
+*.o

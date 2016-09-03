@@ -2,7 +2,8 @@
 
 #include "Header.h"
 
-int Canvas::attributeList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, 0 };
+// Note that on Linux, if the depth buffer size is not given, we don't get a depth buffer at all!
+int Canvas::attributeList[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, 0 };
 
 //==================================================================================================
 Canvas::Canvas( wxWindow* parent ) : wxGLCanvas( parent, wxID_ANY, attributeList )
@@ -407,11 +408,14 @@ void Canvas::RenderAxisLabel( const c3ga::vectorE3GA& axis, int label )
 //==================================================================================================
 void Canvas::OnSize( wxSizeEvent& event )
 {
-	BindContext();
-	wxSize size = event.GetSize();
-	glViewport( 0, 0, size.GetWidth(), size.GetHeight() );
+	if( IsShown() )
+	{
+		//BindContext();
+		wxSize size = event.GetSize();
+		glViewport( 0, 0, size.GetWidth(), size.GetHeight() );
 
-	Refresh();
+		Refresh();
+	}
 }
 
 //==================================================================================================
