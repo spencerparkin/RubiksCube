@@ -19,6 +19,7 @@ public:
 	void RotationHistoryClear( void );
 
 	RubiksCube* rubiksCube;
+	bool makeInitialCube;
 
 private:
 

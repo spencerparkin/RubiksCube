@@ -14,7 +14,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxMenuItem* destroyCubeMenuItem = new wxMenuItem( programMenu, ID_DestroyCube, "Destroy Cube", "Destroy the Rubik's Cube." );
 	wxMenuItem* scrambleCubeMenuItem = new wxMenuItem( programMenu, ID_ScrambleCube, "Scramble Cube", "Randomize the Rubik's Cube." );
 	wxMenuItem* solveCubeMenuItem = new wxMenuItem( programMenu, ID_SolveCube, "Solve Cube", "Solve the Rubik's Cube." );
-	wxMenuItem* cubeInACubeMenuItem = new wxMenuItem( programMenu, ID_CubeInACube, "Cube In A Cube", "Solve for the cube-in-a-cube configuration of the Rubik's Cube." );
+//	wxMenuItem* cubeInACubeMenuItem = new wxMenuItem( programMenu, ID_CubeInACube, "Cube In A Cube", "Solve for the cube-in-a-cube configuration of the Rubik's Cube." );
 	wxMenuItem* saveCubeMenuItem = new wxMenuItem( programMenu, ID_SaveCube, "Save Cube", "Save the Rubik's Cube to file." );
 	wxMenuItem* loadCubeMenuItem = new wxMenuItem( programMenu, ID_LoadCube, "Load Cube", "Load a Rubik's Cube from file." );
 	wxMenuItem* exitMenuItem = new wxMenuItem( programMenu, ID_Exit, "Exit", "Exit this program." );
@@ -26,7 +26,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	programMenu->AppendSeparator();
 	programMenu->Append( scrambleCubeMenuItem );
 	programMenu->Append( solveCubeMenuItem );
-	programMenu->Append( cubeInACubeMenuItem );
+//	programMenu->Append( cubeInACubeMenuItem );
 	programMenu->AppendSeparator();
 	programMenu->Append( exitMenuItem );
 
@@ -54,11 +54,16 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	viewMenu->Append( renderWithOrthographicProjectionMenuItem );
 
 	wxMenu* helpMenu = new wxMenu();
+#ifdef _DEBUG
 	wxMenuItem* debugModeMenuItem = new wxMenuItem( helpMenu, ID_DebugMode, "Debug Mode", "Continually scramble and solve the Rubik's Cube.", wxITEM_CHECK );
 	wxMenuItem* silentDebugModeMenuItem = new wxMenuItem( helpMenu, ID_SilentDebugMode, "Silent Debug Mode", "Scramble and solve many Rubik's Cubes internally." );
-	wxMenuItem* aboutMenuItem = new wxMenuItem( helpMenu, ID_About, "About\tF1", "Show the about-box." );
 	helpMenu->Append( debugModeMenuItem );
 	helpMenu->Append( silentDebugModeMenuItem );
+	helpMenu->AppendSeparator();
+#endif
+	wxMenuItem* helpMenuItem = new wxMenuItem( helpMenu, ID_Help, "Help\tF1", "Go to the help page in your browser." );
+	wxMenuItem* aboutMenuItem = new wxMenuItem( helpMenu, ID_About, "About", "Show the about-box." );
+	helpMenu->Append( helpMenuItem );
 	helpMenu->AppendSeparator();
 	helpMenu->Append( aboutMenuItem );
 
@@ -84,7 +89,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxAcceleratorEntry acceleratorEntries[3];
 	acceleratorEntries[0].Set( wxACCEL_NORMAL, WXK_F5, ID_RotationHistoryGoBackward );
 	acceleratorEntries[1].Set( wxACCEL_NORMAL, WXK_F6, ID_RotationHistoryGoForward );
-	acceleratorEntries[2].Set( wxACCEL_NORMAL, WXK_F1, ID_About, aboutMenuItem );
+	acceleratorEntries[2].Set( wxACCEL_NORMAL, WXK_F1, ID_Help );
 
 	wxAcceleratorTable acceleratorTable( sizeof( acceleratorEntries ) / sizeof( wxAcceleratorEntry ), acceleratorEntries );
 	SetAcceleratorTable( acceleratorTable );
@@ -107,6 +112,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnExit, this, ID_Exit );
 	Bind( wxEVT_MENU, &Frame::OnDebugMode, this, ID_DebugMode );
 	Bind( wxEVT_MENU, &Frame::OnSilentDebugMode, this, ID_SilentDebugMode );
+	Bind( wxEVT_MENU, &Frame::OnHelp, this, ID_Help );
 	Bind( wxEVT_MENU, &Frame::OnAbout, this, ID_About );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_CreateCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DestroyCube );
@@ -297,6 +303,14 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnTimer( wxTimerEvent& event )
 {
+	if( wxGetApp().makeInitialCube )
+	{
+		wxGetApp().rubiksCube = new RubiksCube();
+		canvas->AdjustSizeFor( wxGetApp().rubiksCube );
+		canvas->Refresh();
+		wxGetApp().makeInitialCube = false;
+	}
+
 	if( !canvas->IsAnimating( animationTolerance ) )
 	{
 		wxStatusBar* statusBar = GetStatusBar();
@@ -469,6 +483,13 @@ void Frame::OnExit( wxCommandEvent& event )
 }
 
 //==================================================================================================
+void Frame::OnHelp( wxCommandEvent& event )
+{
+	wxString url = "http://spencerparkin.github.io/RubiksCube/";
+	wxLaunchDefaultBrowser( url );
+}
+
+//==================================================================================================
 void Frame::OnAbout( wxCommandEvent& event )
 {
 	wxAboutDialogInfo aboutDialogInfo;
@@ -476,7 +497,7 @@ void Frame::OnAbout( wxCommandEvent& event )
     aboutDialogInfo.SetName( "Rubik's Cube" );
     aboutDialogInfo.SetVersion( "1.0" );
     aboutDialogInfo.SetDescription( "This program is free software and distributed under the MIT license." );
-    aboutDialogInfo.SetCopyright( "Copyright (C) 2013, 2015 -- Spencer T. Parkin <SpencerTParkin@gmail.com>" );
+    aboutDialogInfo.SetCopyright( "Copyright (C) 2013, 2015, 2016 -- Spencer T. Parkin <SpencerTParkin@gmail.com>" );
 
     wxAboutBox( aboutDialogInfo );
 }

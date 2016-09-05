@@ -5,6 +5,7 @@
 *.tss
 *.sdf
 *.htm
+*.opensdf
 
 # Ignore built files and intermmediates
 Build/

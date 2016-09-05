@@ -85,7 +85,7 @@ void RubiksCube::LoadTextures( void )
 			continue;
 
 		wxImage image;
-		wxString path = wxString( "/home/spencer/dev/RubiksCube/Textures/" ) + textureFiles[ color ];		// TODO: Get rid of full-path.
+		wxString path = wxString( "Textures/" ) + textureFiles[ color ];
 		if( !image.LoadFile( path ) )
 			continue;
 
@@ -426,7 +426,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 		else
 		{	
 			glNormal3f( faceNormal.get_e1(), faceNormal.get_e2(), faceNormal.get_e3() );
-			GLfloat ambientDiffuse[] = { faceColor.get_e1(), faceColor.get_e2(), faceColor.get_e3(), 1.f };
+			GLfloat ambientDiffuse[] = { ( GLfloat )faceColor.get_e1(), ( GLfloat )faceColor.get_e2(), ( GLfloat )faceColor.get_e3(), 1.f };
 			glMaterialfv( GL_FRONT, GL_AMBIENT_AND_DIFFUSE, ambientDiffuse );
 		}
 

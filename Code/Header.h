@@ -1,5 +1,10 @@
 // Header.h
 
+// Note that this program was written a long time ago, and at that time,
+// I thought that creating a master header like this was a good idea.
+// I know now, however, that it is a very bad idea, and makes compilation
+// very, very slow.
+
 #include <wx/setup.h>
 #include <wx/app.h>
 #include <wx/frame.h>
@@ -15,12 +20,13 @@
 #include <wx/xml/xml.h>
 #include <wx/scopedptr.h>
 #include <wx/image.h>
+#include <wx/utils.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <GL/glut.h>
 
 #include <list>
+#include <map>
 
 #include "c3ga/c3ga.h"
 

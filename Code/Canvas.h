@@ -78,6 +78,21 @@ private:
 	bool showInvariantFaces;
 	int selectedFaceId;
 	RubiksCube* comparativeRubiksCube;
+	
+	class RGBA_Buffer
+	{
+	public:
+		RGBA_Buffer( const wxImage& image );
+		~RGBA_Buffer( void );
+
+		GLubyte* pixelData;
+		GLsizei width, height;
+	};
+
+	typedef std::map< int, RGBA_Buffer* > PerspectiveLabelMap;
+	PerspectiveLabelMap perspectiveLabelMap;
+
+	void DeletePerspectiveLabelMap( void );
 };
 
 // Canvas.h

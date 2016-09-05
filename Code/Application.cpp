@@ -10,6 +10,7 @@ Application::Application( void )
 {
 	rubiksCube = 0;
 	rotationHistoryIndex = -1;
+	makeInitialCube = true;
 }
 
 //==================================================================================================

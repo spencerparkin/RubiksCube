@@ -8,6 +8,8 @@ public:
 	Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size );
 	virtual ~Frame( void );
 
+	Canvas* GetCanvas( void ) { return canvas; }
+
 private:
 
 	enum
@@ -30,6 +32,7 @@ private:
 		ID_Exit,
 		ID_DebugMode,
 		ID_SilentDebugMode,
+		ID_Help,
 		ID_About,
 		ID_Timer,
 	};
@@ -52,6 +55,7 @@ private:
 	void OnExit( wxCommandEvent& event );
 	void OnDebugMode( wxCommandEvent& event );
 	void OnSilentDebugMode( wxCommandEvent& event );
+	void OnHelp( wxCommandEvent& event );
 	void OnAbout( wxCommandEvent& event );
 	void OnUpdateMenuItemUI( wxUpdateUIEvent& event );
 	void OnTimer( wxTimerEvent& event );

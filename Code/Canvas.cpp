@@ -21,8 +21,8 @@ Canvas::Canvas( wxWindow* parent ) : wxGLCanvas( parent, wxID_ANY, attributeList
 	hitBuffer = 0;
 	hitBufferSize = 0;
 
-	camera.eye.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 12.0 );
-	camera.xAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 0.0, 0.0 );
+	camera.eye.set( c3ga::vectorE3GA::coord_e1_e2_e3, 10.0, 0.0, 10.0 );
+	camera.xAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, sqrt( 2.0 ) / 2.0, 0.0, -sqrt( 2.0 ) / 2.0 );
 	camera.yAxis.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
 
 	mousePos.x = 0;
@@ -53,6 +53,7 @@ Canvas::Canvas( wxWindow* parent ) : wxGLCanvas( parent, wxID_ANY, attributeList
 {
 	delete context;
 	delete comparativeRubiksCube;
+	DeletePerspectiveLabelMap();
 }
 
 //==================================================================================================
@@ -192,7 +193,7 @@ void Canvas::PreRender( GLenum mode )
 		glLightModelf( GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE );
 		glLightModelf( GL_LIGHT_MODEL_LOCAL_VIEWER, GL_FALSE );
 
-		GLfloat lightPos[] = { camera.eye.get_e1(), camera.eye.get_e2(), camera.eye.get_e3(), 0.f };
+		GLfloat lightPos[] = { ( GLfloat )camera.eye.get_e1(), ( GLfloat )camera.eye.get_e2(), ( GLfloat )camera.eye.get_e3(), 0.f };
 		GLfloat lightColor[] = { 1.f, 1.f, 1.f, 1.f };
 		glLightfv( GL_LIGHT0, GL_POSITION, lightPos );
 		glLightfv( GL_LIGHT0, GL_AMBIENT, lightColor );
@@ -307,6 +308,8 @@ void Canvas::RenderPerspectiveLabels( void )
 	double length = 0.7 * ( size.cubeWidthHeightAndDepth + size.subCubeWidthHeightAndDepth );
 
 	glDisable( GL_DEPTH_TEST );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 	glColor3f( 0.5f, 0.5f, 0.5f );
 //	RenderAxes( length, 1.f, 0.f );
@@ -324,6 +327,7 @@ void Canvas::RenderPerspectiveLabels( void )
 	RenderAxisLabel( -zAxis * length, AxisLabel( -zAxis, perspective ) );
 
 	glEnable( GL_DEPTH_TEST );
+	glDisable( GL_BLEND );
 
 	if( lighting )
 		glEnable( GL_LIGHTING );
@@ -402,7 +406,40 @@ void Canvas::RenderAxisLabel( const c3ga::vectorE3GA& axis, int label )
 {
 	float delta = 0.0f;		// I'm not sure how to calculate this.
 	glRasterPos3f( axis.get_e1() - delta, axis.get_e2() - delta, axis.get_e3() - delta );
-	glutBitmapCharacter( GLUT_BITMAP_TIMES_ROMAN_24, label );
+
+	PerspectiveLabelMap::iterator iter = perspectiveLabelMap.find( label );
+	if( iter == perspectiveLabelMap.end() )
+	{
+		wxString perspectiveLabelFile = wxString::Format( "Textures/label_%c.png", ( char )label );
+
+		wxImage* image = new wxImage();
+		if( !image->LoadFile( perspectiveLabelFile, wxBITMAP_TYPE_PNG ) )
+			delete image;
+		else
+		{
+			RGBA_Buffer* buffer = new RGBA_Buffer( *image );
+			perspectiveLabelMap[ label ] = buffer;
+			iter = perspectiveLabelMap.find( label );
+		}
+	}
+
+	if( iter == perspectiveLabelMap.end() )
+		return;
+
+	RGBA_Buffer* buffer = iter->second;
+	glDrawPixels( buffer->width, buffer->height, GL_RGBA, GL_UNSIGNED_BYTE, buffer->pixelData );
+}
+
+//==================================================================================================
+void Canvas::DeletePerspectiveLabelMap( void )
+{
+	while( perspectiveLabelMap.size() > 0 )
+	{
+		PerspectiveLabelMap::iterator iter = perspectiveLabelMap.begin();
+		RGBA_Buffer* buffer = iter->second;
+		delete buffer;
+		perspectiveLabelMap.erase( iter );
+	}
 }
 
 //==================================================================================================
@@ -653,6 +690,35 @@ void Canvas::DeterminePerspective( RubiksCube::Perspective& perspective ) const
 				neitherAxisList->push_back( axis );
 		}
 	}
+}
+
+//==================================================================================================
+Canvas::RGBA_Buffer::RGBA_Buffer( const wxImage& image )
+{
+	wxASSERT( image.HasAlpha() );
+
+	width = image.GetWidth();
+	height = image.GetHeight();
+
+	pixelData = new GLubyte[ width * height * 4 ];
+
+	for( int i = 0; i < height; i++ )
+	{
+		for( int j = 0; j < width; j++ )
+		{
+			GLubyte* pixel = &pixelData[ ( ( height - 1 - i ) * width + j ) * 4 ];
+			const GLubyte* imageData = image.GetData();
+			pixel[0] = imageData[ ( i * width + j ) * 3 + 0 ];
+			pixel[1] = imageData[ ( i * width + j ) * 3 + 1 ];
+			pixel[2] = imageData[ ( i * width + j ) * 3 + 2 ];
+			pixel[3] = image.GetAlpha()[ i * width + j ];
+		}
+	}
+}
+
+Canvas::RGBA_Buffer::~RGBA_Buffer( void )
+{
+	delete[] pixelData;
 }
 
 // Canvas.cpp
