@@ -10,8 +10,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	animationTolerance = 0.01;
 
 	wxMenu* programMenu = new wxMenu();
-	wxMenuItem* createCubeMenuItem = new wxMenuItem( programMenu, ID_CreateCube, "Create Cube\tF5", "Create a new Rubik's Cube." );
-	wxMenuItem* destroyCubeMenuItem = new wxMenuItem( programMenu, ID_DestroyCube, "Destroy Cube\tF6", "Destroy the Rubik's Cube." );
+	wxMenuItem* createCubeMenuItem = new wxMenuItem( programMenu, ID_CreateCube, "Create Cube", "Create a new Rubik's Cube." );
+	wxMenuItem* destroyCubeMenuItem = new wxMenuItem( programMenu, ID_DestroyCube, "Destroy Cube", "Destroy the Rubik's Cube." );
 	wxMenuItem* scrambleCubeMenuItem = new wxMenuItem( programMenu, ID_ScrambleCube, "Scramble Cube", "Randomize the Rubik's Cube." );
 	wxMenuItem* solveCubeMenuItem = new wxMenuItem( programMenu, ID_SolveCube, "Solve Cube", "Solve the Rubik's Cube." );
 	wxMenuItem* cubeInACubeMenuItem = new wxMenuItem( programMenu, ID_CubeInACube, "Cube In A Cube", "Solve for the cube-in-a-cube configuration of the Rubik's Cube." );
@@ -32,8 +32,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 
 	wxMenu* rotationHistoryMenu = new wxMenu();
 	wxMenuItem* rotationHistoryClearMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryClear, "Clear History", "Delete all rotation history." );
-	wxMenuItem* rotationHistoryGoForwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoForward, "Go Forward\tF9", "Apply the rotation that takes us forward in the rotation history." );
-	wxMenuItem* rotationHisotryGoBackwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoBackward, "Go Backward\tF10", "Apply the rotation that takes us backward in the rotation history." );
+	wxMenuItem* rotationHistoryGoForwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoForward, "Go Forward\tF5", "Apply the rotation that takes us forward in the rotation history." );
+	wxMenuItem* rotationHisotryGoBackwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoBackward, "Go Backward\tF6", "Apply the rotation that takes us backward in the rotation history." );
 	rotationHistoryMenu->Append( rotationHistoryGoForwardMenuItem );
 	rotationHistoryMenu->Append( rotationHisotryGoBackwardMenuItem );
 	rotationHistoryMenu->AppendSeparator();
@@ -81,12 +81,10 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	boxSizer->Add( textCtrl, 0, wxALL | wxGROW, 0 );
 	SetSizer( boxSizer );
 
-	wxAcceleratorEntry acceleratorEntries[5];
-	acceleratorEntries[0].Set( wxACCEL_NORMAL, WXK_F5, ID_CreateCube, createCubeMenuItem );
-	acceleratorEntries[1].Set( wxACCEL_NORMAL, WXK_F6, ID_DestroyCube, destroyCubeMenuItem );
-	acceleratorEntries[2].Set( wxACCEL_NORMAL, WXK_F9, ID_RotationHistoryGoBackward );
-	acceleratorEntries[3].Set( wxACCEL_NORMAL, WXK_F10, ID_RotationHistoryGoForward );
-	acceleratorEntries[4].Set( wxACCEL_NORMAL, WXK_F1, ID_About, aboutMenuItem );
+	wxAcceleratorEntry acceleratorEntries[3];
+	acceleratorEntries[0].Set( wxACCEL_NORMAL, WXK_F5, ID_RotationHistoryGoBackward );
+	acceleratorEntries[1].Set( wxACCEL_NORMAL, WXK_F6, ID_RotationHistoryGoForward );
+	acceleratorEntries[2].Set( wxACCEL_NORMAL, WXK_F1, ID_About, aboutMenuItem );
 
 	wxAcceleratorTable acceleratorTable( sizeof( acceleratorEntries ) / sizeof( wxAcceleratorEntry ), acceleratorEntries );
 	SetAcceleratorTable( acceleratorTable );

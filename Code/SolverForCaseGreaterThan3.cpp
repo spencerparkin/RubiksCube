@@ -1080,6 +1080,7 @@ SolverForCaseGreaterThan3::As3x3x3Solver::As3x3x3Solver( void )
 		return false;
 
 	RubiksCube* reducedRubiksCube = new RubiksCube( 3, false );
+	wxScopedPtr< RubiksCube > scopedPtr( reducedRubiksCube );
 
 	for( int x = 0; x < 3; x++ )
 	{
@@ -1109,8 +1110,7 @@ SolverForCaseGreaterThan3::As3x3x3Solver::As3x3x3Solver( void )
 	SolverForCase3 solverForCase3( &parityErrorList );
 	RubiksCube::RotationSequence reducedRotationSequence;
 	solverForCase3.MakeEntireSolutionSequence( reducedRubiksCube, reducedRotationSequence );
-	delete reducedRubiksCube;
-
+	
 	for( RubiksCube::RotationSequence::const_iterator iter = reducedRotationSequence.begin(); iter != reducedRotationSequence.end(); iter++ )
 	{
 		RubiksCube::Rotation reducedRotation = *iter;
