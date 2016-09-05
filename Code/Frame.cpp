@@ -32,8 +32,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 
 	wxMenu* rotationHistoryMenu = new wxMenu();
 	wxMenuItem* rotationHistoryClearMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryClear, "Clear History", "Delete all rotation history." );
-	wxMenuItem* rotationHistoryGoForwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoForward, "Go Forward\tF5", "Apply the rotation that takes us forward in the rotation history." );
-	wxMenuItem* rotationHisotryGoBackwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoBackward, "Go Backward\tF6", "Apply the rotation that takes us backward in the rotation history." );
+	wxMenuItem* rotationHistoryGoForwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoForward, "Go Forward\tF6", "Apply the rotation that takes us forward in the rotation history." );
+	wxMenuItem* rotationHisotryGoBackwardMenuItem = new wxMenuItem( rotationHistoryMenu, ID_RotationHistoryGoBackward, "Go Backward\tF5", "Apply the rotation that takes us backward in the rotation history." );
 	rotationHistoryMenu->Append( rotationHistoryGoForwardMenuItem );
 	rotationHistoryMenu->Append( rotationHisotryGoBackwardMenuItem );
 	rotationHistoryMenu->AppendSeparator();
@@ -196,7 +196,10 @@ void Frame::OnSaveCube( wxCommandEvent& event )
 		return;
 
 	wxString file = fileDialog.GetPath();
-	if( !wxGetApp().rubiksCube->SaveToFile( file ) )
+	wxFileName fileName( file );
+	fileName.SetExt( "xml" );	// Not sure why I have to do this on Linux.
+	
+	if( !wxGetApp().rubiksCube->SaveToFile( fileName.GetFullPath() ) )
 		wxMessageBox( "Failed to save file \"" + file + "\".", "Save Failure" );
 }
 
@@ -303,7 +306,7 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnTimer( wxTimerEvent& event )
 {
-	if( wxGetApp().makeInitialCube )
+	if( wxGetApp().makeInitialCube && canvas->ContextReady() )
 	{
 		wxGetApp().rubiksCube = new RubiksCube();
 		canvas->AdjustSizeFor( wxGetApp().rubiksCube );
@@ -322,7 +325,8 @@ void Frame::OnTimer( wxTimerEvent& event )
 			executionSequence.erase( iter );
 			canvas->ApplyRotation( rotation );
 
-			statusBar->SetStatusText( wxString::Format( "%d animation moves remaining.", executionSequence.size() ) );
+			int moveCount = executionSequence.size() ;
+			statusBar->SetStatusText( wxString::Format( "%d animation moves remaining.", moveCount ) );
 		}
 		else
 		{
@@ -485,6 +489,7 @@ void Frame::OnExit( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnHelp( wxCommandEvent& event )
 {
+	wxBusyCursor busyCursor;
 	wxString url = "http://spencerparkin.github.io/RubiksCube/";
 	wxLaunchDefaultBrowser( url );
 }

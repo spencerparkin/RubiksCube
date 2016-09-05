@@ -20,7 +20,7 @@ OBJ = $(SRC:.cpp=.o)
 	g++ -g -c $< -o $@ `wx-config --cxxflags` -std=c++11
 
 RubiksCube: $(OBJ)
-	g++ -g -o RubiksCube $(OBJ) -lGL -lGLU -lglut `wx-config --libs` -lwx_gtk2u_gl-3.0
+	g++ -g -o RubiksCube $(OBJ) -lGL -lGLU `wx-config --libs` -lwx_gtk2u_gl-3.0
 	export UBUNTU_MENUPROXY=0
 
 all: RubiksCube

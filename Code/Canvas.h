@@ -29,6 +29,8 @@ public:
 	void DeterminePerspective( RubiksCube::Perspective& perspective ) const;
 	bool TakeSnapShot( void );
 
+	bool ContextReady( void ) { return context ? true : false; }
+	
 private:
 
 	void BindContext( void );
