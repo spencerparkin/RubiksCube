@@ -85,9 +85,15 @@ void RubiksCube::LoadTextures( void )
 			continue;
 
 		wxImage image;
-		wxString path = wxString( "Textures/" ) + textureFiles[ color ];
+		//image.SetLoadFlags( image.GetLoadFlags() & ~wxImage::Load_Verbose );
+
+		wxString path = wxString( "/usr/share/RubiksCube/Textures/" ) + textureFiles[ color ];
 		if( !image.LoadFile( path ) )
-			continue;
+		{
+			path = wxString( "Textures/" ) + textureFiles[ color ];
+			if( !image.LoadFile( path ) )
+				continue;
+		}
 
 		GLuint texName;
 		glGenTextures( 1, &texName );

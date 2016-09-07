@@ -10,3 +10,9 @@
 # Ignore built files and intermmediates
 Build/
 *.o
+
+# Misc.
+.*.swp
+.*.dblite
+config.log
+.sconf_temp/

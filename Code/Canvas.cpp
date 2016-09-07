@@ -410,10 +410,22 @@ void Canvas::RenderAxisLabel( const c3ga::vectorE3GA& axis, int label )
 	PerspectiveLabelMap::iterator iter = perspectiveLabelMap.find( label );
 	if( iter == perspectiveLabelMap.end() )
 	{
-		wxString perspectiveLabelFile = wxString::Format( "Textures/label_%c.png", ( char )label );
-
 		wxImage* image = new wxImage();
-		if( !image->LoadFile( perspectiveLabelFile, wxBITMAP_TYPE_PNG ) )
+		bool loaded = false;
+
+		//image->SetLoadFlags( image->GetLoadFlags() & ~wxImage::Load_Verbose );
+
+		wxString perspectiveLabelFile = wxString::Format( "/usr/share/RubiksCube/Textures/label_%c.png", ( char )label );
+		if( image->LoadFile( perspectiveLabelFile, wxBITMAP_TYPE_PNG ) )
+			loaded = true;
+		else
+		{
+			perspectiveLabelFile = wxString::Format( "Textures/label_%c.png", ( char )label );
+			if( image->LoadFile( perspectiveLabelFile, wxBITMAP_TYPE_PNG ) )
+				loaded = true;
+		}
+
+		if( !loaded )
 			delete image;
 		else
 		{
