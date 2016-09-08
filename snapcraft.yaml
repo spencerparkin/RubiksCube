@@ -1,17 +1,17 @@
-name: RubeCube
+name: rubecube
 version: "1.0"
 summary: An interactive Rubik's Cube simulation in 3D.
 description: Play with a virtual Rubik's Cube through an intuitive interface.
   Simulate Rubik's Cubes of various dimensions.  Watch the computer scramble and solve them.
-	Save and load cubes to disk.  Create and test your own algorithms.
-	Move backwards and forward through your own rotation history.
+  Save and load cubes to disk.  Create and test your own algorithms.
+  Move backwards and forward through your own rotation history.
 
 apps:
-	RubeCube:
-		command: RubeCube
+  rubecube:
+    command: RubeCube
 
 parts:
-	RubeCube:
-		plugin: scons
-		source: https://github.com/spencerparkin/RubiksCube.git
-		source-branch: stable-release
+  rubecube:
+    plugin: scons
+    source: https://github.com/spencerparkin/RubiksCube.git
+    source-branch: stable-release
