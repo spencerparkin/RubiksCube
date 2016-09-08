@@ -3,7 +3,7 @@
 #include "Header.h"
 
 //==================================================================================================
-Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFrame( parent, wxID_ANY, "Rubik's Cube", pos, size ), timer( this, ID_Timer )
+Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFrame( parent, wxID_ANY, "Rube-Cube", pos, size ), timer( this, ID_Timer )
 {
 	debugMode = DEBUG_MODE_NONE;
 	
@@ -499,7 +499,7 @@ void Frame::OnAbout( wxCommandEvent& event )
 {
 	wxAboutDialogInfo aboutDialogInfo;
         
-    aboutDialogInfo.SetName( "Rubik's Cube" );
+    aboutDialogInfo.SetName( "Rube-Cube" );
     aboutDialogInfo.SetVersion( "1.0" );
     aboutDialogInfo.SetDescription( "This program is free software and distributed under the MIT license." );
     aboutDialogInfo.SetCopyright( "Copyright (C) 2013, 2015, 2016 -- Spencer T. Parkin <SpencerTParkin@gmail.com>" );

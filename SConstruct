@@ -27,10 +27,10 @@ for source_file in cpp_source_list:
 	object_file = obj_env.StaticObject( source_file )
 	object_list.append( object_file )
 
-prog_env = Environment( parse_flags = '!wx-config --libs core base adv xml gl' )
+prog_env = Environment( PROGNAME = 'RubeCube', parse_flags = '!wx-config --libs core base adv xml gl' )
 prog_env.Append( LIBS = '-lGL' )
 prog_env.Append( LIBS = '-lGLU' )
-prog = prog_env.Program( 'RubiksCube', source = object_list )
+prog = prog_env.Program( '$PROGNAME', source = object_list )
 
 # TODO: Snapcraft might provide these locations as options.
 install_env = Environment(
