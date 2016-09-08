@@ -32,10 +32,13 @@ prog_env.Append( LIBS = '-lGL' )
 prog_env.Append( LIBS = '-lGLU' )
 prog = prog_env.Program( '$PROGNAME', source = object_list )
 
-# TODO: Snapcraft might provide these locations as options.
+dest_dir = '/usr'
+if 'DESTDIR' in os.environ:
+	dest_dir = os.environ[ 'DESTDIR' ]
+
 install_env = Environment(
-	BIN = '/usr/bin',
-	SHARE = '/usr/share' )
+	BIN = dest_dir + '/bin',
+	SHARE = dest_dir + '/share' )
 
 texture_list = Glob( 'Textures/*.png' )
 
