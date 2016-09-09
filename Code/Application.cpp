@@ -70,6 +70,27 @@ void Application::RotationHistoryAppend( const RubiksCube::Rotation& rotation )
 }
 
 //==================================================================================================
+wxImage* Application::LoadTextureResource( const wxString& textureFile )
+{
+	wxImage* image = new wxImage();
+	
+	//image->SetLoadFlags( image->GetLoadFlags() & ~wxImage::Load_Verbose );
+
+	wxString path = wxString( "../share/RubiksCube/Textures/" ) + textureFile;
+	if( !image->LoadFile( path, wxBITMAP_TYPE_PNG ) )
+	{
+		path = wxString( "Textures/" ) + textureFile;
+		if( !image->LoadFile( path, wxBITMAP_TYPE_PNG ) )
+		{
+			delete image;
+			image = nullptr;
+		}
+	}
+	
+	return image;
+}
+
+//==================================================================================================
 bool Application::RotationHistoryGoForward( RubiksCube::Rotation& rotation )
 {
 	if( !RotationHistoryCanGoForward() )

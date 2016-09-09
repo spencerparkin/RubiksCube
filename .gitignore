@@ -10,6 +10,7 @@
 # Ignore built files and intermmediates
 Build/
 *.o
+RubeCube
 
 # Misc.
 .*.swp

@@ -84,32 +84,27 @@ void RubiksCube::LoadTextures( void )
 		if( textures[ color ] != GL_INVALID_VALUE )
 			continue;
 
-		wxImage image;
-		//image.SetLoadFlags( image.GetLoadFlags() & ~wxImage::Load_Verbose );
-
-		wxString path = wxString( "/usr/share/RubiksCube/Textures/" ) + textureFiles[ color ];
-		if( !image.LoadFile( path ) )
-		{
-			path = wxString( "Textures/" ) + textureFiles[ color ];
-			if( !image.LoadFile( path ) )
-				continue;
-		}
+		wxImage* image = wxGetApp().LoadTextureResource( textureFiles[ color ] );
+		if( !image )
+			continue;
 
 		GLuint texName;
 		glGenTextures( 1, &texName );
-		if( texName == GL_INVALID_VALUE )
-			continue;
+		if( texName != GL_INVALID_VALUE )
+		{
+			glBindTexture( GL_TEXTURE_2D, texName );
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
-		glBindTexture( GL_TEXTURE_2D, texName );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+			const unsigned char* imageData = image->GetData();
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, image->GetWidth(), image->GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, imageData );
 
-		const unsigned char* imageData = image.GetData();
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, image.GetWidth(), image.GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, imageData );
-
-		textures[ color ] = texName;
+			textures[ color ] = texName;
+		}
+		
+		delete image;
 	}
 }
 

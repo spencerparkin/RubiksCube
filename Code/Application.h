@@ -18,6 +18,8 @@ public:
 	bool RotationHistoryCanGoBackward( void );
 	void RotationHistoryClear( void );
 
+	wxImage* LoadTextureResource( const wxString& textureFile );
+
 	RubiksCube* rubiksCube;
 	bool makeInitialCube;
 
