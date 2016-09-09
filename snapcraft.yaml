@@ -14,5 +14,4 @@ parts:
   rubecube:
     plugin: scons
     source: https://github.com/spencerparkin/RubiksCube.git
-    source-branch: stable-release
-		source-tag: v1.0
+    source-tag: v1.0
