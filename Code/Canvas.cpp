@@ -410,7 +410,7 @@ void Canvas::RenderAxisLabel( const c3ga::vectorE3GA& axis, int label )
 	PerspectiveLabelMap::iterator iter = perspectiveLabelMap.find( label );
 	if( iter == perspectiveLabelMap.end() )
 	{
-		wxString textureFile = wxString::Format( "/usr/share/RubiksCube/Textures/label_%c.png", ( char )label );
+		wxString textureFile = wxString::Format( "label_%c.png", ( char )label );
 		wxImage* image = wxGetApp().LoadTextureResource( textureFile );
 		if( image )
 		{
