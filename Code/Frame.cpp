@@ -40,14 +40,14 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	rotationHistoryMenu->Append( rotationHistoryClearMenuItem );
 
 	wxMenu* viewMenu = new wxMenu();
-	wxMenuItem* takeSnapShotMenuItem = new wxMenuItem( viewMenu, ID_TakeSnapShot, "Take Snap Shot", "Remember the Rubik's Cube as it is in its current state for comparison against a later state of the cube." );
-	wxMenuItem* showInvariantFacesMenuItem = new wxMenuItem( viewMenu, ID_ShowInvariantFaces, "Show Invariant Faces", "Highlight all faces in common between the current Rubik's cube and a snap-shot, if any, taken earlier.", wxITEM_CHECK );
+//	wxMenuItem* takeSnapShotMenuItem = new wxMenuItem( viewMenu, ID_TakeSnapShot, "Take Snap Shot", "Remember the Rubik's Cube as it is in its current state for comparison against a later state of the cube." );
+//	wxMenuItem* showInvariantFacesMenuItem = new wxMenuItem( viewMenu, ID_ShowInvariantFaces, "Show Invariant Faces", "Highlight all faces in common between the current Rubik's cube and a snap-shot, if any, taken earlier.", wxITEM_CHECK );
 	wxMenuItem* showPerspectiveLabelsMenuItem = new wxMenuItem( viewMenu, ID_ShowPerspectiveLabels, "Show Perspective Labels", "Along with the cube, render labels of the cube faces that indicate the current perspective.", wxITEM_CHECK );
 	wxMenuItem* renderWithPerspectiveProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithPerspectiveProjection, "Render With Perspective Projection", "Render the cube using an perspective projection.", wxITEM_CHECK );
 	wxMenuItem* renderWithOrthographicProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithOrthographicProjection, "Render With Orthographic Projection", "Render the cube using an orthographic projection.", wxITEM_CHECK );
-	viewMenu->Append( takeSnapShotMenuItem );
-	viewMenu->AppendSeparator();
-	viewMenu->Append( showInvariantFacesMenuItem );
+//	viewMenu->Append( takeSnapShotMenuItem );
+//	viewMenu->AppendSeparator();
+//	viewMenu->Append( showInvariantFacesMenuItem );
 	viewMenu->Append( showPerspectiveLabelsMenuItem );
 	viewMenu->AppendSeparator();
 	viewMenu->Append( renderWithPerspectiveProjectionMenuItem );
