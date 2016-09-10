@@ -75,16 +75,24 @@ wxImage* Application::LoadTextureResource( const wxString& textureFile )
 	wxImage* image = new wxImage();
 	
 	//image->SetLoadFlags( image->GetLoadFlags() & ~wxImage::Load_Verbose );
-
-	wxString path = wxString( "../share/RubiksCube/Textures/" ) + textureFile;
-	if( !image->LoadFile( path, wxBITMAP_TYPE_PNG ) )
+	
+	wxArrayString fileLocationsArray;
+	fileLocationsArray.Add( wxString( wxGetenv( "SNAP" ) ) + "/" + textureFile );
+	fileLocationsArray.Add( wxString( "../share/RubiksCube/Textures/" ) + textureFile  );
+	fileLocationsArray.Add( wxString( "Textures/" ) + textureFile );
+	
+	int i;
+	for( i = 0; i < fileLocationsArray.GetCount(); i++ )
 	{
-		path = wxString( "Textures/" ) + textureFile;
-		if( !image->LoadFile( path, wxBITMAP_TYPE_PNG ) )
-		{
-			delete image;
-			image = nullptr;
-		}
+		wxFileName fileName( fileLocationsArray[i] );
+		if( fileName.FileExists() && image->LoadFile( fileName.GetFullPath(), wxBITMAP_TYPE_PNG ) )
+			break;
+	}
+	
+	if( i == fileLocationsArray.GetCount() )
+	{
+		delete image;
+		image = nullptr;
 	}
 	
 	return image;

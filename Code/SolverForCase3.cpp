@@ -675,8 +675,10 @@ void SolverForCase3::PerformOrangeCrossAndCornersRelativePositioningStage( const
 			if( orangeEdgeColors[ index ][1] == color )
 				break;
 
+		// TODO: This assert failed...I've got a bug.  Fix it.  :(
 		wxASSERT( index != 4 );
-		edgeQuad[ edge ] = index;
+		if( index != 4 )
+			edgeQuad[ edge ] = index;
 	}
 
 	if( !TriCycleSolver::IsQuadInOrder( edgeQuad ) )

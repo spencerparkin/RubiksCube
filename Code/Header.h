@@ -22,6 +22,8 @@
 #include <wx/image.h>
 #include <wx/utils.h>
 #include <wx/filename.h>
+#include <wx/arrstr.h>
+#include <wx/filename.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>
