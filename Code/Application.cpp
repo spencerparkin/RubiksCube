@@ -77,7 +77,7 @@ wxImage* Application::LoadTextureResource( const wxString& textureFile )
 	//image->SetLoadFlags( image->GetLoadFlags() & ~wxImage::Load_Verbose );
 	
 	wxArrayString fileLocationsArray;
-	fileLocationsArray.Add( wxString( wxGetenv( "SNAP" ) ) + "/" + textureFile );
+	fileLocationsArray.Add( wxString( wxGetenv( "SNAP" ) ) + "/share/RubiksCube/Textures/" + textureFile );
 	fileLocationsArray.Add( wxString( "../share/RubiksCube/Textures/" ) + textureFile  );
 	fileLocationsArray.Add( wxString( "Textures/" ) + textureFile );
 	
