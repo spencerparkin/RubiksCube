@@ -17,30 +17,5 @@ parts:
     plugin: scons
     source: https://github.com/spencerparkin/RubiksCube.git
     source-branch: stable-release
-    after: [desktop-gtk3]
-    build-packages:
-    - libgtk-3-dev
-    stage-packages:
-    - libatk-bridge-2.0
-    - libgailutil
-    - libgailutil-3
-    - liboverlay-scrollbar
-    - libunity-gtk-module
-    - libcanberra-gtk-module
-
-  desktop-gtk3:
-    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
-    source-subdir: gtk
-    make-parameters:
-    - FLAVOR=gtk3
-    stage-packages:
-    - libxkbcommon0
-    - ttf-ubuntu-font-family
-    - dmz-cursor-theme
-    - light-themes
-    - shared-mime-info
-    - libgtk-3-0
-    - libglib2.0-bin
-    - libgtk-3-bin
-    - unity-gtk3-module
+    after: [desktop-gtk2]
 
