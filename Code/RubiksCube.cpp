@@ -2,6 +2,9 @@
 
 #include "Header.h"
 
+// TODO: It would be awesome to let the user load their own textures for the 6 faces of the cube.
+//       This adds an interesting challenge to the cube as the center pieces then require orientation.
+
 //==================================================================================================
 const char* RubiksCube::textureFiles[ MAX_COLORS ] =
 {
@@ -454,6 +457,8 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 		if( mode == GL_RENDER )
 		{
 			bool highlightFace = false;
+			//c3ga::vectorE3GA highlightColor( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0 - faceColor.get_e1(), 1.0 - faceColor.get_e2(), 1.0 - faceColor.get_e3() );
+			c3ga::vectorE3GA highlightColor( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 1.0, 1.0 );
 			if( highlightInvariants )
 			{
 				if( comparativeSubCube && comparativeSubCube->faceData[ face ].id == subCube->faceData[ face ].id )
@@ -461,7 +466,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 					if( subCube->faceData[ face ].id != -1 )
 					{
 						highlightFace = true;
-						glColor3f( 0.5f, 0.5f, 0.5f );
+						highlightColor.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.5, 0.5, 0.5 );
 					}
 				}
 			}
@@ -471,15 +476,12 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 				{
 					highlightFace = true;
 					if( subCube->faceData[ face ].id == *selectedFaceId )
-						glColor3f( 0.f, 0.f, 1.f );
+						highlightColor.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 1.0 );
 					else
-						glColor3f( 0.f, 1.f, 0.f );
+						highlightColor.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 1.0, 0.0 );
 				}
 				else if( subCube->faceData[ face ].id == *selectedFaceId )
-				{
 					highlightFace = true;
-					glColor3f( 1.f, 0.f, 0.f );
-				}
 			}
 
 			if( highlightFace )
@@ -488,6 +490,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 				glDisable( GL_LIGHTING );
 				glLineWidth( 2.f );
 				glBegin( GL_LINE_LOOP );
+				glColor3d( highlightColor.get_e1(), highlightColor.get_e2(), highlightColor.get_e3() );
 				c3ga::vectorE3GA delta = c3ga::gp( faceNormal, 0.1 );
 				for( int index = 0; index < 4; index++ )
 				{

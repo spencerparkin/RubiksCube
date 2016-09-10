@@ -82,7 +82,7 @@ wxImage* Application::LoadTextureResource( const wxString& textureFile )
 	fileLocationsArray.Add( wxString( "Textures/" ) + textureFile );
 	
 	int i;
-	for( i = 0; i < fileLocationsArray.GetCount(); i++ )
+	for( i = 0; i < ( int )fileLocationsArray.GetCount(); i++ )
 	{
 		wxFileName fileName( fileLocationsArray[i] );
 		if( fileName.FileExists() && image->LoadFile( fileName.GetFullPath(), wxBITMAP_TYPE_PNG ) )
