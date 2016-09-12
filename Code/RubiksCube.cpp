@@ -473,20 +473,43 @@ bool RubiksCube::GenerateRotationSequenceForBandaging( const Rotation& rotation,
 		for( int i = 0; i < ( int )subCubeVector.size(); i++ )
 			involvedBandageSets.insert( SubCubeBandageRepresentative( subCubeVector[i] ) );
 
-		for( int index = 0; index < ( int )subCubeMatrixSize; index++ )
+		std::vector< int > rotatingPlanesVector;
+		rotatingPlanesVector.push_back( rotation.plane.index );
+
+		bool keepGoing = true;
+		while( keepGoing )
 		{
-			if( index == rotation.plane.index )
-				continue;
+			keepGoing = false;
 
-			Rotation adjacentRotation = rotation;
-			adjacentRotation.plane.index = index;
-			CollectCubiesInPlaneOfRotation( adjacentRotation, subCubeVector );
-
-			for( int i = 0; i < ( int )subCubeVector.size(); i++ )
+			for( int index = 0; index < ( int )subCubeMatrixSize; index++ )
 			{
-				std::set< const SubCube* >::iterator iter = involvedBandageSets.find( SubCubeBandageRepresentative( subCubeVector[i] ) );
-				if( iter != involvedBandageSets.end() )
-					rotationSequence.push_back( adjacentRotation );
+				int i;
+				for( i = 0; i < ( int )rotatingPlanesVector.size(); i++ )
+					if( index == rotatingPlanesVector[i] )
+						break;
+				if( i < ( int )rotatingPlanesVector.size() )
+					continue;
+
+				Rotation adjacentRotation = rotation;
+				adjacentRotation.plane.index = index;
+				CollectCubiesInPlaneOfRotation( adjacentRotation, subCubeVector );
+
+				for( i = 0; i < ( int )subCubeVector.size(); i++ )
+				{
+					std::set< const SubCube* >::iterator iter = involvedBandageSets.find( SubCubeBandageRepresentative( subCubeVector[i] ) );
+					if( iter != involvedBandageSets.end() )
+					{
+						rotationSequence.push_back( adjacentRotation );
+
+						for( i = 0; i < ( int )subCubeVector.size(); i++ )
+							involvedBandageSets.insert( SubCubeBandageRepresentative( subCubeVector[i] ) );
+
+						rotatingPlanesVector.push_back( adjacentRotation.plane.index );
+
+						index = ( int )subCubeMatrixSize;
+						keepGoing = true;
+					}
+				}
 			}
 		}
 	}
