@@ -20,12 +20,15 @@ public:
 
 	wxImage* LoadTextureResource( const wxString& textureFile );
 
-	RubiksCube* rubiksCube;
 	bool makeInitialCube;
-
 	Frame* frame;
 
+	void SetRubiksCube( RubiksCube* rubiksCube );
+	RubiksCube* GetRubiksCube( void ) { return rubiksCube; }
+
 private:
+
+	RubiksCube* rubiksCube;
 
 	typedef std::vector< RubiksCube::Rotation > RotationHistory;
 	RotationHistory rotationHistory;

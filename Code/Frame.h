@@ -14,8 +14,7 @@ private:
 
 	enum
 	{
-		ID_CreateCube = wxID_HIGHEST,
-		ID_DestroyCube,
+		ID_NewCube = wxID_HIGHEST,
 		ID_ScrambleCube,
 		ID_SolveCube,
 		ID_CubeInACube,
@@ -39,8 +38,7 @@ private:
 		ID_Timer,
 	};
 
-	void OnCreateCube( wxCommandEvent& event );
-	void OnDestroyCube( wxCommandEvent& event );
+	void OnNewCube( wxCommandEvent& event );
 	void OnScrambleCube( wxCommandEvent& event );
 	void OnSolveCube( wxCommandEvent& event );
 	void OnCubeInACube( wxCommandEvent& event );

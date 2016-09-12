@@ -10,8 +10,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	animationTolerance = 0.01;
 
 	wxMenu* programMenu = new wxMenu();
-	wxMenuItem* createCubeMenuItem = new wxMenuItem( programMenu, ID_CreateCube, "Create Cube", "Create a new Rubik's Cube." );
-	wxMenuItem* destroyCubeMenuItem = new wxMenuItem( programMenu, ID_DestroyCube, "Destroy Cube", "Destroy the Rubik's Cube." );
+	wxMenuItem* newCubeMenuItem = new wxMenuItem( programMenu, ID_NewCube, "New Cube", "Replace your current cube with a new Rubik's Cube." );
 	wxMenuItem* scrambleCubeMenuItem = new wxMenuItem( programMenu, ID_ScrambleCube, "Scramble Cube", "Randomize the Rubik's Cube." );
 	wxMenuItem* solveCubeMenuItem = new wxMenuItem( programMenu, ID_SolveCube, "Solve Cube", "Solve the Rubik's Cube." );
 //	wxMenuItem* cubeInACubeMenuItem = new wxMenuItem( programMenu, ID_CubeInACube, "Cube In A Cube", "Solve for the cube-in-a-cube configuration of the Rubik's Cube." );
@@ -20,8 +19,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxMenuItem* exitMenuItem = new wxMenuItem( programMenu, ID_Exit, "Exit", "Exit this program." );
 	wxMenuItem* enforceBandagingItem = new wxMenuItem( programMenu, ID_EnforceBandaging, "Enforce Bandaging", "If there are bandaged cubies, keep them relative to one another.", wxITEM_CHECK );
 	wxMenuItem* clearBandagingItem = new wxMenuItem( programMenu, ID_ClearBandaging, "Clear Bandaging", "Remove all bandages between any two cubies." );
-	programMenu->Append( createCubeMenuItem );
-	programMenu->Append( destroyCubeMenuItem );
+	programMenu->Append( newCubeMenuItem );
 	programMenu->AppendSeparator();
 	programMenu->Append( saveCubeMenuItem );
 	programMenu->Append( loadCubeMenuItem );
@@ -99,8 +97,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxAcceleratorTable acceleratorTable( sizeof( acceleratorEntries ) / sizeof( wxAcceleratorEntry ), acceleratorEntries );
 	SetAcceleratorTable( acceleratorTable );
 
-	Bind( wxEVT_MENU, &Frame::OnCreateCube, this, ID_CreateCube );
-	Bind( wxEVT_MENU, &Frame::OnDestroyCube, this, ID_DestroyCube );
+	Bind( wxEVT_MENU, &Frame::OnNewCube, this, ID_NewCube );
 	Bind( wxEVT_MENU, &Frame::OnScrambleCube, this, ID_ScrambleCube );
 	Bind( wxEVT_MENU, &Frame::OnSolveCube, this, ID_SolveCube );
 	Bind( wxEVT_MENU, &Frame::OnCubeInACube, this, ID_CubeInACube );
@@ -121,8 +118,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnSilentDebugMode, this, ID_SilentDebugMode );
 	Bind( wxEVT_MENU, &Frame::OnHelp, this, ID_Help );
 	Bind( wxEVT_MENU, &Frame::OnAbout, this, ID_About );
-	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_CreateCube );
-	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_DestroyCube );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_NewCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ScrambleCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SolveCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_CubeInACube );
@@ -162,7 +158,7 @@ void Frame::OnDebugMode( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnSilentDebugMode( wxCommandEvent& event )
 {
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 	if( !rubiksCube )
 		return;
 
@@ -196,7 +192,8 @@ void Frame::OnSilentDebugMode( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnSaveCube( wxCommandEvent& event )
 {
-	if( !wxGetApp().rubiksCube )
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
+	if( !rubiksCube )
 		return;
 
 	wxFileDialog fileDialog( this, "Save Rubik's Cube File", wxEmptyString, wxEmptyString, "Rubik's Cube Files (*.xml)|*.xml", wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
@@ -207,27 +204,25 @@ void Frame::OnSaveCube( wxCommandEvent& event )
 	wxFileName fileName( file );
 	fileName.SetExt( "xml" );	// Not sure why I have to do this on Linux.
 	
-	if( !wxGetApp().rubiksCube->SaveToFile( fileName.GetFullPath() ) )
+	if( !rubiksCube->SaveToFile( fileName.GetFullPath() ) )
 		wxMessageBox( "Failed to save file \"" + file + "\".", "Save Failure" );
 }
 
 //==================================================================================================
 void Frame::OnLoadCube( wxCommandEvent& event )
 {
-	if( wxGetApp().rubiksCube )
-		return;
-
 	wxFileDialog fileDialog( this, "Load Rubik's Cube File", wxEmptyString, wxEmptyString, "Rubik's Cube Files (*.xml)|*.xml", wxFD_OPEN | wxFD_FILE_MUST_EXIST );
 	if( wxID_OK != fileDialog.ShowModal() )
 		return;
 
 	wxString file = fileDialog.GetPath();
-	wxGetApp().rubiksCube = RubiksCube::LoadFromFile( file );
-	if( !wxGetApp().rubiksCube )
+	RubiksCube* newRubiksCube = RubiksCube::LoadFromFile( file );
+	if( !newRubiksCube )
 		wxMessageBox( "Failed to load file \"" + file + "\".", "Load Failure" );
 	else
 	{
-		canvas->AdjustSizeFor( wxGetApp().rubiksCube );
+		wxGetApp().SetRubiksCube( newRubiksCube );
+		canvas->AdjustSizeFor( newRubiksCube );
 		canvas->Refresh();
 		wxGetApp().RotationHistoryClear();
 	}
@@ -236,7 +231,7 @@ void Frame::OnLoadCube( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnEnforceBandaging( wxCommandEvent& event )
 {
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 
 	if( rubiksCube )
 	{
@@ -260,9 +255,10 @@ void Frame::OnEnforceBandaging( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnClearBandaging( wxCommandEvent& event )
 {
-	if( wxGetApp().rubiksCube )
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
+	if( rubiksCube )
 	{
-		wxGetApp().rubiksCube->ClearBandaging();
+		rubiksCube->ClearBandaging();
 		canvas->Refresh();
 	}
 }
@@ -309,7 +305,8 @@ void Frame::OnTakeSnapShot( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 {
-	if( !wxGetApp().rubiksCube )
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
+	if( !rubiksCube )
 		return;
 
 	if( executionSequence.size() > 0 || canvas->IsAnimating( 1.0 ) )
@@ -323,11 +320,11 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 		RubiksCube::Perspective perspective;
 		canvas->DeterminePerspective( perspective );
 
-		if( !wxGetApp().rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, executionSequence ) )
+		if( !rubiksCube->TranslateRotationSequence( perspective, relativeRotationSequence, executionSequence ) )
 			executionSequence.clear();
 		else
 		{
-			wxGetApp().rubiksCube->CompressRotationSequence( executionSequence );
+			rubiksCube->CompressRotationSequence( executionSequence );
 			animationTolerance = 0.01;
 		}
 	}
@@ -336,8 +333,12 @@ void Frame::OnTextCtrlEnter( wxCommandEvent& event )
 //==================================================================================================
 /*static*/ bool Frame::ParseRelativeRotationSequenceString( const wxString& relativeRotationSequenceString, RubiksCube::RelativeRotationSequence& relativeRotationSequence )
 {
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
+	if( !rubiksCube )
+		return false;
+
 	std::string string = ( const char* )relativeRotationSequenceString.c_str();
-	if( !wxGetApp().rubiksCube->ParseRelativeRotationSequenceString( string, relativeRotationSequence ) )
+	if( !rubiksCube->ParseRelativeRotationSequenceString( string, relativeRotationSequence ) )
 	{
 		wxMessageBox( "Failed to parse string \"" + relativeRotationSequenceString + "\".", "Parse Error" );
 		return false;
@@ -350,8 +351,8 @@ void Frame::OnTimer( wxTimerEvent& event )
 {
 	if( wxGetApp().makeInitialCube && canvas->ContextReady() )
 	{
-		wxGetApp().rubiksCube = new RubiksCube();
-		canvas->AdjustSizeFor( wxGetApp().rubiksCube );
+		wxGetApp().SetRubiksCube( new RubiksCube() );
+		canvas->AdjustSizeFor( wxGetApp().GetRubiksCube() );
 		canvas->Refresh();
 		wxGetApp().makeInitialCube = false;
 	}
@@ -374,9 +375,9 @@ void Frame::OnTimer( wxTimerEvent& event )
 		{
 			statusBar->SetStatusText( "" );
 
-			if( debugMode != DEBUG_MODE_NONE && wxGetApp().rubiksCube )
+			RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
+			if( debugMode != DEBUG_MODE_NONE && rubiksCube )
 			{
-				RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 				switch( debugMode )
 				{
 					case DEBUG_MODE_SCRAMBLE:
@@ -397,7 +398,7 @@ void Frame::OnTimer( wxTimerEvent& event )
 						{
 							bool success = rubiksCube->SaveToFile( "debugCube.xml" );
 							wxASSERT( success );
-							success = solver->MakeEntireSolutionSequence( wxGetApp().rubiksCube, executionSequence );
+							success = solver->MakeEntireSolutionSequence( rubiksCube, executionSequence );
 							wxASSERT( success );
 							debugMode = DEBUG_MODE_SCRAMBLE;
 							animationTolerance = 2.0;
@@ -415,30 +416,14 @@ void Frame::OnTimer( wxTimerEvent& event )
 }
 
 //==================================================================================================
-void Frame::OnCreateCube( wxCommandEvent& event )
+void Frame::OnNewCube( wxCommandEvent& event )
 {
-	if( wxGetApp().rubiksCube )
-		return;
-	
-	int subCubeMatrixSize = ( int )wxGetNumberFromUser( "Enter what will be the width, height and depth of the cube.", "Size (2-12):", "Rubik's Cube Size", 3, 2, 12 );
+	int subCubeMatrixSize = ( int )wxGetNumberFromUser( "Enter what will be the width, height and depth of the new cube.", "Size (2-8):", "Rubik's Cube Size", 3, 2, 8 );
 	if( subCubeMatrixSize < 0 )
 		return;
 
-	wxGetApp().rubiksCube = new RubiksCube( subCubeMatrixSize );
-	canvas->AdjustSizeFor( wxGetApp().rubiksCube );
-	canvas->Refresh();
-
-	wxGetApp().RotationHistoryClear();
-}
-
-//==================================================================================================
-void Frame::OnDestroyCube( wxCommandEvent& event )
-{
-	if( !wxGetApp().rubiksCube )
-		return;
-
-	delete wxGetApp().rubiksCube;
-	wxGetApp().rubiksCube = 0;
+	wxGetApp().SetRubiksCube( new RubiksCube( subCubeMatrixSize ) );
+	canvas->AdjustSizeFor( wxGetApp().GetRubiksCube() );
 	canvas->Refresh();
 
 	wxGetApp().RotationHistoryClear();
@@ -450,7 +435,7 @@ void Frame::OnScrambleCube( wxCommandEvent& event )
 	if( executionSequence.size() != 0 )
 		return;
 
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 	if( !rubiksCube )
 		return;
 
@@ -461,7 +446,7 @@ void Frame::OnScrambleCube( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnSolveCube( wxCommandEvent& event )
 {
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 	if( !rubiksCube )
 		return;
 
@@ -483,7 +468,7 @@ void Frame::OnSolveCube( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnCubeInACube( wxCommandEvent& event )
 {
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 	if( !rubiksCube )
 		return;
 
@@ -543,8 +528,7 @@ void Frame::OnAbout( wxCommandEvent& event )
         
     aboutDialogInfo.SetName( "Rube-Cube" );
     aboutDialogInfo.SetVersion( "1.0" );
-    aboutDialogInfo.SetDescription( "This program is free software and distributed under the MIT license.\n"
-									"Feel free report any bugs you find." );
+    aboutDialogInfo.SetDescription( "This program is free software and distributed under the MIT license." );
     aboutDialogInfo.SetCopyright( "Copyright (C) 2013, 2015, 2016 -- Spencer T. Parkin <SpencerTParkin@gmail.com>" );
 
     wxAboutBox( aboutDialogInfo );
@@ -553,35 +537,36 @@ void Frame::OnAbout( wxCommandEvent& event )
 //==================================================================================================
 void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 {
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
+
 	switch( event.GetId() )
 	{
-		case ID_CreateCube:
+		case ID_NewCube:
 		case ID_LoadCube:
 		{
-			event.Enable( wxGetApp().rubiksCube == 0 ? true : false );
+			event.Enable( true );
 			break;
 		}
-		case ID_DestroyCube:
 		case ID_SaveCube:
 		case ID_TakeSnapShot:
 		case ID_SilentDebugMode:
 		{
-			event.Enable( wxGetApp().rubiksCube != 0 ? true : false );
+			event.Enable( rubiksCube != 0 ? true : false );
 			break;
 		}
 		case ID_CubeInACube:
 		{
-			event.Enable( wxGetApp().rubiksCube != 0 ? wxGetApp().rubiksCube->IsInSolvedState() : false );
+			event.Enable( rubiksCube != 0 ? rubiksCube->IsInSolvedState() : false );
 			break;
 		}
 		case ID_SolveCube:
 		{
-			event.Enable( ( wxGetApp().rubiksCube != 0 && executionSequence.size() == 0 && !wxGetApp().rubiksCube->EnforceBandaging() ) ? true : false );
+			event.Enable( ( rubiksCube != 0 && executionSequence.size() == 0 && !rubiksCube->EnforceBandaging() ) ? true : false );
 			break;
 		}
 		case ID_ScrambleCube:
 		{
-			event.Enable( ( wxGetApp().rubiksCube != 0 && executionSequence.size() == 0 ) ? true : false );
+			event.Enable( ( rubiksCube != 0 && executionSequence.size() == 0 ) ? true : false );
 			break;
 		}
 		case ID_RenderWithPerspectiveProjection:
@@ -626,10 +611,10 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		}
 		case ID_EnforceBandaging:
 		{
-			if( wxGetApp().rubiksCube )
+			if( rubiksCube )
 			{
 				event.Enable( true );
-				bool checked = wxGetApp().rubiksCube->EnforceBandaging();
+				bool checked = rubiksCube->EnforceBandaging();
 				event.Check( checked );
 			}
 			else

@@ -17,7 +17,7 @@ Application::Application( void )
 //==================================================================================================
 /*virtual*/ Application::~Application( void )
 {
-	delete rubiksCube;
+	SetRubiksCube( nullptr );
 }
 
 //==================================================================================================
@@ -54,6 +54,18 @@ Application::Application( void )
 /*virtual*/ int Application::OnExit( void )
 {
 	return 0;
+}
+
+//==================================================================================================
+void Application::SetRubiksCube( RubiksCube* rubiksCube )
+{
+	if( this->rubiksCube )
+	{
+		delete this->rubiksCube;
+		this->rubiksCube = nullptr;
+	}
+
+	this->rubiksCube = rubiksCube;
 }
 
 //==================================================================================================

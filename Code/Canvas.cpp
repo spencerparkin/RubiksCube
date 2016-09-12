@@ -128,7 +128,7 @@ bool Canvas::IsAnimating( double tolerance /*= 1e-7*/ ) const
 //==================================================================================================
 bool Canvas::ApplyRotation( const RubiksCube::Rotation& rotation, bool appendToRotationHistory /*= true*/ )
 {
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 	if( !rubiksCube )
 		return false;
 
@@ -145,7 +145,7 @@ bool Canvas::ApplyRotation( const RubiksCube::Rotation& rotation, bool appendToR
 //==================================================================================================
 bool Canvas::TakeSnapShot( void )
 {
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 	if( !rubiksCube )
 		return false;
 
@@ -240,7 +240,7 @@ void Canvas::PostRender( GLenum mode, bool selectFace )
 	{
 		int hitCount = glRenderMode( GL_RENDER );
 
-		RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+		RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 		if( rubiksCube )
 			grippingCube = rubiksCube->Select( hitBuffer, hitBufferSize, hitCount, ( selectFace ? 0 : &grip ), ( selectFace ? &selectedFaceId : 0 ) );
 
@@ -285,7 +285,7 @@ void Canvas::OnPaint( wxPaintEvent& event )
 {
 	PreRender( GL_RENDER );
 
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 	if( rubiksCube )
 		rubiksCube->Render( GL_RENDER, rotation, size, &selectedFaceId, comparativeRubiksCube, showInvariantFaces );
 
@@ -459,7 +459,7 @@ void Canvas::OnMouseLeftDown( wxMouseEvent& event )
 {
 	mousePos = event.GetPosition();
 
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 	if( rubiksCube && event.ControlDown() )
 	{
 		int preFaceId = selectedFaceId;
@@ -487,7 +487,7 @@ void Canvas::OnMouseRightDown( wxMouseEvent& event )
 	mousePos = event.GetPosition();
 
 	// Perform selection so that we know what kind of grip, if any, we have on the cube.
-	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
 	if( rubiksCube )
 	{
 		PreRender( GL_SELECT );
