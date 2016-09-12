@@ -5,6 +5,7 @@ description: Play with a virtual Rubik's Cube through an intuitive interface.
   Simulate Rubik's Cubes of various dimensions.  Watch the computer scramble and solve them.
   Save and load cubes to disk.  Create and test your own algorithms.
   Move backwards and forward through your own rotation history.
+  Customize your cube by changing the face textures.  Apply your own bandaging to the cube.
 confinement: strict
 
 apps:
