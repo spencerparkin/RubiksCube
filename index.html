@@ -12,7 +12,9 @@
     
 	<h2>Basic Usage</h2>
 	
-	<p>Once running, use the "Program" menu to create a new cube.
+	<p>When the application is launched, you're initially presented
+	with a standard 3x3x3 Rubik's Cube.  You can, however, change this
+	by using the "Program" menu to create a new cube of higher order.
 	The requested cube size determines the width, height and
 	depth of the cube.  After creating a cube, click and drag
 	the left mouse button in the window to orient the cube.
@@ -20,6 +22,8 @@
 	to manipulate it.  Also in the "Program" menu, you'll find
 	a "Scramble Cube" option which you can use to randomize the cube
 	by applying a randomly generated sequence of rotations.</p>
+	
+	<h3>Command Sequences</h3>
 	
 	<p>
 	An alternative mode of cube manipulation is to use the command
@@ -48,7 +52,50 @@
 	<p>Note that as of this writing,
 	the "Solve Cube" feature should work for all NxNxN cubes with N>=3.
 	I'm not sure when, if ever, I'll get around to solving the 2x2x2 case.
-	Presumably, the 3x3x3 case could have used code that solves the 2x2x2 case.</p>
+	Presumably, the 3x3x3 case could have used code that solves the 2x2x2 case,
+	but I didn't think that far ahead.</p>
+	
+	<h3>Bandaging</h3>
+	
+	<p>
+	You can apply your own bandaging to your cube.  The idea behind bandaging
+	is to effectivly glue two or more cubies together, so that they can't behind
+	separated.  In real-world practice, this can only be done between adjacent cubies.
+	In virtual-practice, you can "glue" any two cubies together in the entire cube.
+	Control-Left-click on a cubie to select one of its faces.  This selects the cubie face,
+	the cubie itself, and possibly all cubies faces of that color.  In this case, we
+	just care about the selected cubie.  With the cubie selected, Control-Shift-Left-click
+	some other cubie.  Doing so, you're prompted for a bandaging color.  After picking
+	one, you'll see the two cubies drawn with that color applied.  The two cubies are
+	not "glued" together if you then select the "Enforce Bandaging" option in the "Program Menu."
+	Note that enforcement is not aloud begin unless the cube is in the solved state.
+	Expand the set of bandaged cubies by first Control-clicking a member of the bandaged set,
+	then Control-Shift-clicking any non-member of the set.
+	</p>
+	
+	<h3>Face Textures</h3>
+	
+	<p>
+	There is some support for changing the textures used on the cube.  As of this writing,
+	you can't change the individual textures on each little individual cubie, but you can
+	change the textures applied to each side of the cube.  Control-Left-Right-click on a cubie
+	to select one of its faces.  Then use the "Change Face Texture" option under the "View" menu.
+	This will let you change the texture that is applied to all faces having the same color
+	as the one you selected.  Use the "Stretch Texture Across Entire Face" option under the
+	"View" menu so that your image is completely only once all appropriate cubies are positioned
+	and oriented properly.  This adds an interesting, additional complexity to solving the cube.
+	Note that as of this writing, the solving algorithm does not pay attention to the orientation
+	of center-piece cubies; so while it will get all colors the same on every side of the cube,
+	the orientation of the center cubies won't necessarily be correct.
+	</p>
+	
+	<h2>Closing Remarks</h2>
+	
+	<p>
+	Thanks for using my program.  It's not perfect, but it is free, and you get what you pay for.
+	If you have any feedback or would like to report a bug, feel free to do so.  My e-mail address
+	is "spencertparkin-at-gmail-dot-com".
+	</p>
 	
   </body>
 </html>
