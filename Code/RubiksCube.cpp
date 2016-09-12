@@ -58,6 +58,8 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/ )
 				subCube->bandageCoords.y = -1;
 				subCube->bandageCoords.z = -1;
 
+				subCube->bandageColor.set( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 0.0 );
+
 				subCube->bandaged = false;
 
 				CalcCubieTexCoords( subCube->faceData[ NEG_X ].texCoords, NEG_X, subCube->coords );
@@ -763,6 +765,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 		{
 			if( subCube->bandaged )
 			{
+				// TODO: Draw this with some transparency?
 				glDisable( GL_TEXTURE_2D );
 				glDisable( GL_LIGHTING );
 				glBegin( GL_QUADS );
@@ -1908,8 +1911,6 @@ bool RubiksCube::SaveToFile( const wxString& file ) const
 /*static*/ bool RubiksCube::SaveToFile( const RubiksCube* rubiksCube, const wxString& file )
 {
 	bool success = false;
-	
-	// TODO: We need to save bandaging info and texture coordinate data.
 
 	do
 	{
@@ -1939,8 +1940,6 @@ bool RubiksCube::SaveToFile( const wxString& file ) const
 {
 	bool success = false;
 	RubiksCube* rubiksCube = 0;
-
-	// TODO: We need to load bandaging info and texture coordinate data.
 
 	do
 	{
@@ -1980,6 +1979,13 @@ bool RubiksCube::SaveToFile( const wxString& file ) const
 //==================================================================================================
 bool RubiksCube::SaveToXml( wxXmlNode* xmlNode ) const
 {
+	if( !SaveBoolToXml( xmlNode, "enforceBandaging", enforceBandaging ) )
+		return false;
+
+	bool stretch = ( this->texApp == TEX_APPLY_ENTIRE_FACE ) ? true : false;
+	if( !SaveBoolToXml( xmlNode, "stretchTexAcrossFace", stretch ) )
+		return false;
+
 	wxXmlNode* xmlMatrixNode = new wxXmlNode( xmlNode, wxXML_ELEMENT_NODE, "Matrix" );
 
 	for( int x = 0; x < subCubeMatrixSize; x++ )
@@ -2021,6 +2027,56 @@ bool RubiksCube::SaveToXml( wxXmlNode* xmlNode ) const
 					return false;
 				if( !SaveIntegerToXml( xmlSubCube, "pos_z_id", subCube->faceData[ POS_Z ].id ) )
 					return false;
+
+				if( !SaveFloatToXml( xmlSubCube, "ban_color_r", subCube->bandageColor.get_e1() ) )
+					return false;
+				if( !SaveFloatToXml( xmlSubCube, "ban_color_g", subCube->bandageColor.get_e2() ) )
+					return false;
+				if( !SaveFloatToXml( xmlSubCube, "ban_color_b", subCube->bandageColor.get_e3() ) )
+					return false;
+
+				if( !SaveIntegerToXml( xmlSubCube, "ban_coord_x", subCube->bandageCoords.x ) )
+					return false;
+				if( !SaveIntegerToXml( xmlSubCube, "ban_coord_y", subCube->bandageCoords.y ) )
+					return false;
+				if( !SaveIntegerToXml( xmlSubCube, "ban_coord_z", subCube->bandageCoords.z ) )
+					return false;
+
+				if( !SaveBoolToXml( xmlSubCube, "bandaged", subCube->bandaged ) )
+					return false;
+
+				for( int i = 0; i < 4; i++ )
+				{
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "neg_x_u%d", i ), subCube->faceData[ NEG_X ].texCoords.data[i][0] ) )
+						return false;
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "neg_x_v%d", i ), subCube->faceData[ NEG_X ].texCoords.data[i][1] ) )
+						return false;
+
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "pos_x_u%d", i ), subCube->faceData[ POS_X ].texCoords.data[i][0] ) )
+						return false;
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "pos_x_v%d", i ), subCube->faceData[ POS_X ].texCoords.data[i][1] ) )
+						return false;
+
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "neg_y_u%d", i ), subCube->faceData[ NEG_Y ].texCoords.data[i][0] ) )
+						return false;
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "neg_y_v%d", i ), subCube->faceData[ NEG_Y ].texCoords.data[i][1] ) )
+						return false;
+
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "pos_y_u%d", i ), subCube->faceData[ POS_Y ].texCoords.data[i][0] ) )
+						return false;
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "pos_y_v%d", i ), subCube->faceData[ POS_Y ].texCoords.data[i][1] ) )
+						return false;
+
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "neg_z_u%d", i ), subCube->faceData[ NEG_Z ].texCoords.data[i][0] ) )
+						return false;
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "neg_z_v%d", i ), subCube->faceData[ NEG_Z ].texCoords.data[i][1] ) )
+						return false;
+
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "pos_z_u%d", i ), subCube->faceData[ POS_Z ].texCoords.data[i][0] ) )
+						return false;
+					if( !SaveFloatToXml( xmlSubCube, wxString::Format( "pos_z_v%d", i ), subCube->faceData[ POS_Z ].texCoords.data[i][1] ) )
+						return false;
+				}
 			}
 		}
 	}
@@ -2071,6 +2127,18 @@ const wxXmlNode* RubiksCube::FindNodeByName( const wxXmlNode* xmlRoot, const wxS
 //==================================================================================================
 bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 {
+	if( !LoadBoolFromXml( xmlNode, "enforceBandaging", enforceBandaging ) )
+		return false;
+
+	bool stretch;
+	if( !LoadBoolFromXml( xmlNode, "stretchTexAcrossFace", stretch ) )
+		return false;
+
+	if( stretch )
+		texApp = TEX_APPLY_ENTIRE_FACE;
+	else
+		texApp = TEX_APPLY_CUBIE_FACES;
+
 	const wxXmlNode* xmlMatrixNode = FindNodeByName( xmlNode, "Matrix" );
 	if( !xmlMatrixNode )
 		return false;
@@ -2134,6 +2202,60 @@ bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 			return false;
 		if( !LoadIntegerFromXml( xmlSubCube, "pos_z_id", subCube->faceData[ POS_Z ].id ) )
 			return false;
+
+		float r, g, b;
+
+		if( !LoadFloatFromXml( xmlSubCube, "ban_color_r", r ) )
+			return false;
+		if( !LoadFloatFromXml( xmlSubCube, "ban_color_g", g ) )
+			return false;
+		if( !LoadFloatFromXml( xmlSubCube, "ban_color_b", b ) )
+			return false;
+
+		subCube->bandageColor.set( c3ga::vectorE3GA::coord_e1_e2_e3, r, g, b );
+
+		if( !LoadIntegerFromXml( xmlSubCube, "ban_coord_x", subCube->bandageCoords.x ) )
+			return false;
+		if( !LoadIntegerFromXml( xmlSubCube, "ban_coord_y", subCube->bandageCoords.y ) )
+			return false;
+		if( !LoadIntegerFromXml( xmlSubCube, "ban_coord_z", subCube->bandageCoords.z ) )
+			return false;
+
+		if( !LoadBoolFromXml( xmlSubCube, "bandaged", subCube->bandaged ) )
+			return false;
+
+		for( int i = 0; i < 4; i++ )
+		{
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "neg_x_u%d", i ), subCube->faceData[ NEG_X ].texCoords.data[i][0] ) )
+				return false;
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "neg_x_v%d", i ), subCube->faceData[ NEG_X ].texCoords.data[i][1] ) )
+				return false;
+
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "pos_x_u%d", i ), subCube->faceData[ POS_X ].texCoords.data[i][0] ) )
+				return false;
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "pos_x_v%d", i ), subCube->faceData[ POS_X ].texCoords.data[i][1] ) )
+				return false;
+
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "neg_y_u%d", i ), subCube->faceData[ NEG_Y ].texCoords.data[i][0] ) )
+				return false;
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "neg_y_v%d", i ), subCube->faceData[ NEG_Y ].texCoords.data[i][1] ) )
+				return false;
+
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "pos_y_u%d", i ), subCube->faceData[ POS_Y ].texCoords.data[i][0] ) )
+				return false;
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "pos_y_v%d", i ), subCube->faceData[ POS_Y ].texCoords.data[i][1] ) )
+				return false;
+
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "neg_z_u%d", i ), subCube->faceData[ NEG_Z ].texCoords.data[i][0] ) )
+				return false;
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "neg_z_v%d", i ), subCube->faceData[ NEG_Z ].texCoords.data[i][1] ) )
+				return false;
+
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "pos_z_u%d", i ), subCube->faceData[ POS_Z ].texCoords.data[i][0] ) )
+				return false;
+			if( !LoadFloatFromXml( xmlSubCube, wxString::Format( "pos_z_v%d", i ), subCube->faceData[ POS_Z ].texCoords.data[i][1] ) )
+				return false;
+		}
 	}
 
 	const wxXmlNode* xmlTextureDataNode = FindNodeByName( xmlNode, "TextureData" );
@@ -2199,6 +2321,48 @@ bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 		return false;
 
 	integer = int( integerLong );
+	return true;
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::SaveFloatToXml( wxXmlNode* xmlNode, const wxString& name, float number )
+{
+	wxString numberString = wxString::Format( "%f", number );
+	xmlNode->AddAttribute( name, numberString );
+	return true;
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::LoadFloatFromXml( const wxXmlNode* xmlNode, const wxString& name, float& number )
+{
+	wxString numberString;
+	if( !xmlNode->GetAttribute( name, &numberString ) )
+		return false;
+
+	double numberDouble;
+	if( !numberString.ToCDouble( &numberDouble ) )
+		return false;
+
+	number = ( float )numberDouble;
+	return true;
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::SaveBoolToXml( wxXmlNode* xmlNode, const wxString& name, bool boolean )
+{
+	wxString booleanString = boolean ? "1" : "0";
+	xmlNode->AddAttribute( name, booleanString );
+	return true;
+}
+
+//==================================================================================================
+/*static*/ bool RubiksCube::LoadBoolFromXml( const wxXmlNode* xmlNode, const wxString& name, bool& boolean )
+{
+	wxString booleanString;
+	if( !xmlNode->GetAttribute( name, &booleanString ) )
+		return false;
+
+	boolean = ( booleanString == "1" ) ? true : false;
 	return true;
 }
 

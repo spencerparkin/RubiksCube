@@ -258,6 +258,10 @@ private:
 
 	static bool SaveIntegerToXml( wxXmlNode* xmlNode, const wxString& name, int integer );
 	static bool LoadIntegerFromXml( const wxXmlNode* xmlNode, const wxString& name, int& integer );
+	static bool SaveFloatToXml( wxXmlNode* xmlNode, const wxString& name, float number );
+	static bool LoadFloatFromXml( const wxXmlNode* xmlNode, const wxString& name, float& number );
+	static bool SaveBoolToXml( wxXmlNode* xmlNode, const wxString& name, bool boolean );
+	static bool LoadBoolFromXml( const wxXmlNode* xmlNode, const wxString& name, bool& boolean );
 
 	void RotatePlane( Plane plane, RotationDirection rotationDirection, int rotationCount );
 	void RotatePlaneCCW( Plane plane );
