@@ -11,6 +11,7 @@ Application::Application( void )
 	rubiksCube = 0;
 	rotationHistoryIndex = -1;
 	makeInitialCube = true;
+	frame = nullptr;
 }
 
 //==================================================================================================
@@ -43,7 +44,7 @@ Application::Application( void )
 	int quadEdges[4] = { 0, 1, 2, 3 };		// Edges
 	bool result = TriCycleSolver::FindSmallestTriCycleSequenceThatOrdersQuadTheSame( quadCorners, quadEdges, triCycleSequence );
 
-	Frame* frame = new Frame( 0, wxDefaultPosition, wxSize( 500, 500 ) );
+	frame = new Frame( 0, wxDefaultPosition, wxSize( 500, 500 ) );
 	frame->Show();
 
 	return true;

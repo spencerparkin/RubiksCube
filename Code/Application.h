@@ -23,6 +23,8 @@ public:
 	RubiksCube* rubiksCube;
 	bool makeInitialCube;
 
+	Frame* frame;
+
 private:
 
 	typedef std::vector< RubiksCube::Rotation > RotationHistory;

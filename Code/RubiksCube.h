@@ -134,6 +134,9 @@ public:
 
 		FaceData faceData[ CUBE_FACE_COUNT ];
 		Coordinates coords;
+		mutable Coordinates bandageCoords;
+		c3ga::vectorE3GA bandageColor;
+		bool bandaged;
 		int id;
 	};
 
@@ -161,10 +164,20 @@ public:
 	static int ExposedColors( const SubCube* subCube, Color* colorArray );
 	static int ExposedFaces( const SubCube* subCube, Face* faceArray );
 
+	SubCube* SubCubeBandageRepresentative( SubCube* subCube );
+	const SubCube* SubCubeBandageRepresentative( const SubCube* subCube ) const;
+
+	void CollectBandagedCubies( SubCube* givenSubCube, SubCubeVector& subCubeVector );
+	void CollectCubiesInPlaneOfRotation( const Rotation& rotation, SubCubeVector& subCubeVector ) const;
+
 	typedef std::list< Rotation > RotationSequence;
 	typedef std::list< RelativeRotation > RelativeRotationSequence;
 
 	void Render( GLenum mode, const Rotation& rotation, const Size& size,
+										int* selectedFaceId = 0,
+										const RubiksCube* comparativeRubiksCube = 0,
+										bool highlightInvariants = false ) const;
+	void Render( GLenum mode, const RotationSequence& rotationSequence, const Size& size,
 										int* selectedFaceId = 0,
 										const RubiksCube* comparativeRubiksCube = 0,
 										bool highlightInvariants = false ) const;
@@ -173,6 +186,8 @@ public:
 	bool ApplySequence( const RotationSequence& rotationSequence );
 	bool Select( unsigned int* hitBuffer, int hitBufferSize, int hitCount, Grip* grip = 0, int* faceId = 0 ) const;
 	bool IsInSolvedState( void ) const;
+
+	bool GenerateRotationSequenceForBandaging( const Rotation& rotation, RotationSequence& rotationSequence ) const;
 
 	int SubCubeMatrixSize( void ) const;
 
@@ -209,8 +224,16 @@ public:
 	static bool AreAdjacentFaces( Face face0, Face face1 );
 
 	const SubCube* FindSubCubeById( int subCubeId ) const;
+	const SubCube* FindSubCubeByFaceId( int faceId ) const;
+	SubCube* FindSubCubeByFaceId( int faceId );
 
 	static int PlaneContainingSubCube( Axis axis, const SubCube* subCube );
+
+	bool EnforceBandaging( void ) const { return enforceBandaging; }
+	void EnforceBandaging( bool enforce ) const { enforceBandaging = enforce; }
+
+	void ClearBandaging( void );
+	void BandageCubies( SubCube* subCubeA, SubCube* subCubeB );
 
 private:
 
@@ -224,7 +247,7 @@ private:
 	void RotatePlaneCCW( Plane plane );
 
 	void RenderSubCube( GLenum mode, int x, int y, int z,
-								const Rotation& rotation, const Size& size,
+								const RotationSequence& rotationSequence, const Size& size,
 								int* selectedFaceId,
 								const RubiksCube* comparativeRubiksCube,
 								bool highlightInvariants ) const;
@@ -236,12 +259,15 @@ private:
 								bool highlightInvariants ) const;
 
 	SubCube* SubCubeIndexPlane( Plane plane, int i, int j );
+	const SubCube* SubCubeIndexPlane( Plane plane, int i, int j ) const;
 	static void SwapFaces( SubCube* subCube, int i, int j );
 	static void SwapFaces( SubCube::FaceData& faceData0, SubCube::FaceData& faceData1 );
 	static void SwapSubCubes( SubCube* subCube0, SubCube* subCube1 );
+	template< typename Type > static void Swap( Type& t0, Type& t1 );
 
 	SubCube*** subCubeMatrix;
 	int subCubeMatrixSize;
+	mutable bool enforceBandaging;
 
 	static double subCubeVertex[8][3];
 	static int subCubeFace[ CUBE_FACE_COUNT ][4];

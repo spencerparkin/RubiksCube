@@ -20,6 +20,8 @@ const char* RubiksCube::textureFiles[ MAX_COLORS ] =
 //==================================================================================================
 RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= true*/ )
 {
+	enforceBandaging = false;
+
 	int faceId = 0;
 	int subCubeId = 0;
 
@@ -52,6 +54,12 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= tru
 				subCube->coords.x = x;
 				subCube->coords.y = y;
 				subCube->coords.z = z;
+
+				subCube->bandageCoords.x = -1;
+				subCube->bandageCoords.y = -1;
+				subCube->bandageCoords.z = -1;
+
+				subCube->bandaged = false;
 
 				subCube->id = subCubeId++;
 			}
@@ -252,7 +260,7 @@ int RubiksCube::SubCubeMatrixSize( void ) const
 
 //==================================================================================================
 void RubiksCube::RenderSubCube( GLenum mode, int x, int y, int z,
-										const Rotation& rotation, const Size& size,
+										const RotationSequence& rotationSequence, const Size& size,
 										int* selectedFaceId,
 										const RubiksCube* comparativeRubiksCube,
 										bool highlightInvariants ) const
@@ -278,15 +286,21 @@ void RubiksCube::RenderSubCube( GLenum mode, int x, int y, int z,
 
 	c3ga::rotorE3GA rotor( c3ga::rotorE3GA::coord_scalar_e1e2_e2e3_e3e1, 1.0, 0.0, 0.0, 0.0 );
 
-	if( ( rotation.plane.axis == X_AXIS && x == rotation.plane.index ) ||
-		( rotation.plane.axis == Y_AXIS && y == rotation.plane.index ) ||
-		( rotation.plane.axis == Z_AXIS && z == rotation.plane.index ) )
+	for( RotationSequence::const_iterator iter = rotationSequence.cbegin(); iter != rotationSequence.cend(); iter++ )
 	{
-		c3ga::vectorE3GA rotationAxis = TranslateAxis( rotation.plane.axis );
-		double rotationAngle = rotation.angle;
-		c3ga::bivectorE3GA rotationBlade;
-		rotationBlade.set( c3ga::lc( rotationAxis, c3ga::trivectorE3GA( c3ga::trivectorE3GA::coord_e1e2e3, 1.0 ) ) );
-		rotor = c3ga::exp( rotationBlade * -0.5 * rotationAngle );
+		const Rotation& rotation = *iter;
+
+		if( ( rotation.plane.axis == X_AXIS && x == rotation.plane.index ) ||
+			( rotation.plane.axis == Y_AXIS && y == rotation.plane.index ) ||
+			( rotation.plane.axis == Z_AXIS && z == rotation.plane.index ) )
+		{
+			c3ga::vectorE3GA rotationAxis = TranslateAxis( rotation.plane.axis );
+			double rotationAngle = rotation.angle;
+			c3ga::bivectorE3GA rotationBlade;
+			rotationBlade.set( c3ga::lc( rotationAxis, c3ga::trivectorE3GA( c3ga::trivectorE3GA::coord_e1e2e3, 1.0 ) ) );
+			rotor = c3ga::exp( rotationBlade * -0.5 * rotationAngle );
+			break;
+		}
 	}
 
 	c3ga::mv motor = 1.0 - 0.5 * subCubeCenter * c3ga::ni;
@@ -316,7 +330,183 @@ void RubiksCube::RenderSubCube( GLenum mode, int x, int y, int z,
 }
 
 //==================================================================================================
+void RubiksCube::ClearBandaging( void )
+{
+	for( int x = 0; x < subCubeMatrixSize; x++ )
+	{
+		for( int y = 0; y < subCubeMatrixSize; y++ )
+		{
+			for( int z = 0; z < subCubeMatrixSize; z++ )
+			{
+				SubCube* subCube = &subCubeMatrix[x][y][z];
+				subCube->bandageCoords.x = -1;
+				subCube->bandageCoords.y = -1;
+				subCube->bandageCoords.z = -1;
+				subCube->bandaged = false;
+			}
+		}
+	}
+}
+
+//==================================================================================================
+RubiksCube::SubCube* RubiksCube::SubCubeBandageRepresentative( SubCube* subCube )
+{
+	const SubCube* subCubeRep = const_cast< const RubiksCube* >( this )->SubCubeBandageRepresentative( subCube );
+	return const_cast< SubCube* >( subCubeRep );
+}
+
+//==================================================================================================
+const RubiksCube::SubCube* RubiksCube::SubCubeBandageRepresentative( const SubCube* subCube ) const
+{
+	const SubCube* subCubeRep = subCube;
+	while( subCubeRep->bandageCoords.x >= 0 )
+		subCubeRep = Matrix( subCubeRep->bandageCoords );
+	
+	while( subCube != subCubeRep )
+	{
+		subCube->bandageCoords = subCubeRep->coords;
+		subCube = Matrix( subCube->bandageCoords );
+	}
+
+	return subCubeRep;
+}
+
+//==================================================================================================
+void RubiksCube::CollectBandagedCubies( SubCube* givenSubCube, SubCubeVector& subCubeVector )
+{
+	for( int x = 0; x < subCubeMatrixSize; x++ )
+	{
+		for( int y = 0; y < subCubeMatrixSize; y++ )
+		{
+			for( int z = 0; z < subCubeMatrixSize; z++ )
+			{
+				SubCube* subCube = &subCubeMatrix[x][y][z];
+				if( SubCubeBandageRepresentative( subCube ) == SubCubeBandageRepresentative( givenSubCube ) )
+					subCubeVector.push_back( subCube );
+			}
+		}
+	}
+}
+
+//==================================================================================================
+void RubiksCube::BandageCubies( SubCube* subCubeA, SubCube* subCubeB )
+{
+	SubCube* subCubeRepA = SubCubeBandageRepresentative( subCubeA );
+	SubCube* subCubeRepB = SubCubeBandageRepresentative( subCubeB );
+
+	if( subCubeRepA == subCubeRepB )
+		return;
+
+	// This is arbitrarily done.  We could do it vice-versa.
+	subCubeRepA->bandageCoords = subCubeRepB->coords;
+
+	if( subCubeA->bandaged == subCubeB->bandaged )
+	{
+		wxColourDialog colorDialog( wxGetApp().frame );
+		if( wxID_OK != colorDialog.ShowModal() )
+			return;
+
+		wxColour color = colorDialog.GetColourData().GetColour();
+		c3ga::vectorE3GA bandageColor;
+		bandageColor.set_e1( double( color.Red() ) / 255.0 );
+		bandageColor.set_e2( double( color.Green() ) / 255.0 );
+		bandageColor.set_e3( double( color.Blue() ) / 255.0 );
+
+		if( !subCubeA->bandaged )
+		{
+			subCubeA->bandageColor = bandageColor;
+			subCubeB->bandageColor = bandageColor;
+		}
+		else
+		{
+			SubCubeVector subCubeVector;
+			CollectBandagedCubies( subCubeA, subCubeVector );
+			for( int i = 0; i < ( int )subCubeVector.size(); i++ )
+				*const_cast< c3ga::vectorE3GA* >( &subCubeVector[i]->bandageColor ) = bandageColor;
+		}
+	}
+	else if( subCubeA->bandaged )
+		subCubeB->bandageColor = subCubeA->bandageColor;
+	else if( subCubeB->bandaged )
+		subCubeA->bandageColor = subCubeB->bandageColor;
+	else
+	{
+		wxASSERT( false );
+	}
+
+	subCubeA->bandaged = true;
+	subCubeB->bandaged = true;
+}
+
+//==================================================================================================
+void RubiksCube::CollectCubiesInPlaneOfRotation( const Rotation& rotation, SubCubeVector& subCubeVector ) const
+{
+	subCubeVector.clear();
+
+	for( int x = 0; x < subCubeMatrixSize; x++ )
+	{
+		for( int y = 0; y < subCubeMatrixSize; y++ )
+		{
+			// Skip internal cubies.
+			if( rotation.plane.index > 0 && rotation.plane.index < subCubeMatrixSize - 1 )
+				if( x > 0 && x < subCubeMatrixSize - 1 && y > 0 && y < subCubeMatrixSize - 1 )
+					continue;
+
+			const SubCube* subCube = SubCubeIndexPlane( rotation.plane, x, y );
+			subCubeVector.push_back( subCube );
+		}
+	}
+}
+
+//==================================================================================================
+bool RubiksCube::GenerateRotationSequenceForBandaging( const Rotation& rotation, RotationSequence& rotationSequence ) const
+{
+	rotationSequence.clear();
+	rotationSequence.push_back( rotation );
+
+	if( enforceBandaging )
+	{
+		SubCubeVector subCubeVector;
+		CollectCubiesInPlaneOfRotation( rotation, subCubeVector );
+
+		std::set< const SubCube* > involvedBandageSets;
+		for( int i = 0; i < ( int )subCubeVector.size(); i++ )
+			involvedBandageSets.insert( SubCubeBandageRepresentative( subCubeVector[i] ) );
+
+		for( int index = 0; index < ( int )subCubeMatrixSize; index++ )
+		{
+			if( index == rotation.plane.index )
+				continue;
+
+			Rotation adjacentRotation = rotation;
+			adjacentRotation.plane.index = index;
+			CollectCubiesInPlaneOfRotation( adjacentRotation, subCubeVector );
+
+			for( int i = 0; i < ( int )subCubeVector.size(); i++ )
+			{
+				std::set< const SubCube* >::iterator iter = involvedBandageSets.find( SubCubeBandageRepresentative( subCubeVector[i] ) );
+				if( iter != involvedBandageSets.end() )
+					rotationSequence.push_back( adjacentRotation );
+			}
+		}
+	}
+
+	return true;
+}
+
+//==================================================================================================
 void RubiksCube::Render( GLenum mode, const Rotation& rotation, const Size& size,
+										int* selectedFaceId /*= 0*/,
+										const RubiksCube* comparativeRubiksCube /*= 0*/,
+										bool highlightInvariants /*= false*/ ) const
+{
+	RotationSequence rotationSequence;
+	GenerateRotationSequenceForBandaging( rotation, rotationSequence );
+	Render( mode, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+}
+
+//==================================================================================================
+void RubiksCube::Render( GLenum mode, const RotationSequence& rotationSequence, const Size& size,
 										int* selectedFaceId /*= 0*/,
 										const RubiksCube* comparativeRubiksCube /*= 0*/,
 										bool highlightInvariants /*= false*/ ) const
@@ -325,42 +515,42 @@ void RubiksCube::Render( GLenum mode, const Rotation& rotation, const Size& size
 	{
 		for( int j = 1; j < subCubeMatrixSize - 1; j++ )
 		{
-			RenderSubCube( mode, i, j, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-			RenderSubCube( mode, 0, i, j, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-			RenderSubCube( mode, j, 0, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, i, j, 0, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, 0, i, j, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, j, 0, i, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
 
-			RenderSubCube( mode, i, j, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-			RenderSubCube( mode, subCubeMatrixSize - 1, i, j, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-			RenderSubCube( mode, j, subCubeMatrixSize - 1, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, i, j, subCubeMatrixSize - 1, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, subCubeMatrixSize - 1, i, j, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+			RenderSubCube( mode, j, subCubeMatrixSize - 1, i, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
 		}
 	}
 
 	for( int i = 1; i < subCubeMatrixSize - 1; i++ )
 	{
-		RenderSubCube( mode, i, 0, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-		RenderSubCube( mode, i, subCubeMatrixSize - 1, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-		RenderSubCube( mode, i, 0, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-		RenderSubCube( mode, i, subCubeMatrixSize - 1, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, i, 0, 0, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, i, subCubeMatrixSize - 1, 0, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, i, 0, subCubeMatrixSize - 1, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, i, subCubeMatrixSize - 1, subCubeMatrixSize - 1, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
 
-		RenderSubCube( mode, 0, i, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-		RenderSubCube( mode, subCubeMatrixSize - 1, i, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-		RenderSubCube( mode, 0, i, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-		RenderSubCube( mode, subCubeMatrixSize - 1, i, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, 0, i, 0, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, subCubeMatrixSize - 1, i, 0, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, 0, i, subCubeMatrixSize - 1, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, subCubeMatrixSize - 1, i, subCubeMatrixSize - 1, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
 
-		RenderSubCube( mode, 0, 0, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-		RenderSubCube( mode, subCubeMatrixSize - 1, 0, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-		RenderSubCube( mode, 0, subCubeMatrixSize - 1, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-		RenderSubCube( mode, subCubeMatrixSize - 1, subCubeMatrixSize - 1, i, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, 0, 0, i, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, subCubeMatrixSize - 1, 0, i, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, 0, subCubeMatrixSize - 1, i, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+		RenderSubCube( mode, subCubeMatrixSize - 1, subCubeMatrixSize - 1, i, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
 	}
 
-	RenderSubCube( mode, 0, 0, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-	RenderSubCube( mode, subCubeMatrixSize - 1, 0, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-	RenderSubCube( mode, 0, subCubeMatrixSize - 1, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-	RenderSubCube( mode, subCubeMatrixSize - 1, subCubeMatrixSize - 1, 0, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-	RenderSubCube( mode, 0, 0, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-	RenderSubCube( mode, subCubeMatrixSize - 1, 0, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-	RenderSubCube( mode, 0, subCubeMatrixSize - 1, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
-	RenderSubCube( mode, subCubeMatrixSize - 1, subCubeMatrixSize - 1, subCubeMatrixSize - 1, rotation, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, 0, 0, 0, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, subCubeMatrixSize - 1, 0, 0, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, 0, subCubeMatrixSize - 1, 0, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, subCubeMatrixSize - 1, subCubeMatrixSize - 1, 0, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, 0, 0, subCubeMatrixSize - 1, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, subCubeMatrixSize - 1, 0, subCubeMatrixSize - 1, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, 0, subCubeMatrixSize - 1, subCubeMatrixSize - 1, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
+	RenderSubCube( mode, subCubeMatrixSize - 1, subCubeMatrixSize - 1, subCubeMatrixSize - 1, rotationSequence, size, selectedFaceId, comparativeRubiksCube, highlightInvariants );
 }
 
 //==================================================================================================
@@ -434,12 +624,17 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 			glMaterialfv( GL_FRONT, GL_AMBIENT_AND_DIFFUSE, ambientDiffuse );
 		}
 
+		c3ga::dualSphere dualPoint;
+		dualPoint.set( c3ga::no );
+		dualPoint = c3ga::applyUnitVersor( vertexVersor, dualPoint );
+		c3ga::vectorE3GA subCubeCenter;
+		subCubeCenter = dualPoint;
+
 		c3ga::vectorE3GA quadVertices[4];
 		for( int index = 0; index < 4; index++ )
 		{
 			double* vertex = subCubeVertex[ subCubeFace[ face ][ index ] ];
 			c3ga::vectorE3GA point( c3ga::vectorE3GA::coord_e1_e2_e3, vertex[0], vertex[1], vertex[2] );
-			c3ga::dualSphere dualPoint;
 			dualPoint.set( c3ga::no + point + 0.5 * c3ga::norm2( point ) * c3ga::ni );
 			dualPoint = c3ga::applyUnitVersor( vertexVersor, dualPoint );		// This should always be homogenized.
 			quadVertices[ index ] = dualPoint;
@@ -456,6 +651,25 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 
 		if( mode == GL_RENDER )
 		{
+			if( subCube->bandaged )
+			{
+				glDisable( GL_TEXTURE_2D );
+				glDisable( GL_LIGHTING );
+				glBegin( GL_QUADS );
+				glColor3d( subCube->bandageColor.get_e1(), subCube->bandageColor.get_e2(), subCube->bandageColor.get_e3() );
+				c3ga::vectorE3GA center( c3ga::vectorE3GA::coord_e1_e2_e3, 0.0, 0.0, 0.0 );
+				for( int index = 0; index < 4; index++ )
+					center += quadVertices[ index ];
+				center *= 1.0 / 4.0;
+				for( int index = 0; index < 4; index++ )
+				{
+					c3ga::vectorE3GA vertex = center + ( quadVertices[ index ] - center ) * 0.6;
+					vertex = vertex + ( center - subCubeCenter ) * 0.05;
+					glVertex3d( vertex.get_e1(), vertex.get_e2(), vertex.get_e3() );
+				}
+				glEnd();
+			}
+
 			bool highlightFace = false;
 			//c3ga::vectorE3GA highlightColor( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0 - faceColor.get_e1(), 1.0 - faceColor.get_e2(), 1.0 - faceColor.get_e3() );
 			c3ga::vectorE3GA highlightColor( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 1.0, 1.0 );
@@ -727,7 +941,20 @@ bool RubiksCube::Apply( const Rotation& rotation, Rotation* invariantRotation /*
 	if( rotationCount == 0 )
 		return false;
 
-	RotatePlane( rotation.plane, rotationDirection, rotationCount );
+	if( !enforceBandaging )
+		RotatePlane( rotation.plane, rotationDirection, rotationCount );
+	else
+	{
+		RotationSequence rotationSequence;
+		GenerateRotationSequenceForBandaging( rotation, rotationSequence );
+		if( rotationSequence.size() == 0 )
+			return false;
+
+		enforceBandaging = false;
+		for( RotationSequence::const_iterator iter = rotationSequence.cbegin(); iter != rotationSequence.cend(); iter++ )
+			Apply( *iter );
+		enforceBandaging = true;
+	}
 
 	// Notice that the invariant rotation is used as both input and output.
 	if( invariantRotation )
@@ -814,6 +1041,50 @@ void RubiksCube::RotatePlaneCCW( Plane plane )
 			}
 		}
 	}
+
+	// Lastly, fixup any bandage coordinates.
+	for( int i = 0; i < subCubeMatrixSize; i++ )
+	{
+		for( int j = 0; j < subCubeMatrixSize; j++ )
+		{
+			SubCube* subCube = SubCubeIndexPlane( plane, i, j );
+			if( subCube->bandaged && subCube->bandageCoords.x >= 0 )
+			{
+				Coordinates coords;
+				switch( plane.axis )
+				{
+					case X_AXIS:
+					{
+						coords.x = subCube->bandageCoords.x;
+						coords.y = subCubeMatrixSize - 1 - subCube->bandageCoords.z;
+						coords.z = subCube->bandageCoords.y;
+						break;
+					}
+					case Y_AXIS:
+					{
+						coords.x = subCube->bandageCoords.z;
+						coords.y = subCube->bandageCoords.y;
+						coords.z = subCubeMatrixSize - 1 - subCube->bandageCoords.x;
+						break;
+					}
+					case Z_AXIS:
+					{
+						coords.x = subCubeMatrixSize - 1 - subCube->bandageCoords.y;
+						coords.y = subCube->bandageCoords.x;
+						coords.z = subCube->bandageCoords.z;
+						break;
+					}
+				}
+
+				if( !this->ValidMatrixCoordinates( coords ) )
+				{
+					int b = 0;
+				}
+
+				subCube->bandageCoords = coords;
+			}
+		}
+	}
 }
 
 //==================================================================================================
@@ -827,6 +1098,12 @@ RubiksCube::SubCube* RubiksCube::SubCubeIndexPlane( Plane plane, int i, int j )
 	}
 
 	return 0;
+}
+
+//==================================================================================================
+const RubiksCube::SubCube* RubiksCube::SubCubeIndexPlane( Plane plane, int i, int j ) const
+{
+	return const_cast< RubiksCube* >( this )->SubCubeIndexPlane( plane, i, j );
 }
 
 //==================================================================================================
@@ -849,9 +1126,19 @@ RubiksCube::SubCube* RubiksCube::SubCubeIndexPlane( Plane plane, int i, int j )
 	for( int face = 0; face < CUBE_FACE_COUNT; face++ )
 		SwapFaces( subCube0->faceData[ face ], subCube1->faceData[ face ] );
 
-	int tempId = subCube0->id;
-	subCube0->id = subCube1->id;
-	subCube1->id = tempId;
+	Swap< int >( subCube0->id, subCube1->id );
+	Swap< Coordinates >( subCube0->bandageCoords, subCube1->bandageCoords );
+	Swap< bool >( subCube0->bandaged, subCube1->bandaged );
+	Swap< c3ga::vectorE3GA >( subCube0->bandageColor, subCube1->bandageColor );
+}
+
+//==================================================================================================
+template< typename Type >
+/*static*/ void RubiksCube::Swap( Type& t0, Type& t1 )
+{
+	Type temp = t0;
+	t0 = t1;
+	t1 = temp;
 }
 
 //==================================================================================================
@@ -1459,6 +1746,8 @@ bool RubiksCube::SaveToFile( const wxString& file ) const
 {
 	bool success = false;
 	
+	// TODO: We need to save bandaging info.
+
 	do
 	{
 		wxXmlNode* xmlRoot = new wxXmlNode( 0, wxXML_ELEMENT_NODE, "RubiksCube" );
@@ -1487,6 +1776,8 @@ bool RubiksCube::SaveToFile( const wxString& file ) const
 {
 	bool success = false;
 	RubiksCube* rubiksCube = 0;
+
+	// TODO: We need to load bandaging info.
 
 	do
 	{
@@ -1768,7 +2059,7 @@ const RubiksCube::SubCube* RubiksCube::FindSubCubeById( int subCubeId ) const
 {
 	// Another sillyness to consider here, of course, is that we're searching
 	// the entire cube: the inner, non-exposed cubes, as well as the exposed cubes.
-	// We only need to track and search the exposed cubes.
+	// We only need to track and search the exposed cubes.  Whatever.
 	for( int x = 0; x < subCubeMatrixSize; x++ )
 	{
 		for( int y = 0; y < subCubeMatrixSize; y++ )
@@ -1783,6 +2074,32 @@ const RubiksCube::SubCube* RubiksCube::FindSubCubeById( int subCubeId ) const
 	}
 
 	return 0;
+}
+
+//==================================================================================================
+RubiksCube::SubCube* RubiksCube::FindSubCubeByFaceId( int faceId )
+{
+	for( int x = 0; x < subCubeMatrixSize; x++ )
+	{
+		for( int y = 0; y < subCubeMatrixSize; y++ )
+		{
+			for( int z = 0; z < subCubeMatrixSize; z++ )
+			{
+				SubCube* subCube = &subCubeMatrix[x][y][z];
+				for( int face = 0; face < CUBE_FACE_COUNT; face++ )
+					if( subCube->faceData[ face ].id == faceId )
+						return subCube;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+//==================================================================================================
+const RubiksCube::SubCube* RubiksCube::FindSubCubeByFaceId( int faceId ) const
+{
+	return const_cast< RubiksCube* >( this )->FindSubCubeByFaceId( faceId );
 }
 
 //==================================================================================================

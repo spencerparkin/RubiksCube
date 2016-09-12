@@ -18,6 +18,9 @@ bool Solver::MakeEntireSolutionSequence( const RubiksCube* rubiksCube, RubiksCub
 	if( !GetReady() )
 		return false;
 
+	// I don't plan to support solving a bandaged cube...not sure how to do it.
+	rubiksCube->EnforceBandaging( false );
+
 	wxScopedPtr< RubiksCube > rubiksCubeCopy;
 	rubiksCubeCopy.reset( new RubiksCube( rubiksCube->SubCubeMatrixSize(), false ) );
 	if( !rubiksCubeCopy->Copy( *rubiksCube, RubiksCube::CopyMap ) )

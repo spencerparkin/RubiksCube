@@ -18,6 +18,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxMenuItem* saveCubeMenuItem = new wxMenuItem( programMenu, ID_SaveCube, "Save Cube", "Save the Rubik's Cube to file." );
 	wxMenuItem* loadCubeMenuItem = new wxMenuItem( programMenu, ID_LoadCube, "Load Cube", "Load a Rubik's Cube from file." );
 	wxMenuItem* exitMenuItem = new wxMenuItem( programMenu, ID_Exit, "Exit", "Exit this program." );
+	wxMenuItem* enforceBandagingItem = new wxMenuItem( programMenu, ID_EnforceBandaging, "Enforce Bandaging", "If there are bandaged cubies, keep them relative to one another.", wxITEM_CHECK );
+	wxMenuItem* clearBandagingItem = new wxMenuItem( programMenu, ID_ClearBandaging, "Clear Bandaging", "Remove all bandages between any two cubies." );
 	programMenu->Append( createCubeMenuItem );
 	programMenu->Append( destroyCubeMenuItem );
 	programMenu->AppendSeparator();
@@ -27,6 +29,9 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	programMenu->Append( scrambleCubeMenuItem );
 	programMenu->Append( solveCubeMenuItem );
 //	programMenu->Append( cubeInACubeMenuItem );
+	programMenu->AppendSeparator();
+	programMenu->Append( enforceBandagingItem );
+	programMenu->Append( clearBandagingItem );
 	programMenu->AppendSeparator();
 	programMenu->Append( exitMenuItem );
 
@@ -101,6 +106,8 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnCubeInACube, this, ID_CubeInACube );
 	Bind( wxEVT_MENU, &Frame::OnSaveCube, this, ID_SaveCube );
 	Bind( wxEVT_MENU, &Frame::OnLoadCube, this, ID_LoadCube );
+	Bind( wxEVT_MENU, &Frame::OnEnforceBandaging, this, ID_EnforceBandaging );
+	Bind( wxEVT_MENU, &Frame::OnClearBandaging, this, ID_ClearBandaging );
 	Bind( wxEVT_MENU, &Frame::OnShowPerspectiveLabels, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_MENU, &Frame::OnShowInvariantFaces, this, ID_ShowInvariantFaces );
 	Bind( wxEVT_MENU, &Frame::OnTakeSnapShot, this, ID_TakeSnapShot );
@@ -121,6 +128,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_CubeInACube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_SaveCube );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_LoadCube );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_EnforceBandaging );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowInvariantFaces );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_TakeSnapShot );
@@ -222,6 +230,40 @@ void Frame::OnLoadCube( wxCommandEvent& event )
 		canvas->AdjustSizeFor( wxGetApp().rubiksCube );
 		canvas->Refresh();
 		wxGetApp().RotationHistoryClear();
+	}
+}
+
+//==================================================================================================
+void Frame::OnEnforceBandaging( wxCommandEvent& event )
+{
+	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
+
+	if( rubiksCube )
+	{
+		if( rubiksCube->EnforceBandaging() )
+			rubiksCube->EnforceBandaging( false );
+		else
+		{
+			if( !rubiksCube->IsInSolvedState() )
+			{
+				wxMessageBox( wxT( "Can only enable bandaging when cube is in the solved state." ), wxT( "Error" ), wxCENTRE | wxICON_ERROR );
+				return;
+			}
+
+			rubiksCube->EnforceBandaging( true );
+		}
+
+		canvas->Refresh();
+	}
+}
+
+//==================================================================================================
+void Frame::OnClearBandaging( wxCommandEvent& event )
+{
+	if( wxGetApp().rubiksCube )
+	{
+		wxGetApp().rubiksCube->ClearBandaging();
+		canvas->Refresh();
 	}
 }
 
@@ -501,7 +543,8 @@ void Frame::OnAbout( wxCommandEvent& event )
         
     aboutDialogInfo.SetName( "Rube-Cube" );
     aboutDialogInfo.SetVersion( "1.0" );
-    aboutDialogInfo.SetDescription( "This program is free software and distributed under the MIT license." );
+    aboutDialogInfo.SetDescription( "This program is free software and distributed under the MIT license.\n"
+									"Feel free report any bugs you find." );
     aboutDialogInfo.SetCopyright( "Copyright (C) 2013, 2015, 2016 -- Spencer T. Parkin <SpencerTParkin@gmail.com>" );
 
     wxAboutBox( aboutDialogInfo );
@@ -532,6 +575,10 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 			break;
 		}
 		case ID_SolveCube:
+		{
+			event.Enable( ( wxGetApp().rubiksCube != 0 && executionSequence.size() == 0 && !wxGetApp().rubiksCube->EnforceBandaging() ) ? true : false );
+			break;
+		}
 		case ID_ScrambleCube:
 		{
 			event.Enable( ( wxGetApp().rubiksCube != 0 && executionSequence.size() == 0 ) ? true : false );
@@ -575,6 +622,18 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		case ID_DebugMode:
 		{
 			event.Check( ( debugMode == DEBUG_MODE_NONE ) ? false : true );
+			break;
+		}
+		case ID_EnforceBandaging:
+		{
+			if( wxGetApp().rubiksCube )
+			{
+				event.Enable( true );
+				bool checked = wxGetApp().rubiksCube->EnforceBandaging();
+				event.Check( checked );
+			}
+			else
+				event.Enable( false );
 			break;
 		}
 	}

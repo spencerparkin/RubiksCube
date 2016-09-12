@@ -13,6 +13,7 @@
 #include <wx/numdlg.h>
 #include <wx/msgdlg.h>
 #include <wx/filedlg.h>
+#include <wx/colordlg.h>
 #include <wx/glcanvas.h>
 #include <wx/sizer.h>
 #include <wx/timer.h>
@@ -30,6 +31,7 @@
 
 #include <list>
 #include <map>
+#include <set>
 
 #include "c3ga/c3ga.h"
 

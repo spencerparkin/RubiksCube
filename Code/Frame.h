@@ -21,6 +21,8 @@ private:
 		ID_CubeInACube,
 		ID_SaveCube,
 		ID_LoadCube,
+		ID_EnforceBandaging,
+		ID_ClearBandaging,
 		ID_RenderWithPerspectiveProjection,
 		ID_RenderWithOrthographicProjection,
 		ID_ShowPerspectiveLabels,
@@ -44,6 +46,8 @@ private:
 	void OnCubeInACube( wxCommandEvent& event );
 	void OnSaveCube( wxCommandEvent& event );
 	void OnLoadCube( wxCommandEvent& event );
+	void OnEnforceBandaging( wxCommandEvent& event );
+	void OnClearBandaging( wxCommandEvent& event );
 	void OnRenderWithPerspectiveProjection( wxCommandEvent& event );
 	void OnRenderWithOrthographicProjection( wxCommandEvent& event );
 	void OnShowPerspectiveLabels( wxCommandEvent& event );

@@ -112,6 +112,7 @@ bool Canvas::Animate( void )
 		return false;
 	}
 
+	// TODO: The animation rate should be processor-speed-independent.
 	rotation.angle *= 0.9;
 	return true;
 }
@@ -461,9 +462,21 @@ void Canvas::OnMouseLeftDown( wxMouseEvent& event )
 	RubiksCube* rubiksCube = wxGetApp().rubiksCube;
 	if( rubiksCube && event.ControlDown() )
 	{
+		int preFaceId = selectedFaceId;
+
 		PreRender( GL_SELECT );
 		rubiksCube->Render( GL_SELECT, rotation, size );
 		PostRender( GL_SELECT, true );
+
+		int postFaceId = selectedFaceId;
+
+		if( preFaceId != 0 && postFaceId != 0 && preFaceId != postFaceId && event.ShiftDown() )
+		{
+			RubiksCube::SubCube* subCubeA = rubiksCube->FindSubCubeByFaceId( preFaceId );
+			RubiksCube::SubCube* subCubeB = rubiksCube->FindSubCubeByFaceId( postFaceId );
+			rubiksCube->BandageCubies( subCubeA, subCubeB );
+		}
+
 		Refresh();
 	}
 }
