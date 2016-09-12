@@ -301,6 +301,9 @@ private:
 
 	GLuint GetTextureObject( Color color ) const;
 	void FreeTextureData( void );
+
+	enum TexCoordRotateDir { ROT_TEX_COORDS_CW, ROT_TEX_COORDS_CCW };
+	void RotateTextureCoordinates( SubCube::TexCoords& texCoords, TexCoordRotateDir rotDir );
 };
 
 // RubiksCube.h

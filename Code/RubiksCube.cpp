@@ -177,6 +177,7 @@ GLuint RubiksCube::GetTextureObject( Color color ) const
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
+			// TODO: It might be fun to support an alpha channel here.
 			const unsigned char* imageData = tex->image->GetData();
 			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, tex->image->GetWidth(), tex->image->GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, imageData );
 		}
@@ -780,7 +781,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 			}
 
 			bool highlightFace = false;
-			c3ga::vectorE3GA highlightColor( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 1.0, 1.0 );
+			c3ga::vectorE3GA highlightColor( c3ga::vectorE3GA::coord_e1_e2_e3, 0.5, 0.5, 0.5 );
 			if( highlightInvariants )
 			{
 				if( comparativeSubCube && comparativeSubCube->faceData[ face ].id == subCube->faceData[ face ].id )
@@ -1150,12 +1151,13 @@ void RubiksCube::RotatePlaneCCW( Plane plane )
 		}
 	}
 
-	// Fixup any bandage coordinates.
+	// Fixup any bandage coordinates and texture coordinates.
 	for( int i = 0; i < subCubeMatrixSize; i++ )
 	{
 		for( int j = 0; j < subCubeMatrixSize; j++ )
 		{
 			SubCube* subCube = SubCubeIndexPlane( plane, i, j );
+
 			if( subCube->bandaged && subCube->bandageCoords.x >= 0 )
 			{
 				Coordinates coords;
@@ -1186,10 +1188,66 @@ void RubiksCube::RotatePlaneCCW( Plane plane )
 
 				subCube->bandageCoords = coords;
 			}
+
+			switch( plane.axis )
+			{
+				case X_AXIS:
+				{
+					RotateTextureCoordinates( subCube->faceData[ POS_X ].texCoords, ROT_TEX_COORDS_CCW );
+					RotateTextureCoordinates( subCube->faceData[ NEG_X ].texCoords, ROT_TEX_COORDS_CW );
+					RotateTextureCoordinates( subCube->faceData[ POS_Z ].texCoords, ROT_TEX_COORDS_CW );
+					RotateTextureCoordinates( subCube->faceData[ NEG_Z ].texCoords, ROT_TEX_COORDS_CCW );
+					break;
+				}
+				case Y_AXIS:
+				{
+					RotateTextureCoordinates( subCube->faceData[ POS_Y ].texCoords, ROT_TEX_COORDS_CCW );
+					RotateTextureCoordinates( subCube->faceData[ NEG_Y ].texCoords, ROT_TEX_COORDS_CW );
+					RotateTextureCoordinates( subCube->faceData[ POS_X ].texCoords, ROT_TEX_COORDS_CW );
+					RotateTextureCoordinates( subCube->faceData[ NEG_X ].texCoords, ROT_TEX_COORDS_CCW );
+					break;
+				}
+				case Z_AXIS:
+				{
+					RotateTextureCoordinates( subCube->faceData[ POS_Z ].texCoords, ROT_TEX_COORDS_CCW );
+					RotateTextureCoordinates( subCube->faceData[ NEG_Z ].texCoords, ROT_TEX_COORDS_CW );
+					RotateTextureCoordinates( subCube->faceData[ POS_Y ].texCoords, ROT_TEX_COORDS_CW );
+					RotateTextureCoordinates( subCube->faceData[ NEG_Y ].texCoords, ROT_TEX_COORDS_CCW );
+					break;
+				}
+			}
 		}
 	}
+}
 
-	// TODO: Fixup the texture coordinates!!!
+//==================================================================================================
+void RubiksCube::RotateTextureCoordinates( SubCube::TexCoords& texCoords, TexCoordRotateDir rotDir )
+{
+	switch( rotDir )
+	{
+		case ROT_TEX_COORDS_CW:
+		{
+			for( int i = 0; i < 3; i++ )
+			{
+				int j = i + 1;
+				Swap< float >( texCoords.data[i][0], texCoords.data[j][0] );
+				Swap< float >( texCoords.data[i][1], texCoords.data[j][1] );
+			}
+
+			break;
+		}
+		case ROT_TEX_COORDS_CCW:
+		{
+			for( int i = 3; i > 0; i-- )
+			{
+				int j = i - 1;
+				Swap< float >( texCoords.data[i][0], texCoords.data[j][0] );
+				Swap< float >( texCoords.data[i][1], texCoords.data[j][1] );
+			}
+
+			break;
+		}
+	}
 }
 
 //==================================================================================================
@@ -1851,7 +1909,7 @@ bool RubiksCube::SaveToFile( const wxString& file ) const
 {
 	bool success = false;
 	
-	// TODO: We need to save bandaging info.
+	// TODO: We need to save bandaging info and texture coordinate data.
 
 	do
 	{
@@ -1882,7 +1940,7 @@ bool RubiksCube::SaveToFile( const wxString& file ) const
 	bool success = false;
 	RubiksCube* rubiksCube = 0;
 
-	// TODO: We need to load bandaging info.
+	// TODO: We need to load bandaging info and texture coordinate data.
 
 	do
 	{
@@ -2108,7 +2166,11 @@ bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 			wxImage* image = new wxImage( int( width ), int( height ) );
 			int dataLen = image->GetWidth() * image->GetHeight() * 3;
 			wxString rawImageData = xmlImageDataNode->GetContent();
-			wxBase64Decode( image->GetData(), dataLen, rawImageData );
+			if( wxCONV_FAILED == wxBase64Decode( image->GetData(), dataLen, rawImageData ) )
+			{
+				delete image;
+				return false;
+			}
 
 			ReplaceFaceTextureWithImage( ( Color )color, image );
 		}
