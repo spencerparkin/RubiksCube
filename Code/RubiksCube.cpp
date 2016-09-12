@@ -2,9 +2,6 @@
 
 #include "Header.h"
 
-// TODO: It would be awesome to let the user load their own textures for the 6 faces of the cube.
-//       This adds an interesting challenge to the cube as the center pieces then require orientation.
-
 //==================================================================================================
 const char* RubiksCube::textureFiles[ MAX_COLORS ] =
 {
@@ -21,6 +18,8 @@ const char* RubiksCube::textureFiles[ MAX_COLORS ] =
 RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= true*/ )
 {
 	enforceBandaging = false;
+
+	texApp = TEX_APPLY_CUBIE_FACES;
 
 	int faceId = 0;
 	int subCubeId = 0;
@@ -61,6 +60,13 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= tru
 
 				subCube->bandaged = false;
 
+				CalcCubieTexCoords( subCube->faceData[ NEG_X ].texCoords, NEG_X, subCube->coords );
+				CalcCubieTexCoords( subCube->faceData[ POS_X ].texCoords, POS_X, subCube->coords );
+				CalcCubieTexCoords( subCube->faceData[ NEG_Y ].texCoords, NEG_Y, subCube->coords );
+				CalcCubieTexCoords( subCube->faceData[ POS_Y ].texCoords, POS_Y, subCube->coords );
+				CalcCubieTexCoords( subCube->faceData[ NEG_Z ].texCoords, NEG_Z, subCube->coords );
+				CalcCubieTexCoords( subCube->faceData[ POS_Z ].texCoords, POS_Z, subCube->coords );
+
 				subCube->id = subCubeId++;
 			}
 		}
@@ -85,6 +91,67 @@ RubiksCube::~RubiksCube( void )
 	delete[] subCubeMatrix;
 
 	UnloadTextures();
+}
+
+//==================================================================================================
+void RubiksCube::CalcCubieTexCoords( SubCube::TexCoords& texCoords, Face face, const Coordinates& coords )
+{
+	float len = 1.f / float( subCubeMatrixSize );
+
+	texCoords.data[0][0] = 0.f;
+	texCoords.data[0][1] = 0.f;
+
+	texCoords.data[1][0] = len;
+	texCoords.data[1][1] = 0.f;
+
+	texCoords.data[2][0] = len;
+	texCoords.data[2][1] = len;
+
+	texCoords.data[3][0] = 0.f;
+	texCoords.data[3][1] = len;
+
+	for( int i = 0; i < 4; i++ )
+	{
+		switch( face )
+		{
+			case POS_X:
+			{
+				texCoords.data[i][0] += float( coords.y ) * len;
+				texCoords.data[i][1] += float( coords.z ) * len;
+				break;
+			}
+			case NEG_X:
+			{
+				texCoords.data[i][0] += float( coords.z ) * len;
+				texCoords.data[i][1] += float( coords.y ) * len;
+				break;
+			}
+			case POS_Y:
+			{
+				texCoords.data[i][0] += float( coords.z ) * len;
+				texCoords.data[i][1] += float( coords.x ) * len;
+				break;
+			}
+			case NEG_Y:
+			{
+				texCoords.data[i][0] += float( coords.x ) * len;
+				texCoords.data[i][1] += float( coords.z ) * len;
+				break;
+			}
+			case POS_Z:
+			{
+				texCoords.data[i][0] += float( coords.x ) * len;
+				texCoords.data[i][1] += float( coords.y ) * len;
+				break;
+			}
+			case NEG_Z:
+			{
+				texCoords.data[i][0] += float( coords.y ) * len;
+				texCoords.data[i][1] += float( coords.x ) * len;
+				break;
+			}
+		}
+	}
 }
 
 //==================================================================================================
@@ -666,7 +733,12 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 		glBegin( GL_QUADS );
 		for( int index = 0; index < 4; index++ )
 		{
-			glTexCoord2dv( subCubeTextureCoordinates[ index ] );
+			if( texApp == TEX_APPLY_CUBIE_FACES )
+				glTexCoord2dv( subCubeTextureCoordinates[ index ] );
+			else if( texApp == TEX_APPLY_ENTIRE_FACE )
+				glTexCoord2fv( subCube->faceData[ face ].texCoords.data[ index ] );
+			else
+				glTexCoord2f( 0.f, 0.f );
 			c3ga::vectorE3GA* vertex = &quadVertices[ index ];
 			glVertex3d( vertex->get_e1(), vertex->get_e2(), vertex->get_e3() );
 		}
@@ -694,7 +766,6 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 			}
 
 			bool highlightFace = false;
-			//c3ga::vectorE3GA highlightColor( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0 - faceColor.get_e1(), 1.0 - faceColor.get_e2(), 1.0 - faceColor.get_e3() );
 			c3ga::vectorE3GA highlightColor( c3ga::vectorE3GA::coord_e1_e2_e3, 1.0, 1.0, 1.0 );
 			if( highlightInvariants )
 			{
@@ -1065,7 +1136,7 @@ void RubiksCube::RotatePlaneCCW( Plane plane )
 		}
 	}
 
-	// Lastly, fixup any bandage coordinates.
+	// Fixup any bandage coordinates.
 	for( int i = 0; i < subCubeMatrixSize; i++ )
 	{
 		for( int j = 0; j < subCubeMatrixSize; j++ )
@@ -1099,15 +1170,12 @@ void RubiksCube::RotatePlaneCCW( Plane plane )
 					}
 				}
 
-				if( !this->ValidMatrixCoordinates( coords ) )
-				{
-					int b = 0;
-				}
-
 				subCube->bandageCoords = coords;
 			}
 		}
 	}
+
+	// TODO: Fixup the texture coordinates!!!
 }
 
 //==================================================================================================

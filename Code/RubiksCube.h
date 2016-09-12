@@ -126,10 +126,16 @@ public:
 
 	struct SubCube
 	{
+		struct TexCoords
+		{
+			float data[4][2];
+		};
+
 		struct FaceData
 		{
 			Color color;
 			int id;
+			TexCoords texCoords;
 		};
 
 		FaceData faceData[ CUBE_FACE_COUNT ];
@@ -139,6 +145,8 @@ public:
 		bool bandaged;
 		int id;
 	};
+
+	void CalcCubieTexCoords( SubCube::TexCoords& texCoords, Face face, const Coordinates& coords );
 
 	typedef void ( *CopyMapFunc )( Coordinates& );
 	bool Copy( const RubiksCube& rubiksCube, CopyMapFunc copyMapFunc );
@@ -234,6 +242,9 @@ public:
 
 	void ClearBandaging( void );
 	void BandageCubies( SubCube* subCubeA, SubCube* subCubeB );
+
+	enum TextureApplication { TEX_APPLY_ENTIRE_FACE, TEX_APPLY_CUBIE_FACES };
+	TextureApplication texApp;
 
 private:
 
