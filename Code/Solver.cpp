@@ -22,7 +22,7 @@ bool Solver::MakeEntireSolutionSequence( const RubiksCube* rubiksCube, RubiksCub
 	rubiksCube->EnforceBandaging( false );
 
 	wxScopedPtr< RubiksCube > rubiksCubeCopy;
-	rubiksCubeCopy.reset( new RubiksCube( rubiksCube->SubCubeMatrixSize(), false ) );
+	rubiksCubeCopy.reset( new RubiksCube( rubiksCube->SubCubeMatrixSize() ) );
 	if( !rubiksCubeCopy->Copy( *rubiksCube, RubiksCube::CopyMap ) )
 		return false;
 

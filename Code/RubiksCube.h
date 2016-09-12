@@ -5,7 +5,7 @@ class RubiksCube
 {
 public:
 
-	RubiksCube( int subCubeMatrixSize = 3, bool loadTextures = true );
+	RubiksCube( int subCubeMatrixSize = 3 );
 	~RubiksCube( void );
 
 	struct RelativeRotation
@@ -246,6 +246,8 @@ public:
 	enum TextureApplication { TEX_APPLY_ENTIRE_FACE, TEX_APPLY_CUBIE_FACES };
 	TextureApplication texApp;
 
+	void ReplaceFaceTextureWithImage( Color color, wxImage* image ) const;
+
 private:
 
 	bool SaveToXml( wxXmlNode* xmlNode ) const;
@@ -284,11 +286,18 @@ private:
 	static int subCubeFace[ CUBE_FACE_COUNT ][4];
 	static double subCubeTextureCoordinates[4][2];
 
-	GLuint textures[ MAX_COLORS ];
-	static const char* textureFiles[ MAX_COLORS ];
+	struct Texture
+	{
+		GLuint name;
+		wxImage* image;
+	};
 
-	void LoadTextures( void );
-	void UnloadTextures( void );
+	mutable Texture textures[ MAX_COLORS ];
+
+	static const char* defaultTextureFiles[ MAX_COLORS ];
+
+	GLuint GetTextureObject( Color color ) const;
+	void FreeTextureData( void );
 };
 
 // RubiksCube.h

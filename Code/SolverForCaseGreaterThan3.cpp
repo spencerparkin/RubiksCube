@@ -1079,7 +1079,7 @@ SolverForCaseGreaterThan3::As3x3x3Solver::As3x3x3Solver( void )
 	if( subCubeMatrixSize <= 3 )
 		return false;
 
-	RubiksCube* reducedRubiksCube = new RubiksCube( 3, false );
+	RubiksCube* reducedRubiksCube = new RubiksCube( 3 );
 	wxScopedPtr< RubiksCube > scopedPtr( reducedRubiksCube );
 
 	for( int x = 0; x < 3; x++ )

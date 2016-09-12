@@ -150,7 +150,7 @@ bool Canvas::TakeSnapShot( void )
 		return false;
 
 	delete comparativeRubiksCube;
-	comparativeRubiksCube = new RubiksCube( rubiksCube->SubCubeMatrixSize(), false );
+	comparativeRubiksCube = new RubiksCube( rubiksCube->SubCubeMatrixSize() );
 	comparativeRubiksCube->Copy( *rubiksCube, RubiksCube::CopyMap );
 	return true;
 }

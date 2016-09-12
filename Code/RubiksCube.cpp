@@ -3,7 +3,7 @@
 #include "Header.h"
 
 //==================================================================================================
-const char* RubiksCube::textureFiles[ MAX_COLORS ] =
+const char* RubiksCube::defaultTextureFiles[ MAX_COLORS ] =
 {
 	"blackFace.png",
 	"yellowFace.png",
@@ -15,7 +15,7 @@ const char* RubiksCube::textureFiles[ MAX_COLORS ] =
 };
 
 //==================================================================================================
-RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= true*/ )
+RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/ )
 {
 	enforceBandaging = false;
 
@@ -73,10 +73,11 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/, bool loadTextures /*= tru
 	}
 
 	for( int color = 0; color < MAX_COLORS; color++ )
-		textures[ color ] = GL_INVALID_VALUE;
-
-	if( loadTextures )
-		LoadTextures();
+	{
+		Texture* tex = &textures[ color ];
+		tex->name = GL_INVALID_VALUE;
+		tex->image = nullptr;
+	}
 }
 
 //==================================================================================================
@@ -90,7 +91,7 @@ RubiksCube::~RubiksCube( void )
 	}
 	delete[] subCubeMatrix;
 
-	UnloadTextures();
+	FreeTextureData();
 }
 
 //==================================================================================================
@@ -155,48 +156,60 @@ void RubiksCube::CalcCubieTexCoords( SubCube::TexCoords& texCoords, Face face, c
 }
 
 //==================================================================================================
-void RubiksCube::LoadTextures( void )
+GLuint RubiksCube::GetTextureObject( Color color ) const
 {
-	for( int color = 0; color < MAX_COLORS; color++ )
+	Texture* tex = &textures[ color ];
+
+	if( !tex->image )
 	{
-		if( textures[ color ] != GL_INVALID_VALUE )
-			continue;
+		wxImage* image = wxGetApp().LoadTextureResource( defaultTextureFiles[ color ] );
+		ReplaceFaceTextureWithImage( color, image );
+	}
 
-		wxImage* image = wxGetApp().LoadTextureResource( textureFiles[ color ] );
-		if( !image )
-			continue;
-
-		GLuint texName;
-		glGenTextures( 1, &texName );
-		if( texName != GL_INVALID_VALUE )
+	if( tex->image && tex->name == GL_INVALID_VALUE )
+	{
+		glGenTextures( 1, &tex->name );
+		if( tex->name != GL_INVALID_VALUE )
 		{
-			glBindTexture( GL_TEXTURE_2D, texName );
+			glBindTexture( GL_TEXTURE_2D, tex->name );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 
-			const unsigned char* imageData = image->GetData();
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, image->GetWidth(), image->GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, imageData );
-
-			textures[ color ] = texName;
+			const unsigned char* imageData = tex->image->GetData();
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, tex->image->GetWidth(), tex->image->GetHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, imageData );
 		}
-		
-		delete image;
 	}
+
+	return tex->name;
 }
 
 //==================================================================================================
-void RubiksCube::UnloadTextures( void )
+void RubiksCube::ReplaceFaceTextureWithImage( Color color, wxImage* image ) const
+{
+	Texture* tex = &textures[ color ];
+
+	if( tex->name != GL_INVALID_VALUE )
+	{
+		glDeleteTextures( 1, &tex->name );
+		tex->name = GL_INVALID_VALUE;
+	}
+
+	if( tex->image )
+	{
+		delete tex->image;
+		tex->image = nullptr;
+	}
+
+	tex->image = image;
+}
+
+//==================================================================================================
+void RubiksCube::FreeTextureData( void )
 {
 	for( int color = 0; color < MAX_COLORS; color++ )
-	{
-		if( textures[ color ] == GL_INVALID_VALUE )
-			continue;
-
-		glDeleteTextures( 1, &textures[ color ] );
-		textures[ color ] = GL_INVALID_VALUE;
-	}
+		ReplaceFaceTextureWithImage( ( Color )color, nullptr );
 }
 
 //==================================================================================================
@@ -693,7 +706,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 		Color color = subCube->faceData[ face ].color;
 		c3ga::vectorE3GA faceColor = TranslateColor( color );
 
-		GLuint texName = textures[ color ];
+		GLuint texName = GetTextureObject( color );
 		if( texName == GL_INVALID_VALUE )
 			glDisable( GL_TEXTURE_2D );
 		else
