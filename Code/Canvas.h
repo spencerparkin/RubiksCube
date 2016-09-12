@@ -31,6 +31,8 @@ public:
 
 	bool ContextReady( void ) { return context ? true : false; }
 	
+	int GetSelectedFaceId( void ) { return selectedFaceId; }
+
 private:
 
 	void BindContext( void );

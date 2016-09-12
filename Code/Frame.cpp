@@ -49,6 +49,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxMenuItem* renderWithPerspectiveProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithPerspectiveProjection, "Render With Perspective Projection", "Render the cube using an perspective projection.", wxITEM_CHECK );
 	wxMenuItem* renderWithOrthographicProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithOrthographicProjection, "Render With Orthographic Projection", "Render the cube using an orthographic projection.", wxITEM_CHECK );
 	wxMenuItem* stretchTextureAcrossEntireFaceMenuItem = new wxMenuItem( viewMenu, ID_StretchTextureAcrossEntireFace, "Stretch Texture Across Entire Face", "Instead of tiling the face texture on each cubie, use it across the entire face.", wxITEM_CHECK );
+	wxMenuItem* changeFaceTextureMenuItem = new wxMenuItem( viewMenu, ID_ChangeFaceTextureMenuItem, "Change Face Texture", "Change the picture that is drawn on the face of each cubie." );
 //	viewMenu->Append( takeSnapShotMenuItem );
 //	viewMenu->AppendSeparator();
 //	viewMenu->Append( showInvariantFacesMenuItem );
@@ -58,6 +59,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	viewMenu->Append( renderWithOrthographicProjectionMenuItem );
 	viewMenu->AppendSeparator();
 	viewMenu->Append( stretchTextureAcrossEntireFaceMenuItem );
+	viewMenu->Append( changeFaceTextureMenuItem );
 
 	wxMenu* helpMenu = new wxMenu();
 #ifdef _DEBUG
@@ -111,6 +113,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnShowPerspectiveLabels, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_MENU, &Frame::OnShowInvariantFaces, this, ID_ShowInvariantFaces );
 	Bind( wxEVT_MENU, &Frame::OnStretchTextureAcrossEntireFace, this, ID_StretchTextureAcrossEntireFace );
+	Bind( wxEVT_MENU, &Frame::OnChangeFaceTexture, this, ID_ChangeFaceTextureMenuItem );
 	Bind( wxEVT_MENU, &Frame::OnTakeSnapShot, this, ID_TakeSnapShot );
 	Bind( wxEVT_MENU, &Frame::OnRenderWithPerspectiveProjection, this, ID_RenderWithPerspectiveProjection );
 	Bind( wxEVT_MENU, &Frame::OnRenderWithOrthographicProjection, this, ID_RenderWithOrthographicProjection );
@@ -132,6 +135,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowInvariantFaces );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_StretchTextureAcrossEntireFace );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ChangeFaceTextureMenuItem );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_TakeSnapShot );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithPerspectiveProjection );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithOrthographicProjection );
@@ -540,6 +544,42 @@ void Frame::OnAbout( wxCommandEvent& event )
 }
 
 //==================================================================================================
+void Frame::OnChangeFaceTexture( wxCommandEvent& event )
+{
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
+	if( !rubiksCube )
+		return;
+
+	int selectedFaceId = canvas->GetSelectedFaceId();
+	if( selectedFaceId < 0 )
+	{
+		wxMessageBox( "You must select a face first.", "Error", wxICON_ERROR | wxCENTRE );
+		return;
+	}
+
+	RubiksCube::SubCube::FaceData* faceData = nullptr;
+	if( !rubiksCube->FindSubCubeByFaceId( selectedFaceId, &faceData ) )
+		return;
+
+	wxFileDialog fileDialog( this, "Load Image File", wxEmptyString, wxEmptyString, "PNG Image (*.png)|*.png", wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+	if( wxID_OK != fileDialog.ShowModal() )
+		return;
+
+	wxString file = fileDialog.GetPath();
+	wxImage* image = new wxImage();
+	if( !image->LoadFile( file, wxBITMAP_TYPE_PNG ) )
+	{
+		wxMessageBox( "Failed to load file: " + file, "Error", wxCENTRE | wxICON_ERROR );
+		delete image;
+		return;
+	}
+
+	rubiksCube->ReplaceFaceTextureWithImage( faceData->color, image );
+
+	canvas->Refresh();
+}
+
+//==================================================================================================
 void Frame::OnStretchTextureAcrossEntireFace( wxCommandEvent& event )
 {
 	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
@@ -579,6 +619,7 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 		case ID_SaveCube:
 		case ID_TakeSnapShot:
 		case ID_SilentDebugMode:
+		case ID_ChangeFaceTextureMenuItem:
 		{
 			event.Enable( rubiksCube != 0 ? true : false );
 			break;

@@ -25,6 +25,7 @@
 #include <wx/filename.h>
 #include <wx/arrstr.h>
 #include <wx/filename.h>
+#include <wx/base64.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>

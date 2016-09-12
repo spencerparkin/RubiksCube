@@ -232,8 +232,8 @@ public:
 	static bool AreAdjacentFaces( Face face0, Face face1 );
 
 	const SubCube* FindSubCubeById( int subCubeId ) const;
-	const SubCube* FindSubCubeByFaceId( int faceId ) const;
-	SubCube* FindSubCubeByFaceId( int faceId );
+	const SubCube* FindSubCubeByFaceId( int faceId, const SubCube::FaceData** faceData = nullptr ) const;
+	SubCube* FindSubCubeByFaceId( int faceId, SubCube::FaceData** faceData = nullptr );
 
 	static int PlaneContainingSubCube( Axis axis, const SubCube* subCube );
 
@@ -252,6 +252,9 @@ private:
 
 	bool SaveToXml( wxXmlNode* xmlNode ) const;
 	bool LoadFromXml( const wxXmlNode* xmlNode );
+
+	// I'm surprised I couldn't find this function in the API docs.
+	const wxXmlNode* FindNodeByName( const wxXmlNode* xmlRoot, const wxString& name, bool recursive = false );
 
 	static bool SaveIntegerToXml( wxXmlNode* xmlNode, const wxString& name, int integer );
 	static bool LoadIntegerFromXml( const wxXmlNode* xmlNode, const wxString& name, int& integer );

@@ -442,6 +442,7 @@ const RubiksCube::SubCube* RubiksCube::SubCubeBandageRepresentative( const SubCu
 	while( subCubeRep->bandageCoords.x >= 0 )
 		subCubeRep = Matrix( subCubeRep->bandageCoords );
 	
+	// If written recursively, we could do this on return form recursion.
 	while( subCube != subCubeRep )
 	{
 		subCube->bandageCoords = subCubeRep->coords;
@@ -1921,6 +1922,8 @@ bool RubiksCube::SaveToFile( const wxString& file ) const
 //==================================================================================================
 bool RubiksCube::SaveToXml( wxXmlNode* xmlNode ) const
 {
+	wxXmlNode* xmlMatrixNode = new wxXmlNode( xmlNode, wxXML_ELEMENT_NODE, "Matrix" );
+
 	for( int x = 0; x < subCubeMatrixSize; x++ )
 	{
 		for( int y = 0; y < subCubeMatrixSize; y++ )
@@ -1929,7 +1932,7 @@ bool RubiksCube::SaveToXml( wxXmlNode* xmlNode ) const
 			{
 				const SubCube* subCube = &subCubeMatrix[x][y][z];
 
-				wxXmlNode* xmlSubCube = new wxXmlNode( xmlNode, wxXML_ELEMENT_NODE, "SubCube" );
+				wxXmlNode* xmlSubCube = new wxXmlNode( xmlMatrixNode, wxXML_ELEMENT_NODE, "SubCube" );
 
 				xmlSubCube->AddAttribute( "x", wxString::Format( "%d", x ) );
 				xmlSubCube->AddAttribute( "y", wxString::Format( "%d", y ) );
@@ -1964,13 +1967,57 @@ bool RubiksCube::SaveToXml( wxXmlNode* xmlNode ) const
 		}
 	}
 
+	wxXmlNode* xmlTextureDataNode = new wxXmlNode( xmlNode, wxXML_ELEMENT_NODE, "TextureData" );
+
+	for( int color = 0; color < MAX_COLORS; color++ )
+	{
+		Texture* tex = &textures[ color ];
+		if( tex->image )
+		{
+			wxXmlNode* xmlTextureNode = new wxXmlNode( xmlTextureDataNode, wxXML_ELEMENT_NODE, "Texture" );
+
+			wxXmlAttribute* xmlAttr = new wxXmlAttribute( "color", wxString::Format( "%d", color ) );
+			xmlAttr = new wxXmlAttribute( "width", wxString::Format( "%d", tex->image->GetWidth() ), xmlAttr );
+			xmlAttr = new wxXmlAttribute( "height", wxString::Format( "%d", tex->image->GetHeight() ), xmlAttr );
+			xmlTextureNode->SetAttributes( xmlAttr );
+
+			wxXmlNode* xmlImageDataNode = new wxXmlNode( xmlTextureNode, wxXML_CDATA_SECTION_NODE, "ImageData" );
+			int dataLen = tex->image->GetWidth() * tex->image->GetHeight() * 3;
+			wxString rawTextureData = wxBase64Encode( tex->image->GetData(), dataLen );
+			xmlImageDataNode->SetContent( rawTextureData );
+		}
+	}
+
 	return true;
+}
+
+//==================================================================================================
+const wxXmlNode* RubiksCube::FindNodeByName( const wxXmlNode* xmlRoot, const wxString& name, bool recursive /*= false*/ )
+{
+	for( const wxXmlNode* xmlNode = xmlRoot->GetChildren(); xmlNode; xmlNode = xmlNode->GetNext() )
+	{
+		if( xmlNode->GetName() == name )
+			return xmlNode;
+
+		if( recursive )
+		{
+			const wxXmlNode* xmlFoundNode = FindNodeByName( xmlNode, name, true );
+			if( xmlFoundNode )
+				return xmlFoundNode;
+		}
+	}
+
+	return nullptr;
 }
 
 //==================================================================================================
 bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 {
-	for( const wxXmlNode* xmlSubCube = xmlNode->GetChildren(); xmlSubCube; xmlSubCube = xmlSubCube->GetNext() )
+	const wxXmlNode* xmlMatrixNode = FindNodeByName( xmlNode, "Matrix" );
+	if( !xmlMatrixNode )
+		return false;
+
+	for( const wxXmlNode* xmlSubCube = xmlMatrixNode->GetChildren(); xmlSubCube; xmlSubCube = xmlSubCube->GetNext() )
 	{
 		if( xmlSubCube->GetName() != "SubCube" )
 			continue;
@@ -2029,6 +2076,42 @@ bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 			return false;
 		if( !LoadIntegerFromXml( xmlSubCube, "pos_z_id", subCube->faceData[ POS_Z ].id ) )
 			return false;
+	}
+
+	const wxXmlNode* xmlTextureDataNode = FindNodeByName( xmlNode, "TextureData" );
+	if( xmlTextureDataNode )
+	{
+		for( const wxXmlNode* xmlTextureNode = xmlTextureDataNode->GetChildren(); xmlTextureNode; xmlTextureNode = xmlTextureNode->GetNext() )
+		{
+			wxString colorStr = xmlTextureNode->GetAttribute( "color" );
+			if( colorStr.IsEmpty() )
+				return false;
+
+			long color = -1;
+			if( !colorStr.ToLong( &color ) || color < 0 || color >= MAX_COLORS )
+				return false;
+
+			wxString widthStr = xmlTextureNode->GetAttribute( "width" );
+			wxString heightStr = xmlTextureNode->GetAttribute( "height" );
+
+			long width, height;
+			if( !widthStr.ToLong( &width ) || !heightStr.ToLong( &height ) )
+				return false;
+
+			wxXmlNode* xmlImageDataNode = xmlTextureNode->GetChildren();
+			if( !xmlImageDataNode )
+				return false;
+
+			if( xmlImageDataNode->GetType() != wxXML_CDATA_SECTION_NODE )
+				return false;
+
+			wxImage* image = new wxImage( int( width ), int( height ) );
+			int dataLen = image->GetWidth() * image->GetHeight() * 3;
+			wxString rawImageData = xmlImageDataNode->GetContent();
+			wxBase64Decode( image->GetData(), dataLen, rawImageData );
+
+			ReplaceFaceTextureWithImage( ( Color )color, image );
+		}
 	}
 
 	return true;
@@ -2181,7 +2264,7 @@ const RubiksCube::SubCube* RubiksCube::FindSubCubeById( int subCubeId ) const
 }
 
 //==================================================================================================
-RubiksCube::SubCube* RubiksCube::FindSubCubeByFaceId( int faceId )
+RubiksCube::SubCube* RubiksCube::FindSubCubeByFaceId( int faceId, SubCube::FaceData** faceData /*= nullptr*/ )
 {
 	for( int x = 0; x < subCubeMatrixSize; x++ )
 	{
@@ -2191,8 +2274,15 @@ RubiksCube::SubCube* RubiksCube::FindSubCubeByFaceId( int faceId )
 			{
 				SubCube* subCube = &subCubeMatrix[x][y][z];
 				for( int face = 0; face < CUBE_FACE_COUNT; face++ )
+				{
 					if( subCube->faceData[ face ].id == faceId )
+					{
+						if( faceData )
+							*faceData = &subCube->faceData[ face ];
+
 						return subCube;
+					}
+				}
 			}
 		}
 	}
@@ -2201,9 +2291,9 @@ RubiksCube::SubCube* RubiksCube::FindSubCubeByFaceId( int faceId )
 }
 
 //==================================================================================================
-const RubiksCube::SubCube* RubiksCube::FindSubCubeByFaceId( int faceId ) const
+const RubiksCube::SubCube* RubiksCube::FindSubCubeByFaceId( int faceId, const SubCube::FaceData** faceData /*= nullptr*/ ) const
 {
-	return const_cast< RubiksCube* >( this )->FindSubCubeByFaceId( faceId );
+	return const_cast< RubiksCube* >( this )->FindSubCubeByFaceId( faceId, const_cast< SubCube::FaceData** >( faceData ) );
 }
 
 //==================================================================================================
