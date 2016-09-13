@@ -2,7 +2,7 @@ name: rubecube
 version: "1.0"
 summary: An interactive twisty puzzle simulation in 3D.
 description: Play with a virtual cube, similar to the one invented by Erno Rubik, through an intuitive mouse-driven interface. Simulate cubes of various dimensions. Watch the computer scramble and solve them. Save and load cubes to/from disk. Create and test your own algorithms. Move backwards and forward through your own rotation history. Change the textures on your cube. Bandage your cube to make a more challenging puzzle.
-confinement: devmode
+confinement: strict
 
 apps:
   rubecube:
