@@ -686,15 +686,6 @@ int RubiksCube::subCubeFace[ RubiksCube::CUBE_FACE_COUNT ][4] =
 };
 
 //==================================================================================================
-double RubiksCube::subCubeTextureCoordinates[4][2] =
-{
-	{ 0.0, 0.0 },
-	{ 1.0, 0.0 },
-	{ 1.0, 1.0 },
-	{ 0.0, 1.0 },
-};
-
-//==================================================================================================
 void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 												const c3ga::evenVersor& vertexVersor,
 												const c3ga::evenVersor& normalVersor,
@@ -747,13 +738,41 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 			quadVertices[ index ] = dualPoint;
 		}
 
+		// This is a bit hacky; I admit it.
+		float eps = 1e-4f;
+		float min_u = 2.f, max_u = -1.f;
+		float min_v = 2.f, max_v = -1.f;
+		if( texApp == TEX_APPLY_CUBIE_FACES )
+		{
+			for( int index = 0; index < 4; index++ )
+			{
+				const float* texCoordData = subCube->faceData[ face ].texCoords.data[ index ];
+				min_u = fmin( texCoordData[0], min_u );
+				max_u = fmax( texCoordData[0], max_u );
+				min_v = fmin( texCoordData[1], min_v );
+				max_v = fmax( texCoordData[1], max_v );
+			}
+		}
+
 		glBegin( GL_QUADS );
 		for( int index = 0; index < 4; index++ )
 		{
+			const float* texCoordData = subCube->faceData[ face ].texCoords.data[ index ];
 			if( texApp == TEX_APPLY_CUBIE_FACES )
-				glTexCoord2dv( subCubeTextureCoordinates[ index ] );
+			{
+				float u = 0.5f, v = 0.5f;
+				if( fabs( texCoordData[0] - min_u ) < eps )
+					u = 0.f;
+				else if( fabs( texCoordData[0] - max_u ) < eps )
+					u = 1.f;
+				if( fabs( texCoordData[1] - min_v ) < eps )
+					v = 0.f;
+				else if( fabs( texCoordData[1] - max_v ) < eps )
+					v = 1.f;
+				glTexCoord2f( u, v );
+			}
 			else if( texApp == TEX_APPLY_ENTIRE_FACE )
-				glTexCoord2fv( subCube->faceData[ face ].texCoords.data[ index ] );
+				glTexCoord2fv( texCoordData );
 			else
 				glTexCoord2f( 0.f, 0.f );
 			c3ga::vectorE3GA* vertex = &quadVertices[ index ];
