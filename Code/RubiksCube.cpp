@@ -19,8 +19,6 @@ RubiksCube::RubiksCube( int subCubeMatrixSize /*= 3*/ )
 {
 	enforceBandaging = false;
 
-	texApp = TEX_APPLY_CUBIE_FACES;
-
 	int faceId = 0;
 	int subCubeId = 0;
 
@@ -686,15 +684,6 @@ int RubiksCube::subCubeFace[ RubiksCube::CUBE_FACE_COUNT ][4] =
 };
 
 //==================================================================================================
-double RubiksCube::subCubeTextureCoordinates[4][2] =
-{
-	{ 0.0, 0.0 },
-	{ 1.0, 0.0 },
-	{ 1.0, 1.0 },
-	{ 0.0, 1.0 },
-};
-
-//==================================================================================================
 void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 												const c3ga::evenVersor& vertexVersor,
 												const c3ga::evenVersor& normalVersor,
@@ -750,12 +739,7 @@ void RubiksCube::RenderSubCube( GLenum mode, const SubCube* subCube,
 		glBegin( GL_QUADS );
 		for( int index = 0; index < 4; index++ )
 		{
-			if( texApp == TEX_APPLY_CUBIE_FACES )
-				glTexCoord2dv( subCubeTextureCoordinates[ index ] );
-			else if( texApp == TEX_APPLY_ENTIRE_FACE )
-				glTexCoord2fv( subCube->faceData[ face ].texCoords.data[ index ] );
-			else
-				glTexCoord2f( 0.f, 0.f );
+			glTexCoord2fv( subCube->faceData[ face ].texCoords.data[ index ] );
 			c3ga::vectorE3GA* vertex = &quadVertices[ index ];
 			glVertex3d( vertex->get_e1(), vertex->get_e2(), vertex->get_e3() );
 		}
@@ -1982,10 +1966,6 @@ bool RubiksCube::SaveToXml( wxXmlNode* xmlNode ) const
 	if( !SaveBoolToXml( xmlNode, "enforceBandaging", enforceBandaging ) )
 		return false;
 
-	bool stretch = ( this->texApp == TEX_APPLY_ENTIRE_FACE ) ? true : false;
-	if( !SaveBoolToXml( xmlNode, "stretchTexAcrossFace", stretch ) )
-		return false;
-
 	wxXmlNode* xmlMatrixNode = new wxXmlNode( xmlNode, wxXML_ELEMENT_NODE, "Matrix" );
 
 	for( int x = 0; x < subCubeMatrixSize; x++ )
@@ -2129,15 +2109,6 @@ bool RubiksCube::LoadFromXml( const wxXmlNode* xmlNode )
 {
 	if( !LoadBoolFromXml( xmlNode, "enforceBandaging", enforceBandaging ) )
 		return false;
-
-	bool stretch;
-	if( !LoadBoolFromXml( xmlNode, "stretchTexAcrossFace", stretch ) )
-		return false;
-
-	if( stretch )
-		texApp = TEX_APPLY_ENTIRE_FACE;
-	else
-		texApp = TEX_APPLY_CUBIE_FACES;
 
 	const wxXmlNode* xmlMatrixNode = FindNodeByName( xmlNode, "Matrix" );
 	if( !xmlMatrixNode )
