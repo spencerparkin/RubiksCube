@@ -48,6 +48,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	wxMenuItem* showPerspectiveLabelsMenuItem = new wxMenuItem( viewMenu, ID_ShowPerspectiveLabels, "Show Perspective Labels", "Along with the cube, render labels of the cube faces that indicate the current perspective.", wxITEM_CHECK );
 	wxMenuItem* renderWithPerspectiveProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithPerspectiveProjection, "Render With Perspective Projection", "Render the cube using an perspective projection.", wxITEM_CHECK );
 	wxMenuItem* renderWithOrthographicProjectionMenuItem = new wxMenuItem( viewMenu, ID_RenderWithOrthographicProjection, "Render With Orthographic Projection", "Render the cube using an orthographic projection.", wxITEM_CHECK );
+	wxMenuItem* stretchTextureAcrossEntireFaceMenuItem = new wxMenuItem( viewMenu, ID_StretchTextureAcrossEntireFace, "Stretch Texture Across Entire Face", "Instead of tiling the face texture on each cubie, use it across the entire face.", wxITEM_CHECK );
 	wxMenuItem* changeFaceTextureMenuItem = new wxMenuItem( viewMenu, ID_ChangeFaceTextureMenuItem, "Change Face Texture", "Change the picture that is drawn on the face of each cubie." );
 //	viewMenu->Append( takeSnapShotMenuItem );
 //	viewMenu->AppendSeparator();
@@ -57,6 +58,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	viewMenu->Append( renderWithPerspectiveProjectionMenuItem );
 	viewMenu->Append( renderWithOrthographicProjectionMenuItem );
 	viewMenu->AppendSeparator();
+	viewMenu->Append( stretchTextureAcrossEntireFaceMenuItem );
 	viewMenu->Append( changeFaceTextureMenuItem );
 
 	wxMenu* helpMenu = new wxMenu();
@@ -110,6 +112,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnClearBandaging, this, ID_ClearBandaging );
 	Bind( wxEVT_MENU, &Frame::OnShowPerspectiveLabels, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_MENU, &Frame::OnShowInvariantFaces, this, ID_ShowInvariantFaces );
+	Bind( wxEVT_MENU, &Frame::OnStretchTextureAcrossEntireFace, this, ID_StretchTextureAcrossEntireFace );
 	Bind( wxEVT_MENU, &Frame::OnChangeFaceTexture, this, ID_ChangeFaceTextureMenuItem );
 	Bind( wxEVT_MENU, &Frame::OnTakeSnapShot, this, ID_TakeSnapShot );
 	Bind( wxEVT_MENU, &Frame::OnRenderWithPerspectiveProjection, this, ID_RenderWithPerspectiveProjection );
@@ -131,6 +134,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_EnforceBandaging );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowPerspectiveLabels );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ShowInvariantFaces );
+	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_StretchTextureAcrossEntireFace );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_ChangeFaceTextureMenuItem );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_TakeSnapShot );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_RenderWithPerspectiveProjection );
@@ -576,6 +580,30 @@ void Frame::OnChangeFaceTexture( wxCommandEvent& event )
 }
 
 //==================================================================================================
+void Frame::OnStretchTextureAcrossEntireFace( wxCommandEvent& event )
+{
+	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
+	if( rubiksCube )
+	{
+		switch( rubiksCube->texApp )
+		{
+			case RubiksCube::TEX_APPLY_CUBIE_FACES:
+			{
+				rubiksCube->texApp = RubiksCube::TEX_APPLY_ENTIRE_FACE;
+				break;
+			}
+			case RubiksCube::TEX_APPLY_ENTIRE_FACE:
+			{
+				rubiksCube->texApp = RubiksCube::TEX_APPLY_CUBIE_FACES;
+				break;
+			}
+		}
+
+		canvas->Refresh();
+	}
+}
+
+//==================================================================================================
 void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 {
 	RubiksCube* rubiksCube = wxGetApp().GetRubiksCube();
@@ -657,6 +685,18 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 			{
 				event.Enable( true );
 				bool checked = rubiksCube->EnforceBandaging();
+				event.Check( checked );
+			}
+			else
+				event.Enable( false );
+			break;
+		}
+		case ID_StretchTextureAcrossEntireFace:
+		{
+			if( rubiksCube )
+			{
+				event.Enable( true );
+				bool checked = ( rubiksCube->texApp == RubiksCube::TEX_APPLY_ENTIRE_FACE ) ? true : false;
 				event.Check( checked );
 			}
 			else

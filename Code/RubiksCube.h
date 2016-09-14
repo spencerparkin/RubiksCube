@@ -243,6 +243,9 @@ public:
 	void ClearBandaging( void );
 	void BandageCubies( SubCube* subCubeA, SubCube* subCubeB );
 
+	enum TextureApplication { TEX_APPLY_ENTIRE_FACE, TEX_APPLY_CUBIE_FACES };
+	TextureApplication texApp;
+
 	void ReplaceFaceTextureWithImage( Color color, wxImage* image ) const;
 
 private:
@@ -288,6 +291,7 @@ private:
 
 	static double subCubeVertex[8][3];
 	static int subCubeFace[ CUBE_FACE_COUNT ][4];
+	static double subCubeTextureCoordinates[4][2];
 
 	struct Texture
 	{
