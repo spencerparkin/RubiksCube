@@ -291,7 +291,6 @@ private:
 
 	static double subCubeVertex[8][3];
 	static int subCubeFace[ CUBE_FACE_COUNT ][4];
-	static double subCubeTextureCoordinates[4][2];
 
 	struct Texture
 	{
