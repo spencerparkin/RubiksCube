@@ -1829,6 +1829,8 @@ bool RubiksCube::TranslateRotation( const Perspective& perspective, const Relati
 //==================================================================================================
 bool RubiksCube::ParseRelativeRotationSequenceString( const std::string& relativeRotationSequenceString, RelativeRotationSequence& relativeRotationSequence ) const
 {
+	// L, R, 2U, R, Li, Ri
+
 	boost::char_separator< char > separator( " ", "," );
 	typedef boost::tokenizer< boost::char_separator< char > > Tokenizer;
 	Tokenizer tokenizer( relativeRotationSequenceString, separator );
