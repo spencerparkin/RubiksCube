@@ -65,8 +65,10 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 #ifdef _DEBUG
 	wxMenuItem* debugModeMenuItem = new wxMenuItem( helpMenu, ID_DebugMode, "Debug Mode", "Continually scramble and solve the Rubik's Cube.", wxITEM_CHECK );
 	wxMenuItem* silentDebugModeMenuItem = new wxMenuItem( helpMenu, ID_SilentDebugMode, "Silent Debug Mode", "Scramble and solve many Rubik's Cubes internally." );
+//	wxMenuItem* bruteForceAttackMenuItem = new wxMenuItem( helpMenu, ID_BruteForceAttack, "Brute Force Attack", "Try to solve a difficult problem." );
 	helpMenu->Append( debugModeMenuItem );
 	helpMenu->Append( silentDebugModeMenuItem );
+//	helpMenu->Append( bruteForceAttackMenuItem );
 	helpMenu->AppendSeparator();
 #endif
 	wxMenuItem* helpMenuItem = new wxMenuItem( helpMenu, ID_Help, "Help\tF1", "Go to the help page in your browser." );
@@ -123,6 +125,7 @@ Frame::Frame( wxWindow* parent, const wxPoint& pos, const wxSize& size ) : wxFra
 	Bind( wxEVT_MENU, &Frame::OnExit, this, ID_Exit );
 	Bind( wxEVT_MENU, &Frame::OnDebugMode, this, ID_DebugMode );
 	Bind( wxEVT_MENU, &Frame::OnSilentDebugMode, this, ID_SilentDebugMode );
+	Bind( wxEVT_MENU, &Frame::OnBruteForceAttack, this, ID_BruteForceAttack );
 	Bind( wxEVT_MENU, &Frame::OnHelp, this, ID_Help );
 	Bind( wxEVT_MENU, &Frame::OnAbout, this, ID_About );
 	Bind( wxEVT_UPDATE_UI, &Frame::OnUpdateMenuItemUI, this, ID_NewCube );
@@ -539,6 +542,7 @@ void Frame::OnAbout( wxCommandEvent& event )
     aboutDialogInfo.SetVersion( "1.0" );
     aboutDialogInfo.SetDescription( "This program is free software and distributed under the MIT license." );
     aboutDialogInfo.SetCopyright( "Copyright (C) 2013, 2015, 2016 -- Spencer T. Parkin <SpencerTParkin@gmail.com>" );
+	aboutDialogInfo.SetWebSite( "http://spencerparkin.github.io/RubiksCube/" );
 
     wxAboutBox( aboutDialogInfo );
 }
@@ -702,6 +706,110 @@ void Frame::OnUpdateMenuItemUI( wxUpdateUIEvent& event )
 			else
 				event.Enable( false );
 			break;
+		}
+	}
+}
+
+//==================================================================================================
+void Frame::OnBruteForceAttack( wxCommandEvent& event )
+{
+	wxTextFile textFile;
+	if( !textFile.Open( "results.txt" ) )
+		textFile.Create( "results.txt" );
+
+	RubiksCube::RotationSequence rotationSequence;
+	BruteForceAttack( rotationSequence, 10, textFile );
+
+	textFile.Write();
+	textFile.Close();
+}
+
+//==================================================================================================
+// I'm not sure how this algorithm would ever repeat a sequence, but apparently this is happening.
+void Frame::BruteForceAttack( RubiksCube::RotationSequence& rotationSequence, int maxLength, wxTextFile& textFile )
+{
+	if( rotationSequence.size() == maxLength )
+		TestRotationSequence( rotationSequence, textFile );
+	else
+	{
+		for( int i = 0; i < 3; i++ )
+		{
+			RubiksCube::Axis axis = RubiksCube::Axis(i);
+
+			if( rotationSequence.size() > 0 )
+				if( rotationSequence.back().plane.axis == axis )
+					continue;
+			
+			RubiksCube::Rotation rotation;
+			rotation.plane.axis = axis;
+			rotation.plane.index = 2;
+
+			rotation.angle = -M_PI / 2.f;
+			rotationSequence.push_back( rotation );
+			BruteForceAttack( rotationSequence, maxLength, textFile );
+			rotationSequence.pop_back();
+
+			rotation.angle = M_PI / 2.f;
+			rotationSequence.push_back( rotation );
+			BruteForceAttack( rotationSequence, maxLength, textFile );
+			rotationSequence.pop_back();
+
+			rotation.angle = M_PI;
+			rotationSequence.push_back( rotation );
+			BruteForceAttack( rotationSequence, maxLength, textFile );
+			rotationSequence.pop_back();
+		}
+	}
+}
+
+//==================================================================================================
+void Frame::TestRotationSequence( const RubiksCube::RotationSequence& rotationSequence, wxTextFile& textFile )
+{	
+	wxScopedPtr< RubiksCube > rubiksCubeA( new RubiksCube() );
+	wxScopedPtr< RubiksCube > rubiksCubeB( new RubiksCube() );
+
+	rubiksCubeB->ApplySequence( rotationSequence );
+
+	// Did all cubies stay in the same position?
+	for( int x = 0; x < 3; x++ )
+	{
+		for( int y = 0; y < 3; y++ )
+		{
+			for( int z = 0; z < 3; z++ )
+			{
+				RubiksCube::SubCube* subCubeA = rubiksCubeA->Matrix( RubiksCube::Coordinates( x, y, z ) );
+				RubiksCube::SubCube* subCubeB = rubiksCubeB->Matrix( RubiksCube::Coordinates( x, y, z ) );
+
+				if( subCubeA->id != subCubeB->id )
+					return;
+			}
+		}
+	}
+
+	// Did some cubies change orientation?
+	for( int x = 0; x < 3; x++ )
+	{
+		for( int y = 0; y < 3; y++ )
+		{
+			for( int z = 0; z < 3; z++ )
+			{
+				RubiksCube::SubCube* subCubeA = rubiksCubeA->Matrix( RubiksCube::Coordinates( x, y, z ) );
+				RubiksCube::SubCube* subCubeB = rubiksCubeB->Matrix( RubiksCube::Coordinates( x, y, z ) );
+
+				int i;
+				for( i = 0; i < 6; i++ )
+					if( subCubeA->faceData[i].id != subCubeB->faceData[i].id )
+						break;
+				
+				if( i < 6 )
+				{
+					wxString printedRotationSequence;
+					RubiksCube::PrintRotationSequence( rotationSequence, printedRotationSequence );
+					
+					textFile.AddLine( printedRotationSequence );
+					textFile.Write();
+				}
+			}
 		}
 	}
 }
