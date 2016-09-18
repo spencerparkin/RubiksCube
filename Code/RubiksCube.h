@@ -211,6 +211,7 @@ public:
 	bool TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const;
 	bool TranslateRelativeRotation( const std::string& relativeRotationString, RelativeRotation& relativeRotation ) const;
 	bool ParseRelativeRotationSequenceString( const std::string& relativeRotationSequenceString, RelativeRotationSequence& relativeRotationSequence ) const;
+	static void PrintRotationSequence( const RotationSequence& rotationSequence, wxString& printedRotationSequence );
 	static void CompressRotationSequence( RotationSequence& rotationSequence );
 	static void InvertRelativeRotation( RelativeRotation& relativeRotation );
 	static void InvertRelativeRotationSequence( RelativeRotationSequence& relativeRotationSequence );
