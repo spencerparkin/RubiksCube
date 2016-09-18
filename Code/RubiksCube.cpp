@@ -1576,6 +1576,135 @@ bool RubiksCube::IsInSolvedState( void ) const
 }
 
 //==================================================================================================
+// We really should run the given sequence through a perspective matrix to get a relative rotation sequence, then print that.
+/*static*/ void RubiksCube::PrintRotationSequence( const RotationSequence& rotationSequence, wxString& printedRotationSequence )
+{
+	printedRotationSequence = "";
+
+	float eps = 1e-4f;
+
+	for( RotationSequence::const_iterator iter = rotationSequence.cbegin(); iter != rotationSequence.cend(); iter++ )
+	{
+		const Rotation& rotation = *iter;
+
+		switch( rotation.plane.axis )
+		{
+			case X_AXIS:
+			{
+				switch( rotation.plane.index )
+				{
+					case 0:
+					{
+						if( fabs( rotation.angle + M_PI / 2.f ) < eps )
+							printedRotationSequence += "Li, ";
+						else if( fabs( rotation.angle - M_PI / 2.f ) < eps )
+							printedRotationSequence += "L, ";
+						else if( fabs( rotation.angle - M_PI ) < eps )
+							printedRotationSequence += "2L, ";
+						break;
+					}
+					case 1:
+					{
+						if( fabs( rotation.angle + M_PI / 2.f ) < eps )
+							printedRotationSequence += "M, ";
+						else if( fabs( rotation.angle - M_PI / 2.f ) < eps )
+							printedRotationSequence += "Mi, ";
+						else if( fabs( rotation.angle - M_PI ) < eps )
+							printedRotationSequence += "2M, ";
+						break;
+					}
+					case 2:
+					{
+						if( fabs( rotation.angle + M_PI / 2.f ) < eps )
+							printedRotationSequence += "R, ";
+						else if( fabs( rotation.angle - M_PI / 2.f ) < eps )
+							printedRotationSequence += "Ri, ";
+						else if( fabs( rotation.angle - M_PI ) < eps )
+							printedRotationSequence += "2R, ";
+						break;
+					}
+				}
+				break;
+			}
+			case Y_AXIS:
+			{
+				switch( rotation.plane.index )
+				{
+					case 0:
+					{
+						if( fabs( rotation.angle + M_PI / 2.f ) < eps )
+							printedRotationSequence += "Di, ";
+						else if( fabs( rotation.angle - M_PI / 2.f ) < eps )
+							printedRotationSequence += "D, ";
+						else if( fabs( rotation.angle - M_PI ) < eps )
+							printedRotationSequence += "2D, ";
+						break;
+					}
+					case 1:
+					{
+						if( fabs( rotation.angle + M_PI / 2.f ) < eps )
+							printedRotationSequence += "C, ";
+						else if( fabs( rotation.angle - M_PI / 2.f ) < eps )
+							printedRotationSequence += "Ci, ";
+						else if( fabs( rotation.angle - M_PI ) < eps )
+							printedRotationSequence += "2C, ";
+						break;
+					}
+					case 2:
+					{
+						if( fabs( rotation.angle + M_PI / 2.f ) < eps )
+							printedRotationSequence += "U, ";
+						else if( fabs( rotation.angle - M_PI / 2.f ) < eps )
+							printedRotationSequence += "Ui, ";
+						else if( fabs( rotation.angle - M_PI ) < eps )
+							printedRotationSequence += "2U, ";
+						break;
+					}
+				}
+				break;
+			}
+			case Z_AXIS:
+			{
+				switch( rotation.plane.index )
+				{
+					case 0:
+					{
+						if( fabs( rotation.angle + M_PI / 2.f ) < eps )
+							printedRotationSequence += "Bi, ";
+						else if( fabs( rotation.angle - M_PI / 2.f ) < eps )
+							printedRotationSequence += "B, ";
+						else if( fabs( rotation.angle - M_PI ) < eps )
+							printedRotationSequence += "2B, ";
+						break;
+					}
+					case 1:
+					{
+						if( fabs( rotation.angle + M_PI / 2.f ) < eps )
+							printedRotationSequence += "H, ";
+						else if( fabs( rotation.angle - M_PI / 2.f ) < eps )
+							printedRotationSequence += "Hi, ";
+						else if( fabs( rotation.angle - M_PI ) < eps )
+							printedRotationSequence += "2H, ";
+						break;
+					}
+					case 2:
+					{
+						if( fabs( rotation.angle + M_PI / 2.f ) < eps )
+							printedRotationSequence += "F, ";
+						else if( fabs( rotation.angle - M_PI / 2.f ) < eps )
+							printedRotationSequence += "Fi, ";
+						else if( fabs( rotation.angle - M_PI ) < eps )
+							printedRotationSequence += "2F, ";
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
+}
+
+//==================================================================================================
 // Notice here that we do not clear the given list before appending to it.
 bool RubiksCube::TranslateRotationSequence( const Perspective& perspective, const RelativeRotationSequence& relativeRotationSequence, RotationSequence& rotationSequence ) const
 {

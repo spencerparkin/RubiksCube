@@ -38,6 +38,7 @@ private:
 		ID_Help,
 		ID_About,
 		ID_Timer,
+		ID_BruteForceAttack,
 	};
 
 	void OnNewCube( wxCommandEvent& event );
@@ -66,6 +67,10 @@ private:
 	void OnUpdateMenuItemUI( wxUpdateUIEvent& event );
 	void OnTimer( wxTimerEvent& event );
 	void OnTextCtrlEnter( wxCommandEvent& event );
+	void OnBruteForceAttack( wxCommandEvent& event );
+
+	void BruteForceAttack( RubiksCube::RotationSequence& rotationSequence, int maxLength, wxTextFile& textFile );
+	void TestRotationSequence( const RubiksCube::RotationSequence& rotationSequence, wxTextFile& textFile );
 
 	static bool ParseRelativeRotationSequenceString( const wxString& relativeRotationSequenceString, RubiksCube::RelativeRotationSequence& relativeRotationSequence );
 

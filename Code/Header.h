@@ -23,6 +23,7 @@
 #include <wx/image.h>
 #include <wx/utils.h>
 #include <wx/filename.h>
+#include <wx/textfile.h>
 #include <wx/arrstr.h>
 #include <wx/filename.h>
 #include <wx/base64.h>
