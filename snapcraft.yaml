@@ -6,8 +6,8 @@ confinement: strict
 
 apps:
   rubecube:
-    command: desktop-launch $SNAP/bin/RubeCube
-    plugs: [home, x11, unity7]
+    command: env UBUNTU_MENUPROXY=0 desktop-launch $SNAP/bin/RubeCube
+    plugs: [home, x11, unity7, process-control]
 
 parts:
   rubecube:
