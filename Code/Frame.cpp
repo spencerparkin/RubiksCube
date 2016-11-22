@@ -533,7 +533,7 @@ void Frame::OnHelp( wxCommandEvent& event )
 #if !defined LINUX
 	wxLaunchDefaultBrowser( url );
 #else
-	system( "xdg-open " + url );
+	system( "/usr/local/bin/xdg-open " + url );
 #endif
 }
 
