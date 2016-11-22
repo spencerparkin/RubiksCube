@@ -34,6 +34,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <stdlib.h>
 
 #include "c3ga/c3ga.h"
 

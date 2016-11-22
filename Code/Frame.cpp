@@ -530,7 +530,11 @@ void Frame::OnHelp( wxCommandEvent& event )
 {
 	wxBusyCursor busyCursor;
 	wxString url = "http://spencerparkin.github.io/RubiksCube/";
+#if !defined LINUX
 	wxLaunchDefaultBrowser( url );
+#else
+	system( "xdg-open " + url );
+#endif
 }
 
 //==================================================================================================

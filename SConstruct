@@ -4,6 +4,7 @@ import os
 
 obj_env = Environment( parse_flags = '!wx-config --cxxflags' )
 obj_env.Append( CCFLAGS = '--std=c++11' )
+obj_env.Append( CCFLAGS = '-DLINUX' )
 
 if not obj_env.GetOption( 'clean' ):
 	conf = Configure( obj_env )
