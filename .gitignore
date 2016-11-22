@@ -11,6 +11,10 @@
 Build/
 *.o
 RubeCube
+*.snap
+Snap/stage/
+Snap/parts/
+Snap/prime/
 
 # Misc.
 .*.swp
