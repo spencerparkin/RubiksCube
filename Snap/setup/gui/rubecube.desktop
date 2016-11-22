@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Rube Cube
+Exec=rubecube
+Type=Application
+Icon=/snap/rubecube/current/meta/gui/icon.png
